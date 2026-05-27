@@ -468,26 +468,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <body>
 
 <!-- ═══════════ SETUP ═══════════ -->
-<div id="setupScreen">
-  <div class="sw">
-    <div class="slogo">TRIBO<span>LTEC</span></div>
-    <div class="ssub">Sistema ERP — Configuração inicial</div>
-    <div class="scard">
-      <h2>⚡ Conectar ao Firebase</h2>
-      <div class="step"><div class="sn">1</div><div class="st">Acesse <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> e abra o projeto <strong>triboltec-erp</strong></div></div>
-      <div class="step"><div class="sn">2</div><div class="st">Clique em <strong>Configurações do projeto → Geral</strong> e copie o bloco <strong>firebaseConfig</strong></div></div>
-      <div class="step"><div class="sn">3</div><div class="st">Cole abaixo e clique em Conectar:</div></div>
-      <textarea class="sta" id="setupInput" placeholder='{
-  "apiKey": "AIza...",
-  "authDomain": "...",
-  "databaseURL": "https://...-default-rtdb.firebaseio.com",
-  ...
-}'></textarea>
-      <button class="bsetup" onclick="saveSetup()">Conectar →</button>
-      <div class="serr" id="setupErr"></div>
-    </div>
-  </div>
-</div>
+<!-- setup screen removed — config is bundled -->
+<div id="setupScreen" style="display:none!important"></div>
 
 <!-- ═══════════ LOGIN ═══════════ -->
 <div id="loginScreen">
@@ -709,6 +691,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <button class="adm-tab" id="admTab-ponto" onclick="admTab('ponto')">⏱️ Ponto</button>
           <button class="adm-tab" id="admTab-exportar" onclick="admTab('exportar')">📤 Exportar</button>
           <button class="adm-tab" id="admTab-backup" onclick="admTab('backup')">💾 Backup</button>
+          <button class="adm-tab" id="admTab-seguranca" onclick="admTab('seguranca')">🔒 Segurança</button>
         </div>
 
         <!-- Pane: Usuários -->
@@ -814,6 +797,63 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <div class="bkp-warn">
             <div style="font-size:0.78rem;color:var(--sub);margin-bottom:10px">⚠️ A restauração <strong>substitui todos os dados atuais</strong>. Use apenas em emergências.</div>
             <input type="file" id="backupFile" accept=".json" onchange="confirmarRestore()" style="font-size:0.78rem;color:var(--sub)"/>
+          </div>
+        </div>
+
+        <!-- Pane: Segurança -->
+        <div id="admPane-seguranca" style="display:none">
+          <div class="pgh" style="padding-top:0"><div class="pg-title">🔒 Segurança</div></div>
+          <div class="scard" style="margin-bottom:14px;background:#f0fdf4;border-color:#86efac">
+            <div style="font-weight:700;font-size:0.84rem;margin-bottom:10px;color:#15803d">✅ Proteções Ativas</div>
+            <div style="font-size:0.78rem;color:#166534;line-height:1.8">
+              🔐 <strong>Bloqueio por tentativas</strong> — 5 erros de PIN bloqueiam a conta por 5 minutos<br>
+              ⏱️ <strong>Sessão automática</strong> — logout após 30 minutos de inatividade<br>
+              🔑 <strong>Hash SHA-256</strong> — PINs armazenados como hash, nunca em texto puro<br>
+              🛡️ <strong>Backup restrito</strong> — somente administradores acessam backup/restauração
+            </div>
+          </div>
+          <div class="scard" style="margin-bottom:14px;background:#fffbeb;border-color:#fcd34d">
+            <div style="font-weight:700;font-size:0.84rem;margin-bottom:10px;color:#92400e">⚠️ Ação Necessária — Regras do Firebase</div>
+            <div style="font-size:0.78rem;color:#78350f;margin-bottom:10px;line-height:1.6">
+              As regras do banco de dados Firebase devem ser configuradas no Console do Firebase para proteger os dados contra acesso externo.<br><br>
+              <strong>Acesse:</strong> <a href="https://console.firebase.google.com/project/triboltec-erp/database/triboltec-erp-default-rtdb/rules" target="_blank" style="color:#92400e">Firebase Console → Database → Rules</a><br>
+              Cole as regras abaixo e publique:
+            </div>
+            <pre id="fbRulesBox" style="background:#1e1e1e;color:#d4d4d4;border-radius:8px;padding:12px;font-size:0.72rem;font-family:monospace;line-height:1.6;overflow-x:auto;white-space:pre;user-select:all">{
+  "rules": {
+    "erp": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}</pre>
+            <div style="font-size:0.72rem;color:var(--sub);margin-top:8px">⚠️ Nota: estas regras requerem Firebase Authentication ativo. Como o sistema usa PIN próprio, para uma proteção básica use as regras abaixo enquanto não for implementado o Firebase Auth:</div>
+            <pre style="background:#1e1e1e;color:#d4d4d4;border-radius:8px;padding:12px;font-size:0.72rem;font-family:monospace;line-height:1.6;overflow-x:auto;white-space:pre;user-select:all;margin-top:6px">{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "erp": {
+      "usuarios": {
+        ".read": true,
+        ".write": false
+      }
+    }
+  }
+}</pre>
+            <div style="font-size:0.72rem;color:#92400e;margin-top:6px">Esta regra permite ler usuários (para o login) mas bloqueia escrita pública. Para escrita via app, use a SDK com autenticação ou contate o desenvolvedor para implementar Firebase Auth.</div>
+          </div>
+          <div class="scard" style="background:#eff6ff;border-color:#bfdbfe">
+            <div style="font-weight:700;font-size:0.84rem;margin-bottom:10px;color:#1e40af">📋 Checklist de Segurança</div>
+            <div style="font-size:0.78rem;color:#1e3a8a;line-height:2">
+              ✅ PINs com hash SHA-256<br>
+              ✅ Bloqueio por tentativas incorretas<br>
+              ✅ Timeout de sessão (30 min)<br>
+              ✅ Backup restrito a administradores<br>
+              ✅ Tela de setup removida do fluxo<br>
+              ⬜ Regras do Firebase Database configuradas<br>
+              ⬜ HTTPS forçado via Cloudflare (verificar)<br>
+              ⬜ Firebase Authentication implementado (melhoria futura)
+            </div>
           </div>
         </div>
       </div>
@@ -1793,6 +1833,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 // ══════════════════════════════════════════════
 const SALT = '_triboltec_salt_2025';
 const CFG_KEYS = ['tribfb_cfg','triberp_cfg'];
+// ── Security: PIN brute-force protection ──
+const _pinFails = {}; // uid → {count, until}
+let _lockTimer = null;
+// ── Security: session idle timeout ──
+let _idleTimer = null;
+const _IDLE_MS = 30 * 60 * 1000; // 30 min
 
 const MODS = [
   {id:'dash', label:'Dashboard', icon:'🏠', sec:'secDash', always:true},
@@ -1871,34 +1917,18 @@ function diffD(s){ if(!s) return null; const t=new Date(s+'T00:00:00'); const n=
 function stInfo(id){ return STAGES.find(s=>s.id===id)||{label:id,cls:'s-prospect'}; }
 
 // ══════════════════════════════════════════════
-// SETUP
+// FIREBASE INIT
 // ══════════════════════════════════════════════
-function saveSetup(){
-  const raw = document.getElementById('setupInput').value.trim();
-  const err = document.getElementById('setupErr');
-  try {
-    const match = raw.match(/\{[\s\S]*\}/);
-    if(!match){ err.textContent='Cole o bloco { } do firebaseConfig'; return; }
-    let cfg;
-    try { cfg = JSON.parse(match[0]); }
-    catch(e){ cfg = JSON.parse(match[0].replace(/([{,]\s*)([a-zA-Z_]\w*)(\s*:)/g,'$1"$2"$3')); }
-    if(!cfg.apiKey||!cfg.databaseURL){ err.textContent='Faltam apiKey ou databaseURL'; return; }
-    CFG_KEYS.forEach(k => localStorage.setItem(k, JSON.stringify(cfg)));
-    initFirebase(cfg);
-  } catch(e){ err.textContent='Formato inválido. Tente novamente.'; }
-}
-
 function initFirebase(cfg){
   try {
     const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(cfg);
     db = firebase.database(app);
-    document.getElementById('setupScreen').classList.add('h');
     db.ref('.info/connected').on('value', snap=>{
       document.getElementById('syncDot').className = 'sync-dot ' + (snap.val() ? '' : 'off');
       document.getElementById('offWarn').className = 'offline-warn' + (snap.val() ? '' : ' show');
     });
     loadUsers();
-  } catch(e){ document.getElementById('setupErr').textContent = 'Erro Firebase: ' + e.message; }
+  } catch(e){ console.error('Firebase init error:', e.message); }
 }
 
 // ══════════════════════════════════════════════
@@ -1959,12 +1989,17 @@ function selectUser(uid){
   document.getElementById('perr').textContent = '';
 }
 function backToUsers(){
+  if(_lockTimer){ clearInterval(_lockTimer); _lockTimer=null; }
   selUID = null; pinBuf = '';
   document.getElementById('pinBox').style.display = 'none';
+  document.getElementById('perr').textContent = '';
   document.getElementById('userGrid').style.display = 'grid';
 }
 
 function pp(k){
+  // Block input during lockout
+  const fail = _pinFails[selUID] || {count:0, until:0};
+  if(fail.until > Date.now()) return;
   if(k==='←'){ pinBuf=pinBuf.slice(0,-1); }
   else if(k==='OK'){ checkPin(); return; }
   else if(pinBuf.length<4){ pinBuf+=k; }
@@ -1974,13 +2009,51 @@ function pp(k){
 }
 
 async function checkPin(){
+  const now = Date.now();
+  const fail = _pinFails[selUID] || {count:0, until:0};
+  // Locked out?
+  if(fail.until > now){
+    const secs = Math.ceil((fail.until - now)/1000);
+    document.getElementById('perr').textContent = `⛔ Aguarde ${secs}s para tentar novamente.`;
+    pinBuf=''; for(let i=0;i<4;i++) document.getElementById('d'+i).className='dot';
+    return;
+  }
   const u = usuarios[selUID];
   const h = await hashPin(pinBuf);
-  if(h === u.pinHash){ doLogin(selUID, u); }
-  else {
-    document.getElementById('perr').textContent = 'PIN incorreto. Tente novamente.';
+  if(h === u.pinHash){
+    _pinFails[selUID] = {count:0, until:0};
+    if(_lockTimer){ clearInterval(_lockTimer); _lockTimer=null; }
+    doLogin(selUID, u);
+  } else {
+    fail.count = (fail.count||0) + 1;
+    if(fail.count >= 5){
+      fail.until = now + 5*60*1000;
+      fail.count = 0;
+      _pinFails[selUID] = fail;
+      _startLockoutCountdown();
+    } else {
+      _pinFails[selUID] = fail;
+      const left = 5 - fail.count;
+      document.getElementById('perr').textContent = `PIN incorreto — ${left} tentativa${left===1?'':'s'} restante${left===1?'':'s'}.`;
+    }
     pinBuf=''; for(let i=0;i<4;i++) document.getElementById('d'+i).className='dot';
   }
+}
+function _startLockoutCountdown(){
+  if(_lockTimer) clearInterval(_lockTimer);
+  _lockTimer = setInterval(()=>{
+    const fail = _pinFails[selUID];
+    if(!fail || !fail.until){ clearInterval(_lockTimer); _lockTimer=null; return; }
+    const secs = Math.ceil((fail.until - Date.now())/1000);
+    const el = document.getElementById('perr');
+    if(secs <= 0){
+      clearInterval(_lockTimer); _lockTimer=null;
+      _pinFails[selUID] = {count:0, until:0};
+      if(el) el.textContent = 'Bloqueio encerrado. Tente novamente.';
+    } else {
+      if(el) el.textContent = `⛔ Conta bloqueada — aguarde ${secs}s.`;
+    }
+  }, 1000);
 }
 
 function doLogin(uid, u){
@@ -1992,10 +2065,25 @@ function doLogin(uid, u){
   buildNav();
   startListeners();
   navTo('dash');
+  // Idle session timeout
+  _resetIdleTimer();
+  ['click','keydown','touchstart','mousemove'].forEach(ev=>
+    document.addEventListener(ev, _resetIdleTimer, {passive:true}));
+}
+function _resetIdleTimer(){
+  clearTimeout(_idleTimer);
+  if(!curUser) return;
+  _idleTimer = setTimeout(()=>{
+    alert('⏱️ Sessão encerrada por inatividade. Faça login novamente.');
+    logout();
+  }, _IDLE_MS);
 }
 
 function logout(){
   if(!confirm('Sair do sistema?')) return;
+  clearTimeout(_idleTimer); _idleTimer=null;
+  ['click','keydown','touchstart','mousemove'].forEach(ev=>
+    document.removeEventListener(ev, _resetIdleTimer));
   sessionStorage.removeItem('a2erp_uid');
   curUser=null; clientes={}; interacoes={};
   propostas={}; projetos={}; fornecedores={}; pedidos={}; estoque={}; movimentos={}; funcionarios={}; lancamentos={}; notas={}; nfConfig={};
@@ -2043,6 +2131,13 @@ function navTo(mid){
   document.getElementById('fab').classList.toggle('h', mid!=='crm');
   closePanel();
   if(mid==='compras'&&!document.getElementById('compContent').innerHTML.trim()) compTab('ped');
+  if(mid==='admin'){
+    // Restrict tabs to super admin
+    ['backup','seguranca'].forEach(t=>{
+      const btn=document.getElementById('admTab-'+t);
+      if(btn) btn.style.display = curUser?.isSuper ? '' : 'none';
+    });
+  }
   if(mid==='fin'){
     const el=document.getElementById('finMesInput');
     if(el&&!el.value) el.value=new Date().toISOString().slice(0,7);
@@ -2555,12 +2650,19 @@ async function deleteUser(uid,nome){
 // ADMIN TABS
 // ══════════════════════════════════════════════
 function admTab(tab){
-  ['usuarios','docs','ponto','exportar','backup'].forEach(t=>{
-    document.getElementById('admTab-'+t).classList.toggle('active',t===tab);
-    document.getElementById('admPane-'+t).style.display=t===tab?'':'none';
+  const tabs = ['usuarios','docs','ponto','exportar','backup','seguranca'];
+  tabs.forEach(t=>{
+    const btn=document.getElementById('admTab-'+t);
+    const pane=document.getElementById('admPane-'+t);
+    if(btn) btn.classList.toggle('active',t===tab);
+    if(pane) pane.style.display=t===tab?'':'none';
   });
   if(tab==='docs') renderEmpresaDocs();
   if(tab==='ponto') renderPonto();
+  // Segurança tab: only for super admins
+  if(tab==='seguranca' && !curUser?.isSuper){
+    admTab('usuarios');
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -2687,6 +2789,7 @@ function exportarMod(nome,getFn){
 }
 
 function exportarBackupJSON(){
+  if(!curUser?.isSuper){ alert('⛔ Apenas administradores podem exportar o backup completo.'); return; }
   const backup={
     exportadoEm:new Date().toISOString(),versao:'1.0',empresa:'Triboltec Engenharia Industrial e Civil',
     dados:{clientes,interacoes,propostas,projetos,fornecedores,pedidos,estoque,movimentos,funcionarios,lancamentos,notas}
@@ -2699,6 +2802,7 @@ function exportarBackupJSON(){
 }
 
 async function confirmarRestore(){
+  if(!curUser?.isSuper){ alert('⛔ Apenas administradores podem restaurar backup.'); document.getElementById('backupFile').value=''; return; }
   const file=document.getElementById('backupFile').files[0]; if(!file) return;
   if(!confirm('⚠️ ATENÇÃO!\n\nIsso irá SUBSTITUIR todos os dados atuais pelos do backup.\n\nTem certeza absoluta?')){
     document.getElementById('backupFile').value=''; return;
