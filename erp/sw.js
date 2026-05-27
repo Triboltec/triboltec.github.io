@@ -1,5 +1,5 @@
 const CACHE='triboltec-v1';
-const ASSETS=['/app/','/app/index.html','/app/manifest.json',
+const ASSETS=['/erp/','/erp/index.html','/erp/manifest.json',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS).catch(()=>{})));self.skipWaiting();});

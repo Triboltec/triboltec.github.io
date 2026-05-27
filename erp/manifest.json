@@ -1,7 +1,7 @@
 {
   "name": "Triboltec Sistema ERP",
   "short_name": "Triboltec",
-  "start_url": "/app/",
+  "start_url": "/erp/",
   "display": "standalone",
   "background_color": "#1a1a1a",
   "theme_color": "#8B2020",
