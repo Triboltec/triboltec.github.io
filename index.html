@@ -3823,6 +3823,9 @@ function openFechModal(fid){
 }
 let pendingFechPlanilha = null; // holds parsed XLS data while modal is open
 
+// Firebase keys cannot contain . # $ [ ] /  — sanitize column names
+function sanitizeFBKey(k){ return String(k).replace(/[.#$\[\]/]/g,'_').replace(/\s+/g,' ').trim()||'col'; }
+
 async function parseFechXLS(input){
   const file=input.files[0]; if(!file) return;
   const info=document.getElementById('fechXLSInfo');
@@ -3833,16 +3836,20 @@ async function parseFechXLS(input){
     const ws=wb.Sheets[wb.SheetNames[0]];
     const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
     // Find header row (contains COD, NOME)
-    let hIdx=raw.findIndex(r=>r.some(c=>String(c).toUpperCase().includes('NOME')&&r.some(d=>String(d).toUpperCase().includes('COD'))));
+    let hIdx=raw.findIndex(r=>r.some(c=>String(c).toUpperCase().includes('NOME'))&&r.some(d=>String(d).toUpperCase().includes('COD')));
+    if(hIdx<0) hIdx=raw.findIndex(r=>r.some(c=>String(c).toUpperCase().includes('NOME')));
     if(hIdx<0) hIdx=3; // fallback
     const empresa=String(raw[0]?.[0]||'').trim();
-    const periodo=String(raw[1]?.[0]||'').trim();
-    const cols=raw[hIdx].map(c=>String(c).trim());
-    const rows=raw.slice(hIdx+1).filter(r=>r.some(c=>String(c).trim()!=='')).map(r=>{
-      const obj={};cols.forEach((c,i)=>obj[c]=String(r[i]||'').trim());return obj;
-    }).filter(r=>r['NOME']||r[cols[1]]); // filter non-empty name rows
+    const periodo=String(raw[1]?.[0]||raw[2]?.[0]||'').trim();
+    // Sanitize column names for Firebase
+    const rawCols=raw[hIdx].map(c=>String(c).trim());
+    const cols=rawCols.map(sanitizeFBKey);
+    const rows=raw.slice(hIdx+1)
+      .filter(r=>r.some(c=>String(c).trim()!==''))
+      .map(r=>{ const obj={}; cols.forEach((c,i)=>{ if(c) obj[c]=String(r[i]===undefined||r[i]===null?'':r[i]).trim(); }); return obj; })
+      .filter(r=>r['NOME']||r[cols[1]]); // filter rows with empty name
     pendingFechPlanilha={empresa,periodo,cols,rows,importadoEm:Date.now()};
-    info.textContent=`✅ ${rows.length} funcionários carregados — ${periodo}`;
+    info.textContent=`✅ ${rows.length} funcionários carregados — ${periodo||'planilha lida'}`;
   }catch(e){info.textContent='❌ Erro ao ler planilha: '+e.message; pendingFechPlanilha=null;}
 }
 
@@ -3850,12 +3857,26 @@ async function saveFech(){
   const mes=document.getElementById('fechMes').value;
   if(!mes){alert('Informe o mês de referência.');return;}
   const fid=document.getElementById('editFechId').value||genId();
-  const obj={id:fid,mes,status:document.getElementById('fechStatus').value,ponto:document.getElementById('fechPonto').value.trim(),horas:document.getElementById('fechHoras').value.trim(),atestados:document.getElementById('fechAtestados').value.trim(),outros:document.getElementById('fechOutros').value.trim(),obs:document.getElementById('fechObs').value.trim(),criadoEm:fechamentos[fid]?.criadoEm||Date.now(),atualizadoPor:curUser.uid};
+  const obj={
+    id:fid, mes,
+    status:document.getElementById('fechStatus').value,
+    ponto:document.getElementById('fechPonto').value.trim(),
+    horas:document.getElementById('fechHoras').value.trim(),
+    atestados:document.getElementById('fechAtestados').value.trim(),
+    outros:document.getElementById('fechOutros').value.trim(),
+    obs:document.getElementById('fechObs').value.trim(),
+    criadoEm:fechamentos[fid]?.criadoEm||Date.now(),
+    atualizadoPor:curUser?.uid||''
+  };
   if(pendingFechPlanilha) obj.planilha=pendingFechPlanilha;
-  else if(fechamentos[fid]?.planilha) obj.planilha=fechamentos[fid].planilha; // preserve existing
-  await db.ref('erp/fechamentos/'+fid).set(obj);
-  pendingFechPlanilha=null;
-  closeOvl('ovlFech');
+  else if(fechamentos[fid]?.planilha) obj.planilha=fechamentos[fid].planilha;
+  try{
+    await db.ref('erp/fechamentos/'+fid).set(obj);
+    pendingFechPlanilha=null;
+    closeOvl('ovlFech');
+  }catch(e){
+    alert('Erro ao salvar: '+e.message+'\n\nSe carregou uma planilha, tente sem ela primeiro para identificar o problema.');
+  }
 }
 
 // ── Empresa Docs ──
