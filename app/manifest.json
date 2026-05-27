@@ -1,0 +1,12 @@
+{
+  "name": "Triboltec Sistema ERP",
+  "short_name": "Triboltec",
+  "start_url": "/app/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#8B2020",
+  "icons": [
+    {"src": "https://via.placeholder.com/192x192/8B2020/ffffff?text=TB", "sizes": "192x192", "type": "image/png"},
+    {"src": "https://via.placeholder.com/512x512/8B2020/ffffff?text=TB", "sizes": "512x512", "type": "image/png"}
+  ]
+}
