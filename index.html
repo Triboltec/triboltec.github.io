@@ -662,6 +662,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           </div>
           <div style="font-size:0.78rem;color:var(--sub);margin-bottom:14px">AVCB, Alvarás, Certidões, Licenças — com vencimento e link do arquivo (Google Drive).</div>
           <div id="empDocList"></div>
+          <!-- Config: accounting email -->
+          <div class="scard" style="margin-top:20px">
+            <div class="s-title" style="font-size:0.8rem;font-weight:800;margin-bottom:12px">✉️ Configurações de Envio</div>
+            <div class="fg" style="margin-bottom:10px">
+              <label>E-mail da Contabilidade</label>
+              <input type="email" id="configContEmail" placeholder="contabilidade@escritorio.com.br" style="width:100%"/>
+            </div>
+            <div style="font-size:0.72rem;color:var(--sub);margin-bottom:10px">Usado no botão "Enviar para Contabilidade" no fechamento mensal.</div>
+            <button class="btn btn-red" onclick="saveEmpConfig()">💾 Salvar</button>
+            <span id="configMsg" style="font-size:0.73rem;color:var(--sub);margin-left:10px"></span>
+          </div>
         </div>
 
         <!-- Pane: Ponto ControlID -->
@@ -1238,10 +1249,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <div class="fg"><label>Admissão</label><input type="date" id="fnAdmissao"/></div>
       </div>
       <div class="f2">
-        <div class="fg"><label>CEP</label><input type="text" id="fnCEP" placeholder="00000-000" maxlength="9" oninput="buscaCEP(this)"/></div>
+        <div class="fg"><label>CEP</label><input type="text" id="fnCEP" placeholder="00000-000" maxlength="9" oninput="buscaCEP(this)" onblur="buscaCEP(this)"/></div>
         <div class="fg"><label>Cidade / UF</label><input type="text" id="fnCidade" placeholder="São Paulo / SP"/></div>
       </div>
-      <div class="fg"><label>Endereço (Rua, Nº, Bairro)</label><input type="text" id="fnEndereco" placeholder="Rua Exemplo, 123 — Bairro"/></div>
+      <div class="fg"><label>Rua / Bairro <span style="color:var(--sub);font-weight:400">(preenchido pelo CEP)</span></label><input type="text" id="fnEndereco" placeholder="Rua Exemplo — Bairro"/></div>
+      <div class="f2">
+        <div class="fg"><label>Número</label><input type="text" id="fnNumero" placeholder="123"/></div>
+        <div class="fg"><label>Complemento</label><input type="text" id="fnComplemento" placeholder="Apto 4, Bloco B…"/></div>
+      </div>
       <div class="fg" style="background:#f8f9fa;border-radius:8px;padding:10px">
         <label style="display:block;margin-bottom:8px">Período de Experiência</label>
         <div class="f2" style="gap:8px">
@@ -1695,6 +1710,7 @@ let propostas = {}, projetos = {}, fornecedores = {}, pedidos = {}, estoque = {}
 let lancamentos = {};
 let notas = {}, nfConfig = {};
 let candidatos = {}, ausencias = {}, fechamentos = {}, empresaDocs = {}, pontoReg = {};
+let sysConfig = {};
 let nfFilter = 'all';
 let selUID = null, pinBuf = '', curCID = null, crmFilter = 'all';
 let propFilter = 'all', projFilter = 'all', estFilter = 'all', rhFilter = 'all';
@@ -1917,6 +1933,8 @@ function startListeners(){
   db.ref('erp/ponto').on('value', snap=>{ pontoReg=snap.val()||{}; renderPonto(); });
   // Load ControlID config
   db.ref('erp/cidconfig').once('value', snap=>{ const c=snap.val()||{}; if(c.email)document.getElementById('cidEmail').value=c.email; if(c.url)document.getElementById('cidUrl').value=c.url; });
+  // Load system config (accounting email etc.)
+  db.ref('erp/config').on('value', snap=>{ sysConfig=snap.val()||{}; const el=document.getElementById('configContEmail'); if(el&&sysConfig.contEmail) el.value=sysConfig.contEmail; });
 }
 
 // ══════════════════════════════════════════════
@@ -3248,27 +3266,34 @@ function getRHAlerts(){
 
 // ── CEP lookup (ViaCEP) ──
 let cepTimer=null;
+let _cepLastV='';
 async function buscaCEP(input){
   let v=input.value.replace(/\D/g,'');
   // Auto-format 00000-000
-  if(v.length>5) input.value=v.slice(0,5)+'-'+v.slice(5,8);
-  if(v.length<8) return;
+  input.value = v.length>5 ? v.slice(0,5)+'-'+v.slice(5,8) : v;
+  input.style.borderColor='';
+  if(v.length!==8) return;
+  if(v===_cepLastV) return; // avoid duplicate lookups on blur after already fetched
   clearTimeout(cepTimer);
+  input.style.borderColor='var(--amber)';
   cepTimer=setTimeout(async()=>{
-    input.style.borderColor='var(--amber)';
     try{
-      const r=await fetch(`https://viacep.com.br/ws/${v}/json/`);
+      const r=await fetch('https://viacep.com.br/ws/'+v+'/json/');
+      if(!r.ok) throw new Error('http');
       const d=await r.json();
       if(d.erro){input.style.borderColor='var(--red)';return;}
-      const end=document.getElementById('fnEndereco');
-      const cid=document.getElementById('fnCidade');
-      if(end&&!end.value) end.value=(d.logradouro||'')+(d.bairro?' — '+d.bairro:'');
-      if(cid&&!cid.value) cid.value=(d.localidade||'')+(d.uf?' / '+d.uf:'');
+      _cepLastV=v;
+      const endEl=document.getElementById('fnEndereco');
+      const cidEl=document.getElementById('fnCidade');
+      const numEl=document.getElementById('fnNumero');
+      // Fill rua + bairro (auto), leave número for user
+      if(endEl) endEl.value=[d.logradouro,d.bairro].filter(Boolean).join(' — ');
+      if(cidEl) cidEl.value=[d.localidade,d.uf].filter(Boolean).join(' / ');
+      // Focus número field so user can type it right away
+      if(numEl && !numEl.value) numEl.focus();
       input.style.borderColor='var(--green)';
-      // Focus numero field if endereco was auto-filled
-      if(end?.value) end.focus();
     }catch(e){input.style.borderColor='var(--red)';}
-  },600);
+  },400);
 }
 
 // ── Alert beep (Web Audio API) ──
@@ -3424,6 +3449,9 @@ function openFuncModal(fid){
     document.getElementById('fnCEP').value=f.cep||'';
     document.getElementById('fnCidade').value=f.cidade||'';
     document.getElementById('fnEndereco').value=f.endereco||'';
+    document.getElementById('fnNumero').value=f.numero||'';
+    document.getElementById('fnComplemento').value=f.complemento||'';
+    _cepLastV=(f.cep||'').replace(/\D/g,'');
     document.getElementById('fnExpIni').value=f.expIni||'';
     document.getElementById('fnExpDias').value=f.expDias||'';
     document.getElementById('fnExpSegunda').checked=!!f.expSegunda;
@@ -3439,7 +3467,8 @@ function openFuncModal(fid){
       });
     }
   } else {
-    ['fnNome','fnCPF','fnTel','fnEmail','fnAdmissao','fnCEP','fnCidade','fnEndereco','fnExpIni','fnFerIni','fnFerFim','fnFerAquis'].forEach(id=>document.getElementById(id).value='');
+    ['fnNome','fnCPF','fnTel','fnEmail','fnAdmissao','fnCEP','fnCidade','fnEndereco','fnNumero','fnComplemento','fnExpIni','fnFerIni','fnFerFim','fnFerAquis'].forEach(id=>document.getElementById(id).value='');
+    _cepLastV='';
     document.getElementById('fnCargo').value='';
     document.getElementById('fnTipo').value='clt';
     document.getElementById('fnStatus').value='ativo';
@@ -3470,6 +3499,8 @@ async function saveFunc(){
     cep:document.getElementById('fnCEP').value.trim(),
     cidade:document.getElementById('fnCidade').value.trim(),
     endereco:document.getElementById('fnEndereco').value.trim(),
+    numero:document.getElementById('fnNumero').value.trim(),
+    complemento:document.getElementById('fnComplemento').value.trim(),
     admissao:document.getElementById('fnAdmissao').value||'',
     expIni:document.getElementById('fnExpIni').value||'',
     expDias:document.getElementById('fnExpDias').value||'',
@@ -3651,6 +3682,7 @@ function renderFechamentos(){
           ${f.atestados?`<a href="${f.atestados}" target="_blank" style="font-size:0.7rem;color:var(--blue)">📋 Atestados</a>`:''}
           <button class="btn btn-ghost" style="font-size:0.72rem;padding:5px 10px" onclick="openFechModal('${f.id}')">✏️ Editar</button>
           ${f.planilha?`<button class="btn btn-red" style="font-size:0.72rem;padding:5px 10px" onclick="gerarFechamento('${f.id}')">📤 Gerar para Contabilidade</button>`:''}
+          ${f.planilha?`<button class="btn btn-ghost" style="font-size:0.72rem;padding:5px 10px" onclick="enviarEmailContador('${f.id}')">✉️ Enviar por E-mail</button>`:''}
         </div>
       </div>
       ${f.planilha?renderFechTable(f):''}
@@ -3717,6 +3749,47 @@ function gerarFechamento(fid){
   <script>window.onload=()=>window.print()<\/script></body></html>`);
   win.document.close();
 }
+function enviarEmailContador(fid){
+  const f=fechamentos[fid]; if(!f) return;
+  const dest=sysConfig.contEmail||'';
+  if(!dest){
+    alert('Configure o e-mail da contabilidade em Admin → Docs Empresa (parte inferior da página).');
+    return;
+  }
+  const mes=fmtMesRef(f.mes)||f.mes||'—';
+  const funcAtivos=Object.values(funcionarios).filter(x=>x.status==='ativo');
+  const ausDoMes=Object.values(ausencias).filter(a=>a.ini&&f.mes&&a.ini.startsWith(f.mes));
+  const p=f.planilha;
+  // Build body text
+  const linhasFuncionarios=p?.rows?.length
+    ? p.rows.slice(0,30).map(r=>`  • ${r['NOME']||r[Object.keys(r)[1]]||'—'}${r['VALOR']?' — R$ '+r['VALOR']:''}${r['FALTAS']?' | Faltas: '+r['FALTAS']:''}`).join('\n')
+    : funcAtivos.slice(0,30).map(x=>`  • ${x.nome} (${(x.tipo||'CLT').toUpperCase()})`).join('\n');
+  const linhasAus=ausDoMes.length
+    ? ausDoMes.map(a=>`  • ${a.funcNome||'—'}: ${a.tipo} (${fmtD(a.ini)}${a.retorno?' → '+fmtD(a.retorno):''})`).join('\n')
+    : '  Nenhuma ausência registrada no período.';
+  const linksExtra=[f.ponto&&'Ponto: '+f.ponto,f.horas&&'Horas: '+f.horas,f.atestados&&'Atestados: '+f.atestados].filter(Boolean).join('\n');
+  const obs=f.obs?'\nObservações:\n  '+f.obs:'';
+  const body=[
+    `Prezados,`,
+    ``,
+    `Segue o fechamento de folha referente ao mês de ${mes}.`,
+    ``,
+    `─── EQUIPE ATIVA (${funcAtivos.length} funcionários) ───`,
+    linhasFuncionarios,
+    ``,
+    `─── AUSÊNCIAS / ATESTADOS ───`,
+    linhasAus,
+    linksExtra?`\n─── DOCUMENTOS ───\n${linksExtra}`:'',
+    obs,
+    ``,
+    `Este documento foi gerado automaticamente pelo ERP Triboltec.`,
+    `Para mais detalhes acesse: erp.triboltec.com.br`,
+  ].filter(l=>l!==undefined).join('\n');
+  const subject=encodeURIComponent(`Fechamento de Folha — ${mes} — Triboltec Engenharia`);
+  const bodyEnc=encodeURIComponent(body);
+  window.location.href=`mailto:${dest}?subject=${subject}&body=${bodyEnc}`;
+}
+
 function openFechModal(fid){
   const f=fid?fechamentos[fid]:null;
   document.getElementById('editFechId').value=fid||'';
@@ -3815,6 +3888,16 @@ async function saveEmpDoc(){
   const did=document.getElementById('editEmpDocId').value||genId();
   await db.ref('erp/empresa_docs/'+did).set({id:did,tipo,vencimento:document.getElementById('edVenc').value||'',desc:document.getElementById('edDesc').value.trim(),link:document.getElementById('edLink').value.trim(),obs:document.getElementById('edObs').value.trim(),criadoEm:empresaDocs[did]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
   closeOvl('ovlEmpDoc');
+}
+
+// ── System Config ──
+async function saveEmpConfig(){
+  const email=(document.getElementById('configContEmail').value||'').trim();
+  const msg=document.getElementById('configMsg');
+  await db.ref('erp/config').update({contEmail:email});
+  sysConfig.contEmail=email;
+  msg.textContent='✅ Salvo!';
+  setTimeout(()=>{msg.textContent=''},3000);
 }
 
 // ── ControlID iDCloud ──
