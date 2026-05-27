@@ -11,6 +11,7 @@
 <title>Triboltec Sistema ERP</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/pizzip@3.1.7/dist/pizzip.min.js"></script>
 <script src="https://unpkg.com/docxtemplater@3.47.0/build/docxtemplater.js"></script>
@@ -2059,12 +2060,16 @@ function _startLockoutCountdown(){
 function doLogin(uid, u){
   curUser = {uid, ...u};
   sessionStorage.setItem('a2erp_uid', uid);
+  // Autenticação anônima no Firebase (permite regras auth != null)
+  // Inicia listeners após auth estar pronta para evitar permissão negada
   document.getElementById('loginScreen').classList.add('h');
   document.getElementById('app').classList.add('v');
   document.getElementById('userAv').textContent = u.iniciais || initials(u.nome);
   buildNav();
-  startListeners();
   navTo('dash');
+  firebase.auth().signInAnonymously()
+    .then(()=>{ startListeners(); })
+    .catch(e=>{ console.warn('Auth anon falhou, tentando sem auth:', e.message); startListeners(); });
   // Idle session timeout
   _resetIdleTimer();
   ['click','keydown','touchstart','mousemove'].forEach(ev=>
@@ -2084,6 +2089,7 @@ function logout(){
   clearTimeout(_idleTimer); _idleTimer=null;
   ['click','keydown','touchstart','mousemove'].forEach(ev=>
     document.removeEventListener(ev, _resetIdleTimer));
+  firebase.auth().signOut().catch(()=>{});
   sessionStorage.removeItem('a2erp_uid');
   curUser=null; clientes={}; interacoes={};
   propostas={}; projetos={}; fornecedores={}; pedidos={}; estoque={}; movimentos={}; funcionarios={}; lancamentos={}; notas={}; nfConfig={};
