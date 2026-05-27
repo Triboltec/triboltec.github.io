@@ -1188,6 +1188,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <button class="rh-tab active" id="fmTab-dados" onclick="fmTab('dados')">📋 Dados</button>
       <button class="rh-tab" id="fmTab-nrs" onclick="fmTab('nrs')">🦺 NRs</button>
       <button class="rh-tab" id="fmTab-ferias" onclick="fmTab('ferias')">🏖️ Férias</button>
+      <button class="rh-tab" id="fmTab-checklist" onclick="fmTab('checklist')">✅ Checklist</button>
+      <button class="rh-tab" id="fmTab-arquivos" onclick="fmTab('arquivos')">📁 Arquivos</button>
     </div>
     <!-- DADOS -->
     <div id="fmPane-dados">
@@ -1261,6 +1263,49 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       </div>
       <div style="background:#f0fdf4;border-radius:8px;padding:10px;font-size:0.75rem;color:#16a34a;line-height:1.6;margin-top:4px">
         💡 O sistema alerta automaticamente com <strong>30 dias de antecedência</strong> do início das férias.
+      </div>
+    </div>
+    <!-- CHECKLIST -->
+    <div id="fmPane-checklist" style="display:none">
+      <div id="clkNoFunc" style="text-align:center;padding:30px;color:var(--sub);font-size:0.82rem;display:none">Salve o funcionário primeiro para gerenciar o checklist.</div>
+      <div id="clkBody">
+        <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:0.72rem;font-weight:700;color:var(--sub)">Tipo:</span>
+          <button class="rh-tab active" id="clkTabAdm" style="flex:none;font-size:0.7rem;padding:5px 10px" onclick="switchClk('admissao')">Admissão</button>
+          <button class="rh-tab" id="clkTabRes" style="flex:none;font-size:0.7rem;padding:5px 10px" onclick="switchClk('rescisao')">Rescisão</button>
+          <button class="btn btn-ghost" style="margin-left:auto;padding:5px 10px;font-size:0.7rem" onclick="addClkItem()">+ Item</button>
+        </div>
+        <div id="clkList"></div>
+      </div>
+    </div>
+    <!-- ARQUIVOS -->
+    <div id="fmPane-arquivos" style="display:none">
+      <div id="arqNoFunc" style="text-align:center;padding:30px;color:var(--sub);font-size:0.82rem;display:none">Salve o funcionário primeiro para gerenciar arquivos.</div>
+      <div id="arqBody">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="btn btn-red" style="font-size:0.76rem;padding:6px 12px" onclick="openArqForm()">+ Arquivo</button>
+        </div>
+        <div id="arqAddForm" style="display:none;background:#f8f9fa;border-radius:8px;padding:10px;margin-bottom:10px">
+          <div class="f2" style="gap:8px;margin-bottom:6px">
+            <div><label style="font-size:0.64rem;color:var(--sub)">Nome do Arquivo</label><input type="text" id="arqNome" placeholder="Ex: ASO Admissional" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:0.79rem;font-family:inherit"/></div>
+            <div><label style="font-size:0.64rem;color:var(--sub)">Categoria</label>
+              <select id="arqCat" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:0.79rem;font-family:inherit">
+                <option value="admissao">Admissão</option>
+                <option value="rescisao">Rescisão</option>
+                <option value="pessoal">Pessoal</option>
+                <option value="exame">Exame / ASO</option>
+                <option value="contrato">Contrato</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom:6px"><label style="font-size:0.64rem;color:var(--sub)">Link (Google Drive)</label><input type="url" id="arqLink" placeholder="https://drive.google.com/..." style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:0.79rem;font-family:inherit"/></div>
+          <div style="display:flex;gap:6px;justify-content:flex-end">
+            <button class="btn btn-ghost" style="font-size:0.74rem;padding:5px 10px" onclick="document.getElementById('arqAddForm').style.display='none'">Cancelar</button>
+            <button class="btn btn-red" style="font-size:0.74rem;padding:5px 10px" onclick="saveArquivo()">Salvar</button>
+          </div>
+        </div>
+        <div id="arqList"></div>
       </div>
     </div>
     <div class="mact">
@@ -1619,6 +1664,7 @@ let propFilter = 'all', projFilter = 'all', estFilter = 'all', rhFilter = 'all';
 let curProjViewId = null;
 let rhCurTab = 'alertas';
 let curNRs = []; // NRs temporárias no modal
+let curClkTipo = 'admissao'; // tipo ativo no checklist
 
 // ══════════════════════════════════════════════
 // UTILS
@@ -3101,10 +3147,13 @@ function rhTab(t){
 
 // ── Employee modal sub-tabs ──
 function fmTab(t){
-  ['dados','nrs','ferias'].forEach(id=>{
+  ['dados','nrs','ferias','checklist','arquivos'].forEach(id=>{
     document.getElementById('fmTab-'+id).classList.toggle('active',id===t);
     document.getElementById('fmPane-'+id).style.display=id===t?'':'none';
   });
+  const fid=document.getElementById('editFuncId').value;
+  if(t==='checklist'){ if(!fid){document.getElementById('clkNoFunc').style.display='';document.getElementById('clkBody').style.display='none';}else{document.getElementById('clkNoFunc').style.display='none';document.getElementById('clkBody').style.display='';renderClkList(fid,curClkTipo);} }
+  if(t==='arquivos'){ if(!fid){document.getElementById('arqNoFunc').style.display='';document.getElementById('arqBody').style.display='none';}else{document.getElementById('arqNoFunc').style.display='none';document.getElementById('arqBody').style.display='';renderArquivos(fid);} }
 }
 
 // ── Get all RH alerts ──
@@ -3613,6 +3662,169 @@ function renderPonto(){
   el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>
     ${arr.map(r=>`<tr>${keys.map(k=>`<td>${r[k]||'—'}</td>`).join('')}</tr>`).join('')}
   </tbody></table></div>`;
+}
+
+// ══════════════════════════════════════════════
+// CHECKLIST ADMISSÃO / RESCISÃO
+// ══════════════════════════════════════════════
+const CLK_TEMPLATES = {
+  admissao_clt:[
+    'Recolher documentos (RG, CPF, CTPS, PIS, Certidão, Comprovante residência, Foto 3x4)',
+    'Realizar exame admissional (ASO)',
+    'Assinar contrato de trabalho (CLT)',
+    'Registrar na CTPS digital (eSocial)',
+    'Enviar admissão ao eSocial',
+    'Cadastrar no ponto eletrônico (ControlID)',
+    'Entregar EPI e assinar termo de responsabilidade',
+    'Integração e treinamento inicial',
+    'Abrir conta salário',
+    'Cadastrar em benefícios (VA/VR, plano de saúde)',
+    'Entregar uniformes e crachá',
+    'NRs obrigatórias para a função'
+  ],
+  admissao_pj:[
+    'Assinar contrato de prestação de serviços',
+    'Coletar CNPJ e dados da empresa (contrato social)',
+    'Cadastrar como fornecedor no sistema',
+    'Definir periodicidade de emissão de NF',
+    'NRs obrigatórias para a função',
+    'Entregar EPI e assinar termo de responsabilidade'
+  ],
+  admissao_freelancer:[
+    'Assinar contrato / proposta de serviço',
+    'Coletar CPF e dados bancários',
+    'Definir forma de pagamento (RPA ou NF)',
+    'NRs obrigatórias para a função',
+    'Entregar EPI e assinar termo de responsabilidade'
+  ],
+  rescisao:[
+    'Comunicar desligamento ao eSocial',
+    'Calcular verbas rescisórias',
+    'Assinar TRCT (Termo de Rescisão do Contrato)',
+    'Pagar verbas rescisórias dentro do prazo',
+    'Dar baixa na CTPS digital',
+    'Recolher FGTS + multa (se demissão sem justa causa)',
+    'Emitir guia do seguro-desemprego (se cabível)',
+    'Recolher equipamentos, ferramentas e crachá',
+    'Realizar exame demissional (ASO)',
+    'Encerrar benefícios (plano de saúde, VA/VR, VT)',
+    'Revogar acesso ao ponto eletrônico e sistemas',
+    'Arquivar documentos na pasta do funcionário'
+  ]
+};
+
+function switchClk(tipo){
+  curClkTipo=tipo;
+  document.getElementById('clkTabAdm').classList.toggle('active',tipo==='admissao');
+  document.getElementById('clkTabRes').classList.toggle('active',tipo==='rescisao');
+  const fid=document.getElementById('editFuncId').value;
+  if(fid) renderClkList(fid,tipo);
+}
+
+async function renderClkList(fid, tipo){
+  const el=document.getElementById('clkList');
+  if(!el) return;
+  el.innerHTML='<div style="color:var(--sub);font-size:0.78rem;padding:8px 0">Carregando...</div>';
+  const snap=await db.ref(`erp/checklists/${fid}/${tipo}/items`).once('value');
+  let items=snap.val();
+  // Se não tem itens, carrega o template baseado no tipo do funcionário
+  if(!items||Object.keys(items).length===0){
+    const f=funcionarios[fid];
+    const tipoFunc=(f?.tipo||'clt').toLowerCase();
+    const tplKey=tipo==='rescisao'?'rescisao':(`admissao_${tipoFunc==='freelancer'?'freelancer':tipoFunc==='pj'?'pj':'clt'}`);
+    const tpl=CLK_TEMPLATES[tplKey]||CLK_TEMPLATES.admissao_clt;
+    const batch={};
+    tpl.forEach((desc,i)=>{ const id='t'+i; batch[id]={id,desc,done:false,ordem:i}; });
+    await db.ref(`erp/checklists/${fid}/${tipo}/items`).set(batch);
+    items=batch;
+  }
+  const arr=Object.values(items).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+  const done=arr.filter(i=>i.done).length;
+  const pct=arr.length?Math.round(done/arr.length*100):0;
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div style="flex:1;height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${pct===100?'var(--green)':'var(--red)'};border-radius:3px;transition:width 0.3s"></div>
+      </div>
+      <span style="font-size:0.72rem;font-weight:700;color:${pct===100?'var(--green)':'var(--sub)'}">${done}/${arr.length} (${pct}%)</span>
+    </div>
+    ${arr.map(item=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:${item.done?'#f0fdf4':'#f8f9fa'};margin-bottom:5px;cursor:pointer" onclick="toggleClkItem('${fid}','${tipo}','${item.id}',${!item.done})">
+        <div style="width:18px;height:18px;border-radius:4px;border:2px solid ${item.done?'var(--green)':'var(--border)'};background:${item.done?'var(--green)':'#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem;color:#fff">${item.done?'✓':''}</div>
+        <span style="font-size:0.79rem;color:${item.done?'#aaa':'var(--txt)'};text-decoration:${item.done?'line-through':'none'};flex:1">${item.desc}</span>
+        ${item.done&&item.doneBy?`<span style="font-size:0.62rem;color:var(--sub);white-space:nowrap">${item.doneBy}</span>`:''}
+      </div>`).join('')}`;
+}
+
+async function toggleClkItem(fid,tipo,itemId,done){
+  await db.ref(`erp/checklists/${fid}/${tipo}/items/${itemId}`).update({
+    done, doneAt:done?Date.now():null, doneBy:done?(curUser?.nome?.split(' ')[0]||''):null
+  });
+  renderClkList(fid,tipo);
+}
+
+async function addClkItem(){
+  const fid=document.getElementById('editFuncId').value;
+  if(!fid) return;
+  const desc=prompt('Descrição do item:');
+  if(!desc||!desc.trim()) return;
+  const id=genId();
+  const snap=await db.ref(`erp/checklists/${fid}/${curClkTipo}/items`).once('value');
+  const existing=snap.val()||{};
+  const ordem=Object.keys(existing).length;
+  await db.ref(`erp/checklists/${fid}/${curClkTipo}/items/${id}`).set({id,desc:desc.trim(),done:false,ordem});
+  renderClkList(fid,curClkTipo);
+}
+
+// ══════════════════════════════════════════════
+// PASTA DE ARQUIVOS DO FUNCIONÁRIO
+// ══════════════════════════════════════════════
+const ARQ_CAT_LABEL={admissao:'Admissão',rescisao:'Rescisão',pessoal:'Pessoal',exame:'Exame/ASO',contrato:'Contrato',outro:'Outro'};
+const ARQ_CAT_ICO={admissao:'📥',rescisao:'📤',pessoal:'👤',exame:'🏥',contrato:'📄',outro:'📎'};
+
+function openArqForm(){ document.getElementById('arqAddForm').style.display=''; document.getElementById('arqNome').value=''; document.getElementById('arqLink').value=''; }
+
+async function saveArquivo(){
+  const fid=document.getElementById('editFuncId').value;
+  if(!fid) return;
+  const nome=document.getElementById('arqNome').value.trim();
+  const link=document.getElementById('arqLink').value.trim();
+  if(!nome){alert('Informe o nome do arquivo.');return;}
+  const aid=genId();
+  const cat=document.getElementById('arqCat').value;
+  // Store inline in the funcionario document
+  await db.ref(`erp/funcionarios/${fid}/arquivos/${aid}`).set({id:aid,nome,cat,link,criadoEm:Date.now(),criadoPor:curUser?.nome?.split(' ')[0]||''});
+  document.getElementById('arqAddForm').style.display='none';
+  renderArquivos(fid);
+}
+
+function renderArquivos(fid){
+  const el=document.getElementById('arqList');
+  if(!el) return;
+  const f=funcionarios[fid];
+  const arqs=f?.arquivos?Object.values(f.arquivos).sort((a,b)=>b.criadoEm-a.criadoEm):[];
+  if(!arqs.length){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--sub);font-size:0.8rem">Nenhum arquivo cadastrado.<br>Adicione documentos de admissão, rescisão, contratos, exames...</div>';return;}
+  // Group by category
+  const groups={};
+  arqs.forEach(a=>{if(!groups[a.cat])groups[a.cat]=[];groups[a.cat].push(a);});
+  el.innerHTML=Object.entries(groups).map(([cat,items])=>`
+    <div style="margin-bottom:10px">
+      <div style="font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--sub);margin-bottom:5px">${ARQ_CAT_ICO[cat]||'📎'} ${ARQ_CAT_LABEL[cat]||cat}</div>
+      ${items.map(a=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8f9fa;border-radius:8px;margin-bottom:4px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.81rem;font-weight:600;color:var(--dark)">${a.nome}</div>
+          <div style="font-size:0.66rem;color:var(--sub)">${a.criadoPor||''} ${a.criadoEm?'· '+fmtD(new Date(a.criadoEm).toISOString().slice(0,10)):''}</div>
+        </div>
+        ${a.link?`<a href="${a.link}" target="_blank" style="font-size:0.75rem;color:var(--blue);text-decoration:none;white-space:nowrap">🔗 Abrir</a>`:'<span style="font-size:0.7rem;color:#ccc">sem link</span>'}
+        <button onclick="delArquivo('${fid}','${a.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:0.8rem;padding:2px 4px" title="Remover">✕</button>
+      </div>`).join('')}
+    </div>`).join('');
+}
+
+async function delArquivo(fid,aid){
+  if(!confirm('Remover este arquivo?')) return;
+  await db.ref(`erp/funcionarios/${fid}/arquivos/${aid}`).remove();
+  renderArquivos(fid);
 }
 
 // ══════════════════════════════════════════════
