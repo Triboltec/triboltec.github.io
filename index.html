@@ -319,6 +319,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .nr-venc{background:#fee2e2;color:var(--red)}
 .nr-pend{background:#fef3c7;color:var(--amber)}
 
+/* ── FINANCEIRO ── */
+.fin-tabs{display:flex;gap:2px;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:14px}
+.fin-tab{flex:1;padding:8px 6px;border-radius:7px;border:none;background:transparent;color:var(--sub);font-size:0.76rem;font-weight:600;cursor:pointer;transition:all 0.15s;text-align:center;font-family:inherit}
+.fin-tab.active{background:#fff;color:var(--red);box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+.fin-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.fin-pill{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:var(--sub);font-size:0.72rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.12s}
+.fin-pill.active{background:var(--red);color:#fff;border-color:var(--red)}
+.lan-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;background:var(--card);border:1px solid var(--border);margin-bottom:7px;transition:box-shadow 0.12s}
+.lan-item:hover{box-shadow:0 2px 8px rgba(0,0,0,0.07)}
+.lan-bar{width:4px;border-radius:4px;align-self:stretch;flex-shrink:0}
+.lan-info{flex:1;min-width:0}
+.lan-desc{font-size:0.85rem;font-weight:700;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lan-meta{font-size:0.68rem;color:var(--sub);margin-top:2px}
+.lan-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.lan-val{font-size:0.95rem;font-weight:800}
+.lan-val.rec{color:var(--green)}
+.lan-val.des{color:var(--red)}
+.lan-acts{display:flex;gap:4px}
+.lan-btn{border:none;background:transparent;cursor:pointer;font-size:0.75rem;padding:3px 6px;border-radius:5px;color:var(--sub);font-family:inherit;transition:all 0.1s}
+.lan-btn:hover{background:var(--bg)}
+.lan-btn.pay{color:var(--green);font-weight:700}
+.st-badge{padding:2px 8px;border-radius:10px;font-size:0.63rem;font-weight:700;text-transform:uppercase}
+.st-pend{background:#fef3c7;color:#92400e}
+.st-ok{background:#dcfce7;color:#166534}
+.st-venc{background:#fee2e2;color:#991b1b}
+.fin-section{font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--sub);padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.fin-empty{text-align:center;padding:40px;color:var(--sub);font-size:0.83rem}
+
 /* ── RH EXPANDED ── */
 .rh-tabs{display:flex;gap:2px;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:16px;overflow-x:auto;flex-wrap:nowrap}
 .rh-tab{flex:1;padding:8px 6px;border-radius:7px;border:none;background:transparent;color:var(--sub);font-size:0.73rem;font-weight:600;cursor:pointer;transition:all 0.15s;text-align:center;white-space:nowrap;min-width:60px;font-family:inherit}
@@ -505,13 +533,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       </div>
 
       <!-- FINANCEIRO -->
+      <!-- FINANCEIRO -->
       <div class="sec" id="secFin">
-        <div class="cs">
-          <div class="ico">💰</div>
-          <h2>Módulo Financeiro</h2>
-          <p>Acesse o sistema completo de contas a pagar e receber.</p>
-          <a href="/financeiro/" class="btn btn-red" style="margin-top:14px;display:inline-flex">Abrir Financeiro →</a>
+        <div class="pgh">
+          <div class="pg-title">💰 Financeiro</div>
+          <button class="btn btn-red" onclick="openLancModal()">+ Lançamento</button>
         </div>
+
+        <!-- KPI cards -->
+        <div class="kpis" id="finKpis" style="margin-bottom:16px"></div>
+
+        <!-- Tipo tabs -->
+        <div class="fin-tabs">
+          <button class="fin-tab active" id="finTab-todos"    onclick="finSetTab('todos')">📋 Todos</button>
+          <button class="fin-tab"        id="finTab-receita"  onclick="finSetTab('receita')">📈 Receitas</button>
+          <button class="fin-tab"        id="finTab-despesa"  onclick="finSetTab('despesa')">📉 Despesas</button>
+        </div>
+
+        <!-- Filters row -->
+        <div class="fin-filters">
+          <button class="fin-pill active" id="finSt-todos"    onclick="finSetSt('todos')">Todos</button>
+          <button class="fin-pill"        id="finSt-pendente" onclick="finSetSt('pendente')">Pendente</button>
+          <button class="fin-pill"        id="finSt-pago"     onclick="finSetSt('pago')">Pago / Recebido</button>
+          <button class="fin-pill"        id="finSt-vencido"  onclick="finSetSt('vencido')">Vencido</button>
+          <input type="month" id="finMesInput" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:20px;font-size:0.72rem;font-family:inherit;color:var(--dark);background:#fff" onchange="renderFin()"/>
+        </div>
+
+        <!-- List -->
+        <div id="finList"></div>
       </div>
 
       <!-- PROPOSTAS -->
@@ -1499,6 +1548,52 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
 </div>
 
+<!-- ═══ MODAL: LANÇAMENTO FINANCEIRO ═══ -->
+<div class="ovl" id="ovlLanc" onclick="if(event.target===this)closeOvl('ovlLanc')">
+  <div class="modal" style="max-width:500px">
+    <div class="mhead">
+      <div class="mtitle" id="lancModalTitle">Novo Lançamento</div>
+      <button class="mclose" onclick="closeOvl('ovlLanc')">✕</button>
+    </div>
+    <input type="hidden" id="editLancId"/>
+    <!-- Tipo toggle -->
+    <div style="display:flex;gap:6px;margin-bottom:14px">
+      <button id="lancTipoRec" onclick="setLancTipo('receita')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--green);background:#dcfce7;color:#166534;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem">📈 Receita</button>
+      <button id="lancTipoDes" onclick="setLancTipo('despesa')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:#fff;color:var(--sub);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem">📉 Despesa</button>
+    </div>
+    <input type="hidden" id="lancTipo" value="receita"/>
+    <div class="fg"><label>Descrição *</label><input type="text" id="lancDesc" placeholder="Ex: Fatura OS-042, Pagamento fornecedor…"/></div>
+    <div class="f2">
+      <div class="fg"><label>Valor (R$) *</label><input type="number" id="lancValor" placeholder="0,00" min="0" step="0.01"/></div>
+      <div class="fg"><label>Data *</label><input type="date" id="lancData"/></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Categoria</label>
+        <input type="text" id="lancCat" list="lancCatData" placeholder="Selecione ou digite…" autocomplete="off"/>
+        <datalist id="lancCatData">
+          <optgroup label="Receitas"><option>Serviços</option><option>Contratos</option><option>Obras</option><option>Projetos</option><option>Manutenção</option><option>Consultoria</option><option>Outras Receitas</option></optgroup>
+          <optgroup label="Despesas"><option>Salários/CLT</option><option>Materiais</option><option>Equipamentos</option><option>Combustível</option><option>Aluguel</option><option>Impostos/Tributos</option><option>Ferramentas</option><option>EPI/Segurança</option><option>Fornecedores</option><option>Subcontratados</option><option>Viagens</option><option>Outras Despesas</option></optgroup>
+        </datalist>
+      </div>
+      <div class="fg"><label>Vencimento</label><input type="date" id="lancVenc"/></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Status</label>
+        <select id="lancStatus">
+          <option value="pendente">Pendente</option>
+          <option value="pago">Pago / Recebido</option>
+        </select>
+      </div>
+      <div class="fg"><label>Projeto (opcional)</label><input type="text" id="lancProjeto" placeholder="Nome ou OS"/></div>
+    </div>
+    <div class="fg"><label>Observações</label><textarea id="lancObs" rows="2" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit;resize:vertical" placeholder="Detalhes adicionais…"></textarea></div>
+    <div class="mact">
+      <button class="btn btn-ghost" onclick="closeOvl('ovlLanc')">Cancelar</button>
+      <button class="btn btn-red" onclick="saveLanc()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ MODAL: DOCUMENTO EMPRESA ═══ -->
 <div class="ovl" id="ovlEmpDoc" onclick="if(event.target===this)closeOvl('ovlEmpDoc')">
   <div class="modal" style="max-width:480px">
@@ -1928,6 +2023,11 @@ function navTo(mid){
   document.getElementById('fab').classList.toggle('h', mid!=='crm');
   closePanel();
   if(mid==='compras'&&!document.getElementById('compContent').innerHTML.trim()) compTab('ped');
+  if(mid==='fin'){
+    const el=document.getElementById('finMesInput');
+    if(el&&!el.value) el.value=new Date().toISOString().slice(0,7);
+    renderFin();
+  }
 }
 function fabAct(){ if(curMod==='crm') openClientModal(); }
 
@@ -1945,7 +2045,7 @@ function startListeners(){
   db.ref('erp/estoque').on('value', snap=>{ estoque=snap.val()||{}; renderEst(); });
   db.ref('erp/movimentos').on('value', snap=>{ movimentos=snap.val()||{}; });
   db.ref('erp/funcionarios').on('value', snap=>{ funcionarios=snap.val()||{}; renderFuncionarios(); renderRHAlerts(); updateRHBadge(); renderDash(); });
-  db.ref('lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); });
+  db.ref('lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); renderFin(); });
   db.ref('erp/notas').on('value', snap=>{ notas=snap.val()||{}; renderNF(); });
   db.ref('erp/nfconfig').on('value', snap=>{ nfConfig=snap.val()||{}; renderNF(); });
   db.ref('erp/candidatos').on('value', snap=>{ candidatos=snap.val()||{}; renderKanban(); });
@@ -2042,7 +2142,7 @@ function renderDash(){
         </div>
         <div style="font-weight:800;color:${l.tipo==='receita'?'var(--green)':'var(--red)'};">${fmtBRL(l.valor||0)}</div>
       </div>`).join('')}
-      <a href="/financeiro/" style="display:block;text-align:center;margin-top:10px;font-size:0.75rem;color:var(--blue);text-decoration:none">Ver Financeiro completo →</a>
+      <a href="#" onclick="navTo('fin');return false" style="display:block;text-align:center;margin-top:10px;font-size:0.75rem;color:var(--blue);text-decoration:none">Ver Financeiro completo →</a>
     </div>`:''}
     ${overdueList.length?`
     <div class="dash-card" style="border-color:#fee2e2">
@@ -2099,7 +2199,7 @@ function renderCashFlow(lanArr){
   return`<div class="dash-card">
     <h3 style="display:flex;justify-content:space-between;align-items:center">
       <span>💰 Fluxo de Caixa — últimos 6 meses</span>
-      <a href="/financeiro/" style="font-size:0.71rem;color:var(--blue);text-decoration:none;font-weight:600">Abrir →</a>
+      <a href="#" onclick="navTo('fin');return false" style="font-size:0.71rem;color:var(--blue);text-decoration:none;font-weight:600">Abrir →</a>
     </h3>
     <div style="display:flex;align-items:flex-end;gap:6px;padding:8px 0 4px;overflow-x:auto">${bars}</div>
     <div style="display:flex;gap:16px;margin-top:6px;font-size:0.72rem">
@@ -3290,6 +3390,193 @@ function getRHAlerts(){
     else if(d<=45) alerts.push({tipo:'pend',nome:`🏢 ${doc.tipo||'Doc Empresa'}`,desc:`Vence em ${d} dias (${fmtD(doc.vencimento)})`,link:doc.link||''});
   });
   return alerts.sort((a,b)=>a.tipo==='venc'?-1:1);
+}
+
+// ══════════════════════════════════════════════════════
+// ── FINANCEIRO ──
+// ══════════════════════════════════════════════════════
+let finTab = 'todos', finSt = 'todos';
+
+function finSetTab(t){
+  finTab = t;
+  ['todos','receita','despesa'].forEach(x=>{
+    document.getElementById('finTab-'+x)?.classList.toggle('active', x===t);
+  });
+  renderFin();
+}
+function finSetSt(s){
+  finSt = s;
+  ['todos','pendente','pago','vencido'].forEach(x=>{
+    document.getElementById('finSt-'+x)?.classList.toggle('active', x===s);
+  });
+  renderFin();
+}
+
+function renderFin(){
+  const kpiEl=document.getElementById('finKpis');
+  const listEl=document.getElementById('finList');
+  if(!kpiEl||!listEl) return;
+
+  const mes=document.getElementById('finMesInput')?.value||'';
+  const today=new Date(); today.setHours(0,0,0,0);
+  const all=Object.values(lancamentos);
+
+  // KPIs (always full dataset or filtered by month)
+  const scope=mes?all.filter(l=>(l.data||'').startsWith(mes)||(l.venc||'').startsWith(mes)):all;
+  const rec=scope.filter(l=>l.tipo==='receita');
+  const des=scope.filter(l=>l.tipo==='despesa');
+  const sumV=arr=>arr.reduce((s,l)=>s+(Number(l.valor)||0),0);
+  const recPend=sumV(rec.filter(l=>l.status!=='pago'));
+  const desPend=sumV(des.filter(l=>l.status!=='pago'));
+  const recPago=sumV(rec.filter(l=>l.status==='pago'));
+  const desPago=sumV(des.filter(l=>l.status==='pago'));
+  const saldo=recPago-desPago;
+
+  kpiEl.innerHTML=`
+    <div class="kpi"><div class="kpi-lbl">A Receber</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(recPend)}</div><div class="kpi-sub">pendente</div></div>
+    <div class="kpi"><div class="kpi-lbl">A Pagar</div><div class="kpi-val" style="color:var(--red)">${fmtBRL(desPend)}</div><div class="kpi-sub">pendente</div></div>
+    <div class="kpi"><div class="kpi-lbl">Saldo Realizado</div><div class="kpi-val" style="color:${saldo>=0?'var(--green)':'var(--red)'}">${fmtBRL(saldo)}</div><div class="kpi-sub">recebido − pago</div></div>
+    <div class="kpi"><div class="kpi-lbl">Saldo Projetado</div><div class="kpi-val" style="color:${(recPend-desPend)>=0?'var(--green)':'var(--amber)'}">${fmtBRL(recPend-desPend)}</div><div class="kpi-sub">a receber − a pagar</div></div>
+  `;
+
+  // List: apply filters
+  let items=[...all];
+  if(mes) items=items.filter(l=>(l.data||'').startsWith(mes)||(l.venc||'').startsWith(mes));
+  if(finTab!=='todos') items=items.filter(l=>l.tipo===finTab);
+  if(finSt==='pendente') items=items.filter(l=>l.status!=='pago');
+  if(finSt==='pago') items=items.filter(l=>l.status==='pago');
+  if(finSt==='vencido') items=items.filter(l=>{
+    if(l.status==='pago') return false;
+    const d=l.venc||l.data; if(!d) return false;
+    return new Date(d)<today;
+  });
+  items.sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+
+  if(!items.length){
+    listEl.innerHTML='<div class="fin-empty">Nenhum lançamento encontrado.</div>';
+    return;
+  }
+
+  // Group by month
+  const groups={};
+  items.forEach(l=>{
+    const ym=(l.data||'').slice(0,7)||'—';
+    if(!groups[ym]) groups[ym]=[];
+    groups[ym].push(l);
+  });
+
+  listEl.innerHTML=Object.entries(groups).sort((a,b)=>b[0].localeCompare(a[0])).map(([ym,list])=>`
+    <div class="fin-section">${fmtMesRef(ym)||ym}</div>
+    ${list.map(l=>renderLancItem(l,today)).join('')}
+  `).join('');
+}
+
+function renderLancItem(l, today){
+  const isRec=l.tipo==='receita';
+  const isPago=l.status==='pago';
+  const vencDate=l.venc?new Date(l.venc):null;
+  const isVenc=vencDate&&!isPago&&vencDate<today;
+  const diasVenc=vencDate?Math.round((vencDate-today)/864e5):null;
+
+  let stBadge=isPago
+    ? `<span class="st-badge st-ok">${isRec?'Recebido':'Pago'}</span>`
+    : isVenc
+      ? `<span class="st-badge st-venc">Vencido ${Math.abs(diasVenc)}d</span>`
+      : `<span class="st-badge st-pend">Pendente${diasVenc!==null&&diasVenc<=7?' · '+diasVenc+'d':''}</span>`;
+
+  const metaParts=[l.cat||l.categoria, l.data?fmtD(l.data):'', l.venc?'Venc: '+fmtD(l.venc):'', l.projeto?'📋 '+l.projeto:''].filter(Boolean);
+
+  return `<div class="lan-item">
+    <div class="lan-bar" style="background:${isRec?'var(--green)':'var(--red)'}"></div>
+    <div class="lan-info">
+      <div class="lan-desc">${l.desc||l.descricao||'—'}</div>
+      <div class="lan-meta">${metaParts.join(' · ')}</div>
+    </div>
+    <div class="lan-right">
+      <div class="lan-val ${isRec?'rec':'des'}">${isRec?'+':'-'}${fmtBRL(l.valor||0)}</div>
+      ${stBadge}
+      <div class="lan-acts">
+        ${!isPago?`<button class="lan-btn pay" onclick="markLancPago('${l.id}')" title="${isRec?'Marcar recebido':'Marcar pago'}">✓</button>`:''}
+        <button class="lan-btn" onclick="openLancModal('${l.id}')" title="Editar">✏️</button>
+        <button class="lan-btn" onclick="delLanc('${l.id}')" title="Excluir">🗑️</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function setLancTipo(t){
+  document.getElementById('lancTipo').value=t;
+  const recBtn=document.getElementById('lancTipoRec');
+  const desBtn=document.getElementById('lancTipoDes');
+  if(t==='receita'){
+    recBtn.style.cssText='flex:1;padding:10px;border-radius:8px;border:2px solid var(--green);background:#dcfce7;color:#166534;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem';
+    desBtn.style.cssText='flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:#fff;color:var(--sub);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem';
+  } else {
+    recBtn.style.cssText='flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:#fff;color:var(--sub);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem';
+    desBtn.style.cssText='flex:1;padding:10px;border-radius:8px;border:2px solid var(--red);background:#fee2e2;color:#991b1b;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem';
+  }
+}
+
+function openLancModal(lid){
+  const l=lid?lancamentos[lid]:null;
+  document.getElementById('editLancId').value=lid||'';
+  document.getElementById('lancModalTitle').textContent=lid?'Editar Lançamento':'Novo Lançamento';
+  const hoje=new Date().toISOString().slice(0,10);
+  if(l){
+    setLancTipo(l.tipo||'receita');
+    document.getElementById('lancDesc').value=l.desc||l.descricao||'';
+    document.getElementById('lancValor').value=l.valor||'';
+    document.getElementById('lancData').value=l.data||hoje;
+    document.getElementById('lancVenc').value=l.venc||'';
+    document.getElementById('lancCat').value=l.cat||l.categoria||'';
+    document.getElementById('lancStatus').value=l.status||'pendente';
+    document.getElementById('lancProjeto').value=l.projeto||'';
+    document.getElementById('lancObs').value=l.obs||'';
+  } else {
+    setLancTipo('receita');
+    ['lancDesc','lancCat','lancProjeto','lancObs','lancVenc'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('lancValor').value='';
+    document.getElementById('lancData').value=hoje;
+    document.getElementById('lancStatus').value='pendente';
+  }
+  document.getElementById('ovlLanc').classList.add('v');
+}
+
+async function saveLanc(){
+  const desc=(document.getElementById('lancDesc').value||'').trim();
+  const valor=parseFloat(document.getElementById('lancValor').value||0);
+  if(!desc){alert('Informe a descrição.');return;}
+  if(!valor||valor<=0){alert('Informe um valor válido.');return;}
+  const lid=document.getElementById('editLancId').value||genId();
+  const obj={
+    id:lid,
+    tipo:document.getElementById('lancTipo').value,
+    desc,
+    valor,
+    data:document.getElementById('lancData').value||new Date().toISOString().slice(0,10),
+    venc:document.getElementById('lancVenc').value||'',
+    cat:document.getElementById('lancCat').value.trim(),
+    status:document.getElementById('lancStatus').value,
+    projeto:document.getElementById('lancProjeto').value.trim(),
+    obs:document.getElementById('lancObs').value.trim(),
+    criadoEm:lancamentos[lid]?.criadoEm||Date.now(),
+    uid:curUser?.uid||''
+  };
+  try{
+    await db.ref('lancamentos/'+lid).set(obj);
+    closeOvl('ovlLanc');
+  }catch(e){ alert('Erro ao salvar: '+e.message); }
+}
+
+async function markLancPago(lid){
+  const l=lancamentos[lid]; if(!l) return;
+  const novoSt=l.tipo==='receita'?'pago':'pago';
+  await db.ref('lancamentos/'+lid+'/status').set(novoSt);
+}
+
+async function delLanc(lid){
+  if(!confirm('Excluir este lançamento?')) return;
+  await db.ref('lancamentos/'+lid).remove();
 }
 
 // ── CEP lookup (ViaCEP) ──
