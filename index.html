@@ -12,8 +12,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pizzip@3.1.7/dist/pizzip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/docxtemplater@3.47.0/build/docxtemplater.js"></script>
+<script src="https://unpkg.com/pizzip@3.1.7/dist/pizzip.min.js"></script>
+<script src="https://unpkg.com/docxtemplater@3.47.0/build/docxtemplater.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--red:#8B2020;--dark:#1a1a1a;--green:#16a34a;--amber:#d97706;--blue:#1d4ed8;
@@ -3028,9 +3028,11 @@ async function gerarProposta(pid){
     if(!resp.ok) throw new Error('Template não encontrado ('+resp.status+')');
     const buf=await resp.arrayBuffer();
     const zip=new PizZip(buf);
-    const doc=new window.Docxtemplater(zip,{
+    const DocxT=window.docxtemplater||window.Docxtemplater;
+    if(!DocxT) throw new Error('Biblioteca docxtemplater não carregou. Recarregue a página e tente novamente.');
+    const doc=new DocxT(zip,{
       paragraphLoop:true, linebreaks:true,
-      nullGetter:()=>''  // blank for missing tags
+      nullGetter:()=>''
     });
     doc.render(tags);
     const out=doc.getZip().generate({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
