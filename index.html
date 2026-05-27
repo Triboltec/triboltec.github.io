@@ -3185,16 +3185,27 @@ function closeOvl(id){ document.getElementById(id).classList.remove('v'); }
 // INIT
 // ══════════════════════════════════════════════
 (function init(){
-  // Try saved Firebase config (shared with financeiro app)
+  // Try saved Firebase config
   for(const k of CFG_KEYS){
     const cfg=localStorage.getItem(k);
     if(cfg){ try{ initFirebase(JSON.parse(cfg)); return; }catch(e){} }
   }
-  // No config — show setup
+  // Use hardcoded config
+  const cfg={
+    apiKey:"AIzaSyB4xfcVP7UHpXY4zRhiKXTla4IvlJ3giiU",
+    authDomain:"triboltec-erp.firebaseapp.com",
+    databaseURL:"https://triboltec-erp-default-rtdb.firebaseio.com",
+    projectId:"triboltec-erp",
+    storageBucket:"triboltec-erp.firebasestorage.app",
+    messagingSenderId:"798602178931",
+    appId:"1:798602178931:web:317f07523b70d873009506"
+  };
+  CFG_KEYS.forEach(k=>localStorage.setItem(k,JSON.stringify(cfg)));
+  initFirebase(cfg);
 })();
 
 if('serviceWorker' in navigator)
-  navigator.serviceWorker.register('./sw.js',{scope:'/app/'});
+  navigator.serviceWorker.register('./sw.js',{scope:'/'});
 window.addEventListener('online', ()=>document.getElementById('offWarn').classList.remove('show'));
 window.addEventListener('offline',()=>document.getElementById('offWarn').classList.add('show'));
 </script>
