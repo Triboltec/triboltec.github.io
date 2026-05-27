@@ -1227,13 +1227,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="f2">
         <div class="fg"><label>Nome Completo *</label><input type="text" id="fnNome" placeholder="Nome completo"/></div>
         <div class="fg"><label>Cargo</label>
-          <select id="fnCargo">
-            <option value="">Selecione</option>
-            <option>Supervisor</option><option>Engenheiro</option><option>Encarregado</option>
-            <option>Eletricista</option><option>Mecânico</option><option>Soldador</option>
-            <option>Caldeireiro</option><option>Pintor</option><option>Pedreiro</option>
-            <option>Ajudante</option><option>Tec. Segurança</option><option>Administrativo</option>
-          </select>
+          <input type="text" id="fnCargo" list="cargosData" placeholder="Digite ou selecione…" autocomplete="off"/>
+          <datalist id="cargosData">
+            <option>Diretor</option>
+            <option>Coordenador Técnico Comercial</option>
+            <option>Analista de Recursos Humanos</option>
+            <option>Assistente de Engenharia</option>
+            <option>Assistente Administrativo</option>
+            <option>Auxiliar Administrativo</option>
+            <option>Auxiliar de Logística</option>
+            <option>Auxiliar de Operação</option>
+            <option>Balanceiro</option>
+            <option>Ferista</option>
+            <option>Inspetor de Serviços Transporte Rodoviários</option>
+            <option>Supervisor</option>
+            <option>Engenheiro</option>
+            <option>Encarregado</option>
+            <option>Eletricista</option>
+            <option>Mecânico</option>
+            <option>Soldador</option>
+            <option>Caldeireiro</option>
+            <option>Pintor</option>
+            <option>Pedreiro</option>
+            <option>Ajudante</option>
+            <option>Técnico de Segurança</option>
+          </datalist>
         </div>
       </div>
       <div class="f2">
