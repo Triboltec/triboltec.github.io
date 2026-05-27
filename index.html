@@ -319,6 +319,58 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .nr-venc{background:#fee2e2;color:var(--red)}
 .nr-pend{background:#fef3c7;color:var(--amber)}
 
+/* ── RH EXPANDED ── */
+.rh-tabs{display:flex;gap:2px;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:16px;overflow-x:auto;flex-wrap:nowrap}
+.rh-tab{flex:1;padding:8px 6px;border-radius:7px;border:none;background:transparent;color:var(--sub);font-size:0.73rem;font-weight:600;cursor:pointer;transition:all 0.15s;text-align:center;white-space:nowrap;min-width:60px;font-family:inherit}
+.rh-tab.active{background:#fff;color:var(--red);box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+.alert-panel{background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:10px}
+.alert-panel-head{padding:10px 14px;font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;justify-content:space-between}
+.alert-ph-red{background:#fee2e2;color:var(--red)}
+.alert-ph-amber{background:#fef3c7;color:var(--amber)}
+.alert-ph-blue{background:#dbeafe;color:var(--blue)}
+.alert-item{padding:10px 14px;border-bottom:1px solid #f4f4f4;display:flex;align-items:center;gap:10px;cursor:pointer}
+.alert-item:last-child{border-bottom:none}
+.alert-item:hover{background:#fafafa}
+.alert-item-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0}
+.alert-item-txt{flex:1;min-width:0}
+.alert-item-nome{font-size:0.81rem;font-weight:700;color:var(--dark)}
+.alert-item-desc{font-size:0.7rem;color:var(--sub);margin-top:1px}
+.alert-tag{padding:2px 8px;border-radius:10px;font-size:0.6rem;font-weight:700;white-space:nowrap;flex-shrink:0}
+.at-venc{background:#fee2e2;color:var(--red)}
+.at-pend{background:#fef3c7;color:var(--amber)}
+/* Kanban */
+.kanban{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;min-height:300px;align-items:flex-start}
+.kan-col{flex:0 0 195px;background:#f8f9fa;border-radius:10px;padding:10px}
+.kan-col-head{font-size:0.64rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--sub);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.kan-cnt{background:var(--sub);color:#fff;border-radius:10px;font-size:0.58rem;padding:1px 6px;font-weight:700}
+.kan-card{background:#fff;border-radius:8px;border:1px solid var(--border);padding:10px;margin-bottom:7px;cursor:pointer;transition:box-shadow 0.12s}
+.kan-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.kan-card-name{font-size:0.82rem;font-weight:700;color:var(--dark);margin-bottom:2px}
+.kan-card-cargo{font-size:0.69rem;color:var(--sub)}
+.kan-card-date{font-size:0.63rem;color:var(--sub);margin-top:5px}
+.kan-moves{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap}
+.kan-mv{background:#f3f4f6;border:none;border-radius:5px;font-size:0.62rem;font-weight:600;color:var(--sub);padding:3px 6px;cursor:pointer;font-family:inherit}
+.kan-mv:hover{background:var(--dark);color:#fff}
+/* NRs dinâmicas */
+.nr-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.nr-row{display:grid;grid-template-columns:100px 1fr 1fr auto;gap:5px;align-items:center;background:#f8f9fa;border-radius:7px;padding:6px 8px}
+.nr-row input{padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit;background:#fff;width:100%}
+.nr-row input:focus{outline:none;border-color:var(--red)}
+.nr-del{background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;padding:2px 4px;line-height:1}
+.add-nr-btn{background:none;border:1.5px dashed var(--border);color:var(--sub);padding:6px;border-radius:7px;font-size:0.75rem;cursor:pointer;width:100%;font-family:inherit;margin-top:2px}
+.add-nr-btn:hover{border-color:var(--red);color:var(--red)}
+/* Ausências */
+.aus-card{background:var(--card);border-radius:10px;border:1px solid var(--border);padding:12px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer}
+.aus-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+/* Fechamento */
+.fech-card{background:var(--card);border-radius:10px;border:1px solid var(--border);padding:12px 14px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.fech-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+/* Empresa Docs */
+.edoc-card{background:var(--card);border-radius:10px;border:1px solid var(--border);padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.edoc-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+/* Exp period badge */
+.exp-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.6rem;font-weight:700;background:#ede9fe;color:#7c3aed}
+
 /* ── NOTAS FISCAIS ── */
 .nf-card{background:var(--card);border-radius:11px;border:1px solid var(--border);padding:13px 14px;margin-bottom:7px;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;transition:box-shadow 0.12s}
 .nf-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.07)}
@@ -500,14 +552,51 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <!-- RH -->
       <div class="sec" id="secRH">
         <div class="pgh">
-          <div class="pg-title">👷 RH — Equipe</div>
-          <button class="btn btn-red" onclick="openFuncModal()">+ Funcionário</button>
+          <div class="pg-title">👷 RH — Gestão de Pessoas</div>
         </div>
-        <div class="filters">
-          <input class="search" id="rhSearch" placeholder="Buscar funcionário..." oninput="renderRH()"/>
-          <div class="ftabs" id="rhTabs"></div>
+        <div class="rh-tabs">
+          <button class="rh-tab active" id="rhTab-alertas" onclick="rhTab('alertas')">🔔 Alertas</button>
+          <button class="rh-tab" id="rhTab-equipe" onclick="rhTab('equipe')">👷 Equipe</button>
+          <button class="rh-tab" id="rhTab-recrutamento" onclick="rhTab('recrutamento')">🎯 Recrutamento</button>
+          <button class="rh-tab" id="rhTab-ausencias" onclick="rhTab('ausencias')">📅 Ausências</button>
+          <button class="rh-tab" id="rhTab-fechamento" onclick="rhTab('fechamento')">📋 Fechamento</button>
         </div>
-        <div id="funcList"></div>
+        <!-- ALERTAS -->
+        <div id="rhPane-alertas">
+          <div id="rhAlertList"></div>
+        </div>
+        <!-- EQUIPE -->
+        <div id="rhPane-equipe" style="display:none">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+            <button class="btn btn-red" onclick="openFuncModal()">+ Funcionário</button>
+          </div>
+          <div class="filters">
+            <input class="search" id="rhSearch" placeholder="Buscar funcionário..." oninput="renderFuncionarios()"/>
+            <div class="ftabs" id="rhTabs"></div>
+          </div>
+          <div id="funcList"></div>
+        </div>
+        <!-- RECRUTAMENTO -->
+        <div id="rhPane-recrutamento" style="display:none">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+            <button class="btn btn-red" onclick="openCandModal()">+ Candidato</button>
+          </div>
+          <div class="kanban" id="kanbanBoard"></div>
+        </div>
+        <!-- AUSÊNCIAS -->
+        <div id="rhPane-ausencias" style="display:none">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+            <button class="btn btn-red" onclick="openAusModal()">+ Ausência</button>
+          </div>
+          <div id="ausList"></div>
+        </div>
+        <!-- FECHAMENTO MENSAL -->
+        <div id="rhPane-fechamento" style="display:none">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+            <button class="btn btn-red" onclick="openFechModal()">+ Fechamento</button>
+          </div>
+          <div id="fechList"></div>
+        </div>
       </div>
 
       <!-- NOTAS FISCAIS -->
@@ -534,6 +623,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <!-- Admin Tabs -->
         <div class="adm-tabs">
           <button class="adm-tab active" id="admTab-usuarios" onclick="admTab('usuarios')">👥 Usuários</button>
+          <button class="adm-tab" id="admTab-docs" onclick="admTab('docs')">🏢 Docs Empresa</button>
+          <button class="adm-tab" id="admTab-ponto" onclick="admTab('ponto')">⏱️ Ponto</button>
           <button class="adm-tab" id="admTab-exportar" onclick="admTab('exportar')">📤 Exportar</button>
           <button class="adm-tab" id="admTab-backup" onclick="admTab('backup')">💾 Backup</button>
         </div>
@@ -545,6 +636,40 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
             <button class="btn btn-red" onclick="openUserModal()">+ Usuário</button>
           </div>
           <div class="ulist" id="userList"></div>
+        </div>
+
+        <!-- Pane: Docs Empresa -->
+        <div id="admPane-docs" style="display:none">
+          <div class="pgh" style="padding-top:0">
+            <div class="pg-title">Documentos da Empresa</div>
+            <button class="btn btn-red" onclick="openEmpDocModal()">+ Documento</button>
+          </div>
+          <div style="font-size:0.78rem;color:var(--sub);margin-bottom:14px">AVCB, Alvarás, Certidões, Licenças — com vencimento e link do arquivo (Google Drive).</div>
+          <div id="empDocList"></div>
+        </div>
+
+        <!-- Pane: Ponto ControlID -->
+        <div id="admPane-ponto" style="display:none">
+          <div class="pgh" style="padding-top:0"><div class="pg-title">⏱️ Ponto Eletrônico — ControlID iDCloud</div></div>
+          <div style="background:#eff6ff;border-radius:9px;padding:12px 14px;margin-bottom:14px;font-size:0.79rem;color:#1e40af;line-height:1.6">
+            Integração com <strong>ControlID iDCloud</strong>. Insira as credenciais da sua conta iDCloud para sincronizar os registros de ponto automaticamente.
+          </div>
+          <div class="scard" style="margin-bottom:12px">
+            <div class="s-title" style="font-size:0.8rem;font-weight:800;margin-bottom:12px">🔑 Credenciais iDCloud</div>
+            <div class="fg" style="margin-bottom:10px"><label>E-mail iDCloud</label><input type="email" id="cidEmail" placeholder="seu@email.com"/></div>
+            <div class="fg" style="margin-bottom:10px"><label>Senha iDCloud</label><input type="password" id="cidSenha" placeholder="Senha da conta"/></div>
+            <div class="fg" style="margin-bottom:10px"><label>URL do Servidor (opcional)</label><input type="text" id="cidUrl" placeholder="https://push.idsecure.com.br"/></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+              <button class="btn btn-red" onclick="saveCIDConfig()">💾 Salvar Credenciais</button>
+              <button class="btn btn-ghost" onclick="syncPonto()">🔄 Sincronizar Agora</button>
+            </div>
+            <div id="cidMsg" style="font-size:0.75rem;color:var(--sub);margin-top:8px"></div>
+          </div>
+          <div class="pgh" style="padding-top:0;margin-top:4px">
+            <div class="pg-title" style="font-size:0.9rem">Registros de Ponto</div>
+            <label class="btn btn-ghost" style="cursor:pointer">⬆ Importar CSV<input type="file" accept=".csv" style="display:none" onchange="importPontoCSV(this)"/></label>
+          </div>
+          <div id="pontoList"><div style="text-align:center;padding:40px;color:var(--sub);font-size:0.82rem">Sincronize com o ControlID ou importe um CSV para ver os registros.</div></div>
         </div>
 
         <!-- Pane: Exportar -->
@@ -1053,52 +1178,234 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 <!-- ═══ MODAL: FUNCIONÁRIO ═══ -->
 <div class="ovl" id="ovlFunc" onclick="if(event.target===this)closeOvl('ovlFunc')">
-  <div class="modal">
+  <div class="modal" style="max-width:580px">
     <div class="mhead">
       <div class="mtitle" id="funcModalTitle">Novo Funcionário</div>
       <button class="mclose" onclick="closeOvl('ovlFunc')">✕</button>
     </div>
     <input type="hidden" id="editFuncId"/>
-    <div class="f2">
-      <div class="fg"><label>Nome Completo *</label><input type="text" id="fnNome" placeholder="Nome completo"/></div>
-      <div class="fg"><label>Cargo</label>
-        <select id="fnCargo">
-          <option value="">Selecione</option>
-          <option>Supervisor</option><option>Engenheiro</option><option>Encarregado</option>
-          <option>Eletricista</option><option>Mecânico</option><option>Soldador</option>
-          <option>Caldeireiro</option><option>Pintor</option><option>Pedreiro</option>
-          <option>Ajudante</option><option>Tec. Segurança</option><option>Administrativo</option>
-        </select>
-      </div>
+    <div class="rh-tabs" style="margin-bottom:14px">
+      <button class="rh-tab active" id="fmTab-dados" onclick="fmTab('dados')">📋 Dados</button>
+      <button class="rh-tab" id="fmTab-nrs" onclick="fmTab('nrs')">🦺 NRs</button>
+      <button class="rh-tab" id="fmTab-ferias" onclick="fmTab('ferias')">🏖️ Férias</button>
     </div>
-    <div class="f2">
-      <div class="fg"><label>Tipo</label>
-        <select id="fnTipo"><option value="clt">CLT</option><option value="pj">PJ</option><option value="terceiro">Terceiro</option></select>
-      </div>
-      <div class="fg"><label>Admissão</label><input type="date" id="fnAdmissao"/></div>
-    </div>
-    <div class="f2">
-      <div class="fg"><label>CPF</label><input type="text" id="fnCPF" placeholder="000.000.000-00"/></div>
-      <div class="fg"><label>Telefone</label><input type="text" id="fnTel" placeholder="(19) 00000-0000"/></div>
-    </div>
-    <div class="fg"><label>Documentos / NRs (vencimentos)</label>
+    <!-- DADOS -->
+    <div id="fmPane-dados">
       <div class="f2">
-        <div><label style="font-size:0.68rem;color:var(--sub)">NR-10</label><input type="date" id="fnNR10"/></div>
-        <div><label style="font-size:0.68rem;color:var(--sub)">NR-35</label><input type="date" id="fnNR35"/></div>
-        <div><label style="font-size:0.68rem;color:var(--sub)">NR-12</label><input type="date" id="fnNR12"/></div>
-        <div><label style="font-size:0.68rem;color:var(--sub)">NR-18</label><input type="date" id="fnNR18"/></div>
+        <div class="fg"><label>Nome Completo *</label><input type="text" id="fnNome" placeholder="Nome completo"/></div>
+        <div class="fg"><label>Cargo</label>
+          <select id="fnCargo">
+            <option value="">Selecione</option>
+            <option>Supervisor</option><option>Engenheiro</option><option>Encarregado</option>
+            <option>Eletricista</option><option>Mecânico</option><option>Soldador</option>
+            <option>Caldeireiro</option><option>Pintor</option><option>Pedreiro</option>
+            <option>Ajudante</option><option>Tec. Segurança</option><option>Administrativo</option>
+          </select>
+        </div>
+      </div>
+      <div class="f2">
+        <div class="fg"><label>Tipo</label>
+          <select id="fnTipo"><option value="clt">CLT</option><option value="pj">PJ</option><option value="freelancer">Freelancer</option><option value="terceiro">Terceiro</option></select>
+        </div>
+        <div class="fg"><label>Status</label>
+          <select id="fnStatus"><option value="ativo">Ativo</option><option value="ferias">Em Férias</option><option value="afastado">Afastado</option><option value="inativo">Inativo</option></select>
+        </div>
+      </div>
+      <div class="f2">
+        <div class="fg"><label>CPF</label><input type="text" id="fnCPF" placeholder="000.000.000-00"/></div>
+        <div class="fg"><label>Telefone</label><input type="text" id="fnTel" placeholder="(19) 00000-0000"/></div>
+      </div>
+      <div class="f2">
+        <div class="fg"><label>E-mail</label><input type="email" id="fnEmail" placeholder="email@empresa.com"/></div>
+        <div class="fg"><label>Admissão</label><input type="date" id="fnAdmissao"/></div>
+      </div>
+      <div class="fg" style="background:#f8f9fa;border-radius:8px;padding:10px">
+        <label style="display:block;margin-bottom:8px">Período de Experiência</label>
+        <div class="f2" style="gap:8px">
+          <div><label style="font-size:0.64rem;color:var(--sub)">Início</label><input type="date" id="fnExpIni" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:0.79rem;font-family:inherit"/></div>
+          <div><label style="font-size:0.64rem;color:var(--sub)">Duração</label>
+            <select id="fnExpDias" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:0.79rem;font-family:inherit">
+              <option value="">Não se aplica</option>
+              <option value="30">30 dias</option>
+              <option value="45">45 dias</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:6px">
+          <input type="checkbox" id="fnExpSegunda" style="width:14px;height:14px;accent-color:var(--red)"/>
+          <label for="fnExpSegunda" style="font-size:0.75rem;color:var(--txt);font-weight:500;letter-spacing:normal;text-transform:none;cursor:pointer">2ª experiência (renova por mais 30/45 dias)</label>
+        </div>
       </div>
     </div>
-    <div class="f2">
-      <div class="fg"><label>Início Férias</label><input type="date" id="fnFerIni"/></div>
-      <div class="fg"><label>Fim Férias</label><input type="date" id="fnFerFim"/></div>
+    <!-- NRs -->
+    <div id="fmPane-nrs" style="display:none">
+      <div style="font-size:0.74rem;color:var(--sub);margin-bottom:10px;line-height:1.5">Adicione as NRs deste funcionário. Use o link do Google Drive para o certificado.</div>
+      <div style="display:grid;grid-template-columns:100px 1fr 1fr auto;gap:5px;padding:4px 8px;margin-bottom:4px">
+        <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase;color:var(--sub)">NR</span>
+        <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase;color:var(--sub)">Vencimento</span>
+        <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase;color:var(--sub)">Link (Drive)</span>
+        <span></span>
+      </div>
+      <div class="nr-list" id="nrList"></div>
+      <button class="add-nr-btn" onclick="addNR()">＋ Adicionar NR</button>
     </div>
-    <div class="fg"><label>Status</label>
-      <select id="fnStatus"><option value="ativo">Ativo</option><option value="ferias">Em Férias</option><option value="afastado">Afastado</option><option value="inativo">Inativo</option></select>
+    <!-- FÉRIAS -->
+    <div id="fmPane-ferias" style="display:none">
+      <div class="f2">
+        <div class="fg"><label>Início Férias</label><input type="date" id="fnFerIni"/></div>
+        <div class="fg"><label>Fim Férias</label><input type="date" id="fnFerFim"/></div>
+      </div>
+      <div class="f2">
+        <div class="fg"><label>Próxima Aquisição</label><input type="date" id="fnFerAquis"/></div>
+        <div class="fg"><label>Dias Disponíveis</label><input type="number" id="fnFerDias" placeholder="30" min="0" max="30"/></div>
+      </div>
+      <div style="background:#f0fdf4;border-radius:8px;padding:10px;font-size:0.75rem;color:#16a34a;line-height:1.6;margin-top:4px">
+        💡 O sistema alerta automaticamente com <strong>30 dias de antecedência</strong> do início das férias.
+      </div>
     </div>
     <div class="mact">
       <button class="btn btn-ghost" onclick="closeOvl('ovlFunc')">Cancelar</button>
       <button class="btn btn-red" onclick="saveFunc()">Salvar Funcionário</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: CANDIDATO ═══ -->
+<div class="ovl" id="ovlCand" onclick="if(event.target===this)closeOvl('ovlCand')">
+  <div class="modal" style="max-width:480px">
+    <div class="mhead">
+      <div class="mtitle" id="candModalTitle">Novo Candidato</div>
+      <button class="mclose" onclick="closeOvl('ovlCand')">✕</button>
+    </div>
+    <input type="hidden" id="editCandId"/>
+    <div class="f2">
+      <div class="fg"><label>Nome Completo *</label><input type="text" id="cNome" placeholder="Nome do candidato"/></div>
+      <div class="fg"><label>Cargo Pretendido</label><input type="text" id="cCargo" placeholder="Ex: Eletricista"/></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Telefone</label><input type="text" id="cTel" placeholder="(19) 00000-0000"/></div>
+      <div class="fg"><label>E-mail</label><input type="email" id="cEmail" placeholder="candidato@email.com"/></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Etapa</label>
+        <select id="cEtapa">
+          <option value="curriculo">📄 Currículo Recebido</option>
+          <option value="entrevista">💬 Em Entrevista</option>
+          <option value="proposta">📋 Proposta Enviada</option>
+          <option value="admitido">✅ Admitido</option>
+          <option value="rejeitado">❌ Não Aprovado</option>
+        </select>
+      </div>
+      <div class="fg"><label>Data</label><input type="date" id="cData"/></div>
+    </div>
+    <div class="fg"><label>Link Currículo (Drive)</label><input type="url" id="cLink" placeholder="https://drive.google.com/..."/></div>
+    <div class="fg"><label>Observações</label><textarea id="cObs" rows="2" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit;resize:vertical" placeholder="Anotações da entrevista, perfil..."></textarea></div>
+    <div class="mact">
+      <button class="btn btn-ghost" onclick="closeOvl('ovlCand')">Cancelar</button>
+      <button class="btn btn-red" onclick="saveCand()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: AUSÊNCIA ═══ -->
+<div class="ovl" id="ovlAus" onclick="if(event.target===this)closeOvl('ovlAus')">
+  <div class="modal" style="max-width:480px">
+    <div class="mhead">
+      <div class="mtitle" id="ausModalTitle">Registrar Ausência</div>
+      <button class="mclose" onclick="closeOvl('ovlAus')">✕</button>
+    </div>
+    <input type="hidden" id="editAusId"/>
+    <div class="f2">
+      <div class="fg"><label>Funcionário *</label>
+        <select id="ausFuncId" onchange="document.getElementById('ausFuncNome').value=this.options[this.selectedIndex].text">
+          <option value="">Selecione</option>
+        </select>
+        <input type="hidden" id="ausFuncNome"/>
+      </div>
+      <div class="fg"><label>Tipo</label>
+        <select id="ausTipo">
+          <option value="falta">Falta</option>
+          <option value="afastamento">Afastamento (Atestado)</option>
+          <option value="licenca">Licença</option>
+          <option value="ferias">Férias</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Início</label><input type="date" id="ausIni"/></div>
+      <div class="fg"><label>Retorno Previsto</label><input type="date" id="ausRetorno"/></div>
+    </div>
+    <div class="fg"><label>Link Documento (Drive)</label><input type="url" id="ausLink" placeholder="Atestado, declaração..."/></div>
+    <div class="fg"><label>Observações</label><textarea id="ausObs" rows="2" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit;resize:vertical"></textarea></div>
+    <div class="mact">
+      <button class="btn btn-ghost" onclick="closeOvl('ovlAus')">Cancelar</button>
+      <button class="btn btn-red" onclick="saveAus()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: FECHAMENTO MENSAL ═══ -->
+<div class="ovl" id="ovlFech" onclick="if(event.target===this)closeOvl('ovlFech')">
+  <div class="modal" style="max-width:520px">
+    <div class="mhead">
+      <div class="mtitle" id="fechModalTitle">Fechamento Mensal</div>
+      <button class="mclose" onclick="closeOvl('ovlFech')">✕</button>
+    </div>
+    <input type="hidden" id="editFechId"/>
+    <div class="f2">
+      <div class="fg"><label>Mês de Referência</label><input type="month" id="fechMes"/></div>
+      <div class="fg"><label>Status</label>
+        <select id="fechStatus">
+          <option value="aberto">Em aberto</option>
+          <option value="aguardando">Aguardando Contabilidade</option>
+          <option value="concluido">Concluído</option>
+        </select>
+      </div>
+    </div>
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--sub);letter-spacing:0.5px;margin:12px 0 6px">Links dos Documentos</div>
+    <div class="f2">
+      <div class="fg"><label>Folha de Ponto</label><input type="url" id="fechPonto" placeholder="Link Drive"/></div>
+      <div class="fg"><label>Planilha de Horas</label><input type="url" id="fechHoras" placeholder="Link Drive"/></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Atestados / Afastamentos</label><input type="url" id="fechAtestados" placeholder="Link Drive"/></div>
+      <div class="fg"><label>Outros Documentos</label><input type="url" id="fechOutros" placeholder="Link Drive"/></div>
+    </div>
+    <div class="fg"><label>Observações para a Contabilidade</label><textarea id="fechObs" rows="2" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit;resize:vertical" placeholder="Admissões, demissões, férias, observações especiais..."></textarea></div>
+    <div class="mact">
+      <button class="btn btn-ghost" onclick="closeOvl('ovlFech')">Cancelar</button>
+      <button class="btn btn-red" onclick="saveFech()">Salvar Fechamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: DOCUMENTO EMPRESA ═══ -->
+<div class="ovl" id="ovlEmpDoc" onclick="if(event.target===this)closeOvl('ovlEmpDoc')">
+  <div class="modal" style="max-width:480px">
+    <div class="mhead">
+      <div class="mtitle" id="empDocModalTitle">Novo Documento</div>
+      <button class="mclose" onclick="closeOvl('ovlEmpDoc')">✕</button>
+    </div>
+    <input type="hidden" id="editEmpDocId"/>
+    <div class="f2">
+      <div class="fg"><label>Tipo de Documento *</label>
+        <select id="edTipo">
+          <option value="">Selecione</option>
+          <option>AVCB</option><option>Alvará de Funcionamento</option><option>Licença Sanitária</option>
+          <option>CND Federal</option><option>CND Estadual</option><option>CND Municipal</option>
+          <option>Certificado FGTS</option><option>PPRA / PCMSO</option><option>LTCAT</option>
+          <option>ART / RRT</option><option>Seguro de Responsabilidade Civil</option><option>Outro</option>
+        </select>
+      </div>
+      <div class="fg"><label>Vencimento</label><input type="date" id="edVenc"/></div>
+    </div>
+    <div class="fg"><label>Descrição / Número</label><input type="text" id="edDesc" placeholder="Ex: AVCB nº 12345, válido até..."/></div>
+    <div class="fg"><label>Link do Documento (Google Drive) *</label><input type="url" id="edLink" placeholder="https://drive.google.com/..."/></div>
+    <div class="fg"><label>Observações</label><input type="text" id="edObs" placeholder="Órgão emissor, responsável..."/></div>
+    <div class="mact">
+      <button class="btn btn-ghost" onclick="closeOvl('ovlEmpDoc')">Cancelar</button>
+      <button class="btn btn-red" onclick="saveEmpDoc()">Salvar Documento</button>
     </div>
   </div>
 </div>
@@ -1305,10 +1612,13 @@ let usuarios = {}, clientes = {}, interacoes = {};
 let propostas = {}, projetos = {}, fornecedores = {}, pedidos = {}, estoque = {}, movimentos = {}, funcionarios = {};
 let lancamentos = {};
 let notas = {}, nfConfig = {};
+let candidatos = {}, ausencias = {}, fechamentos = {}, empresaDocs = {}, pontoReg = {};
 let nfFilter = 'all';
 let selUID = null, pinBuf = '', curCID = null, crmFilter = 'all';
 let propFilter = 'all', projFilter = 'all', estFilter = 'all', rhFilter = 'all';
 let curProjViewId = null;
+let rhCurTab = 'alertas';
+let curNRs = []; // NRs temporárias no modal
 
 // ══════════════════════════════════════════════
 // UTILS
@@ -1513,10 +1823,17 @@ function startListeners(){
   db.ref('erp/pedidos').on('value', snap=>{ pedidos=snap.val()||{}; renderPedidos(); });
   db.ref('erp/estoque').on('value', snap=>{ estoque=snap.val()||{}; renderEst(); });
   db.ref('erp/movimentos').on('value', snap=>{ movimentos=snap.val()||{}; });
-  db.ref('erp/funcionarios').on('value', snap=>{ funcionarios=snap.val()||{}; renderRH(); renderDash(); });
+  db.ref('erp/funcionarios').on('value', snap=>{ funcionarios=snap.val()||{}; renderFuncionarios(); renderRHAlerts(); renderDash(); });
   db.ref('lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); });
   db.ref('erp/notas').on('value', snap=>{ notas=snap.val()||{}; renderNF(); });
   db.ref('erp/nfconfig').on('value', snap=>{ nfConfig=snap.val()||{}; renderNF(); });
+  db.ref('erp/candidatos').on('value', snap=>{ candidatos=snap.val()||{}; renderKanban(); });
+  db.ref('erp/ausencias').on('value', snap=>{ ausencias=snap.val()||{}; renderAusencias(); });
+  db.ref('erp/fechamentos').on('value', snap=>{ fechamentos=snap.val()||{}; renderFechamentos(); });
+  db.ref('erp/empresa_docs').on('value', snap=>{ empresaDocs=snap.val()||{}; renderEmpresaDocs(); renderRHAlerts(); renderDash(); });
+  db.ref('erp/ponto').on('value', snap=>{ pontoReg=snap.val()||{}; renderPonto(); });
+  // Load ControlID config
+  db.ref('erp/cidconfig').once('value', snap=>{ const c=snap.val()||{}; if(c.email)document.getElementById('cidEmail').value=c.email; if(c.url)document.getElementById('cidUrl').value=c.url; });
 }
 
 // ══════════════════════════════════════════════
@@ -1575,8 +1892,17 @@ function renderDash(){
   const vencFin = lanArr.filter(l=>l.status==='pendente'&&l.data&&l.data>=today&&l.data<=d7s)
     .sort((a,b)=>a.data.localeCompare(b.data)).slice(0,6);
 
+  // ── RH Alerts for dashboard
+  const rhAlertsDash = getRHAlerts().slice(0,5);
+
   document.getElementById('dashCards').innerHTML=`
     ${cfHtml}
+    ${rhAlertsDash.length?`
+    <div class="dash-card" style="border-color:#fee2e2">
+      <h3 style="color:var(--red)">⚠️ Alertas RH (${getRHAlerts().length})</h3>
+      ${rhAlertsDash.map(a=>`<div class="ritem"><div class="ritem-name">${a.nome}</div><div class="ritem-sub">${a.desc}</div></div>`).join('')}
+      <span onclick="navTo('rh')" style="display:block;text-align:center;margin-top:10px;font-size:0.75rem;color:var(--blue);cursor:pointer">Ver todos os alertas →</span>
+    </div>`:''}
     ${vencFin.length?`
     <div class="dash-card" style="border-color:#fef3c7">
       <h3 style="color:var(--amber)">📅 Vencimentos próximos (7 dias)</h3>
@@ -1931,10 +2257,12 @@ async function deleteUser(uid,nome){
 // ADMIN TABS
 // ══════════════════════════════════════════════
 function admTab(tab){
-  ['usuarios','exportar','backup'].forEach(t=>{
+  ['usuarios','docs','ponto','exportar','backup'].forEach(t=>{
     document.getElementById('admTab-'+t).classList.toggle('active',t===tab);
     document.getElementById('admPane-'+t).style.display=t===tab?'':'none';
   });
+  if(tab==='docs') renderEmpresaDocs();
+  if(tab==='ponto') renderPonto();
 }
 
 // ══════════════════════════════════════════════
@@ -2756,7 +3084,123 @@ async function saveMov(){
 // ══════════════════════════════════════════════
 // RH
 // ══════════════════════════════════════════════
-function renderRH(){
+
+// ── Sub-tabs navigation ──
+function rhTab(t){
+  rhCurTab=t;
+  ['alertas','equipe','recrutamento','ausencias','fechamento'].forEach(id=>{
+    document.getElementById('rhTab-'+id).classList.toggle('active',id===t);
+    document.getElementById('rhPane-'+id).style.display=id===t?'':'none';
+  });
+  if(t==='alertas') renderRHAlerts();
+  if(t==='equipe') renderFuncionarios();
+  if(t==='recrutamento') renderKanban();
+  if(t==='ausencias') renderAusencias();
+  if(t==='fechamento') renderFechamentos();
+}
+
+// ── Employee modal sub-tabs ──
+function fmTab(t){
+  ['dados','nrs','ferias'].forEach(id=>{
+    document.getElementById('fmTab-'+id).classList.toggle('active',id===t);
+    document.getElementById('fmPane-'+id).style.display=id===t?'':'none';
+  });
+}
+
+// ── Get all RH alerts ──
+function getRHAlerts(){
+  const alerts=[];
+  const today=todayStr();
+  // NRs vencidas / a vencer (30 dias)
+  Object.values(funcionarios).filter(f=>f.status==='ativo').forEach(f=>{
+    // Legado NRs (nr10, nr35, nr12, nr18)
+    [['nr10','NR-10'],['nr35','NR-35'],['nr12','NR-12'],['nr18','NR-18']].forEach(([k,label])=>{
+      if(!f[k]) return;
+      const d=diffD(f[k]);
+      if(d===null) return;
+      if(d<0) alerts.push({tipo:'venc',nome:`${f.nome} — ${label}`,desc:`Vencida há ${Math.abs(d)} dias`,link:`#func-${f.id}`});
+      else if(d<=30) alerts.push({tipo:'pend',nome:`${f.nome} — ${label}`,desc:`Vence em ${d} dias (${fmtD(f[k])})`,link:`#func-${f.id}`});
+    });
+    // Dynamic NRs
+    if(f.nrs) Object.values(f.nrs).forEach(nr=>{
+      if(!nr.vencimento) return;
+      const d=diffD(nr.vencimento);
+      if(d===null) return;
+      if(d<0) alerts.push({tipo:'venc',nome:`${f.nome} — ${nr.nome||'NR'}`,desc:`Vencida há ${Math.abs(d)} dias`,link:`#func-${f.id}`});
+      else if(d<=30) alerts.push({tipo:'pend',nome:`${f.nome} — ${nr.nome||'NR'}`,desc:`Vence em ${d} dias (${fmtD(nr.vencimento)})`,link:`#func-${f.id}`});
+    });
+    // Férias (30 dias de antecedência)
+    if(f.ferIni){
+      const d=diffD(f.ferIni);
+      if(d!==null&&d>=0&&d<=30) alerts.push({tipo:'pend',nome:`${f.nome} — Férias`,desc:`Início em ${d} dias (${fmtD(f.ferIni)}) — emitir aviso`,link:`#func-${f.id}`});
+    }
+    // Período de experiência
+    if(f.expIni&&f.expDias){
+      const expDias=parseInt(f.expDias)||0;
+      const mult=f.expSegunda?2:1;
+      const expEnd=new Date(f.expIni+'T00:00:00');
+      expEnd.setDate(expEnd.getDate()+expDias*mult);
+      const expEndStr=expEnd.toISOString().slice(0,10);
+      const d=diffD(expEndStr);
+      if(d!==null){
+        const periodoLabel=f.expSegunda?'2ª experiência':'1ª experiência';
+        if(d<0) alerts.push({tipo:'venc',nome:`${f.nome} — Período Exp.`,desc:`${periodoLabel} (${expDias} dias) venceu há ${Math.abs(d)} dias — efetivar ou desligar`,link:`#func-${f.id}`});
+        else if(d<=7) alerts.push({tipo:'pend',nome:`${f.nome} — Período Exp.`,desc:`${periodoLabel} (${expDias} dias) termina em ${d} dias — ${fmtD(expEndStr)}`,link:`#func-${f.id}`});
+      }
+    }
+  });
+  // Documentos da empresa vencidos / a vencer
+  Object.values(empresaDocs).forEach(doc=>{
+    if(!doc.vencimento) return;
+    const d=diffD(doc.vencimento);
+    if(d===null) return;
+    if(d<0) alerts.push({tipo:'venc',nome:`🏢 ${doc.tipo||'Doc Empresa'}`,desc:`Vencido há ${Math.abs(d)} dias`,link:doc.link||''});
+    else if(d<=45) alerts.push({tipo:'pend',nome:`🏢 ${doc.tipo||'Doc Empresa'}`,desc:`Vence em ${d} dias (${fmtD(doc.vencimento)})`,link:doc.link||''});
+  });
+  return alerts.sort((a,b)=>a.tipo==='venc'?-1:1);
+}
+
+// ── Render RH Alerts panel ──
+function renderRHAlerts(){
+  const el=document.getElementById('rhAlertList');
+  if(!el) return;
+  const alerts=getRHAlerts();
+  if(!alerts.length){
+    el.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--sub);font-size:0.85rem">✅ Tudo em dia! Nenhum alerta no momento.</div>';
+    return;
+  }
+  const venc=alerts.filter(a=>a.tipo==='venc');
+  const pend=alerts.filter(a=>a.tipo==='pend');
+  let html='';
+  if(venc.length) html+=`
+    <div class="alert-panel">
+      <div class="alert-panel-head alert-ph-red">🚨 Vencidos (${venc.length})</div>
+      ${venc.map(a=>`<div class="alert-item" ${a.link?`onclick="if('${a.link}'.startsWith('http'))window.open('${a.link}','_blank')"`:''}">
+        <div class="alert-item-ico" style="background:#fee2e2">🔴</div>
+        <div class="alert-item-txt">
+          <div class="alert-item-nome">${a.nome}</div>
+          <div class="alert-item-desc">${a.desc}</div>
+        </div>
+        <span class="alert-tag at-venc">VENCIDO</span>
+      </div>`).join('')}
+    </div>`;
+  if(pend.length) html+=`
+    <div class="alert-panel">
+      <div class="alert-panel-head alert-ph-amber">⚠️ Próximos vencimentos (${pend.length})</div>
+      ${pend.map(a=>`<div class="alert-item" ${a.link&&a.link.startsWith('http')?`onclick="window.open('${a.link}','_blank')"`:''}>
+        <div class="alert-item-ico" style="background:#fef3c7">🟡</div>
+        <div class="alert-item-txt">
+          <div class="alert-item-nome">${a.nome}</div>
+          <div class="alert-item-desc">${a.desc}</div>
+        </div>
+        <span class="alert-tag at-pend">ATENÇÃO</span>
+      </div>`).join('')}
+    </div>`;
+  el.innerHTML=html;
+}
+
+// ── Render employee list ──
+function renderFuncionarios(){
   const q=(document.getElementById('rhSearch')?.value||'').toLowerCase();
   const arr=Object.values(funcionarios).filter(f=>{
     if(rhFilter!=='all'&&f.status!==rhFilter)return false;
@@ -2765,62 +3209,410 @@ function renderRH(){
   }).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
   const allF=Object.values(funcionarios);
   const cnts={all:allF.length,ativo:allF.filter(f=>f.status==='ativo').length,ferias:allF.filter(f=>f.status==='ferias').length,afastado:allF.filter(f=>f.status==='afastado').length};
-  document.getElementById('rhTabs').innerHTML=
+  const rhTabsEl=document.getElementById('rhTabs');
+  if(rhTabsEl) rhTabsEl.innerHTML=
     `<div class="ftab ${rhFilter==='all'?'active':''}" onclick="setRHFilter('all')">Todos (${cnts.all})</div>`+
     [['ativo','Ativos'],['ferias','Férias'],['afastado','Afastados']]
     .map(([id,l])=>`<div class="ftab ${rhFilter===id?'active':''}" onclick="setRHFilter('${id}')">${l} (${cnts[id]})</div>`).join('');
-  if(!arr.length){document.getElementById('funcList').innerHTML='<div class="empty">Nenhum funcionário cadastrado.</div>';return;}
-  const today=todayStr();
-  document.getElementById('funcList').innerHTML=arr.map(f=>{
-    const nrs=['NR10','NR35','NR12','NR18'].map(nr=>{
-      const dt=f['nr'+nr.replace('NR','')]; if(!dt)return'';
-      const d=diffD(dt); const cls=d<0?'nr-venc':d<30?'nr-pend':'nr-ok';
-      return`<span class="nr-badge ${cls}">${nr} ${d<0?'VENC':fmtD(dt)}</span>`;
-    }).join('');
+  const funcListEl=document.getElementById('funcList');
+  if(!funcListEl) return;
+  if(!arr.length){funcListEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--sub);font-size:0.83rem">Nenhum funcionário cadastrado.</div>';return;}
+  funcListEl.innerHTML=arr.map(f=>{
+    // Build NR badges (legacy + dynamic)
+    let nrBadges='';
+    [['nr10','NR-10'],['nr35','NR-35'],['nr12','NR-12'],['nr18','NR-18']].forEach(([k,label])=>{
+      if(!f[k]) return;
+      const d=diffD(f[k]); const cls=d<0?'nr-venc':d<30?'nr-pend':'nr-ok';
+      nrBadges+=`<span class="nr-badge ${cls}">${label}${d<0?' VENC':''}</span>`;
+    });
+    if(f.nrs) Object.values(f.nrs).forEach(nr=>{
+      if(!nr.nome) return;
+      const d=nr.vencimento?diffD(nr.vencimento):null;
+      const cls=d===null?'nr-ok':d<0?'nr-venc':d<30?'nr-pend':'nr-ok';
+      nrBadges+=`<span class="nr-badge ${cls}">${nr.nome}${d!==null&&d<0?' VENC':''}</span>`;
+    });
     const sts={ativo:'✅',ferias:'🏖️',afastado:'🏥',inativo:'❌'}[f.status]||'';
+    // Exp period badge
+    let expBadge='';
+    if(f.expIni&&f.expDias){
+      const d=diffD(f.expIni);
+      if(d!==null) expBadge=`<span class="exp-badge">${f.expSegunda?'2ª':'1ª'} exp ${f.expDias}d</span>`;
+    }
     return`<div class="func-card" onclick="openFuncModal('${f.id}')">
       <div class="func-av">${initials(f.nome)}</div>
       <div class="func-info">
-        <div class="func-name">${f.nome} ${sts}</div>
-        <div class="func-cargo">${f.cargo||'—'} · ${f.tipo||'CLT'}</div>
-        <div style="margin-top:4px">${nrs||'<span style="font-size:0.68rem;color:var(--sub)">Sem NRs cadastradas</span>'}</div>
+        <div class="func-name">${f.nome} ${sts} ${expBadge}</div>
+        <div class="func-cargo">${f.cargo||'—'} · ${(f.tipo||'clt').toUpperCase()} · Adm: ${fmtD(f.admissao)||'—'}</div>
+        <div style="margin-top:4px">${nrBadges||'<span style="font-size:0.68rem;color:var(--sub)">Sem NRs</span>'}</div>
       </div>
     </div>`;}).join('');
 }
-function setRHFilter(f){rhFilter=f;renderRH();}
+function setRHFilter(f){rhFilter=f;renderFuncionarios();}
+// Keep backward compat
+function renderRH(){renderFuncionarios();}
 
+// ── Dynamic NRs in modal ──
+function renderNRList(){
+  const el=document.getElementById('nrList');
+  if(!el) return;
+  el.innerHTML=curNRs.map((nr,i)=>`
+    <div class="nr-row">
+      <input type="text" placeholder="NR-10" value="${nr.nome||''}" oninput="curNRs[${i}].nome=this.value"/>
+      <input type="date" value="${nr.vencimento||''}" oninput="curNRs[${i}].vencimento=this.value"/>
+      <input type="url" placeholder="Link Drive" value="${nr.link||''}" oninput="curNRs[${i}].link=this.value"/>
+      <button class="nr-del" onclick="removeNR(${i})" title="Remover">✕</button>
+    </div>`).join('');
+}
+function addNR(){curNRs.push({nome:'',vencimento:'',link:''});renderNRList();}
+function removeNR(i){curNRs.splice(i,1);renderNRList();}
+
+// ── Open / Save Func modal ──
 function openFuncModal(fid){
   const f=fid?funcionarios[fid]:null;
   document.getElementById('editFuncId').value=fid||'';
   document.getElementById('funcModalTitle').textContent=fid?'Editar Funcionário':'Novo Funcionário';
+  fmTab('dados');
   if(f){
     document.getElementById('fnNome').value=f.nome||'';
     document.getElementById('fnCargo').value=f.cargo||'';
     document.getElementById('fnTipo').value=f.tipo||'clt';
-    document.getElementById('fnAdmissao').value=f.admissao||'';
+    document.getElementById('fnStatus').value=f.status||'ativo';
     document.getElementById('fnCPF').value=f.cpf||'';
     document.getElementById('fnTel').value=f.tel||'';
-    document.getElementById('fnNR10').value=f.nr10||'';
-    document.getElementById('fnNR35').value=f.nr35||'';
-    document.getElementById('fnNR12').value=f.nr12||'';
-    document.getElementById('fnNR18').value=f.nr18||'';
+    document.getElementById('fnEmail').value=f.email||'';
+    document.getElementById('fnAdmissao').value=f.admissao||'';
+    document.getElementById('fnExpIni').value=f.expIni||'';
+    document.getElementById('fnExpDias').value=f.expDias||'';
+    document.getElementById('fnExpSegunda').checked=!!f.expSegunda;
     document.getElementById('fnFerIni').value=f.ferIni||'';
     document.getElementById('fnFerFim').value=f.ferFim||'';
-    document.getElementById('fnStatus').value=f.status||'ativo';
+    document.getElementById('fnFerAquis').value=f.ferAquis||'';
+    document.getElementById('fnFerDias').value=f.ferDias||'';
+    // NRs: load dynamic NRs; also migrate legacy if present
+    curNRs=f.nrs?Object.values(f.nrs):[];
+    if(!curNRs.length){
+      [['nr10','NR-10'],['nr35','NR-35'],['nr12','NR-12'],['nr18','NR-18']].forEach(([k,nome])=>{
+        if(f[k]) curNRs.push({nome,vencimento:f[k],link:''});
+      });
+    }
   } else {
-    ['fnNome','fnCPF','fnTel','fnAdmissao','fnNR10','fnNR35','fnNR12','fnNR18','fnFerIni','fnFerFim'].forEach(id=>document.getElementById(id).value='');
+    ['fnNome','fnCPF','fnTel','fnEmail','fnAdmissao','fnExpIni','fnFerIni','fnFerFim','fnFerAquis'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('fnCargo').value='';
     document.getElementById('fnTipo').value='clt';
     document.getElementById('fnStatus').value='ativo';
+    document.getElementById('fnExpDias').value='';
+    document.getElementById('fnExpSegunda').checked=false;
+    document.getElementById('fnFerDias').value='';
+    curNRs=[];
   }
+  renderNRList();
   document.getElementById('ovlFunc').classList.add('v');
 }
+
 async function saveFunc(){
   const nome=(document.getElementById('fnNome').value||'').trim();
   if(!nome){alert('Informe o nome do funcionário.');return;}
   const fid=document.getElementById('editFuncId').value||genId();
-  await db.ref('erp/funcionarios/'+fid).set({id:fid,nome,cargo:document.getElementById('fnCargo').value,tipo:document.getElementById('fnTipo').value,admissao:document.getElementById('fnAdmissao').value||'',cpf:document.getElementById('fnCPF').value.trim(),tel:document.getElementById('fnTel').value.trim(),nr10:document.getElementById('fnNR10').value||'',nr35:document.getElementById('fnNR35').value||'',nr12:document.getElementById('fnNR12').value||'',nr18:document.getElementById('fnNR18').value||'',ferIni:document.getElementById('fnFerIni').value||'',ferFim:document.getElementById('fnFerFim').value||'',status:document.getElementById('fnStatus').value,criadoEm:funcionarios[fid]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
+  // Convert curNRs array to object
+  const nrsObj={};
+  curNRs.forEach((nr,i)=>{ if(nr.nome) nrsObj['nr'+i]={nome:nr.nome,vencimento:nr.vencimento||'',link:nr.link||''}; });
+  const data={
+    id:fid, nome,
+    cargo:document.getElementById('fnCargo').value,
+    tipo:document.getElementById('fnTipo').value,
+    status:document.getElementById('fnStatus').value,
+    cpf:document.getElementById('fnCPF').value.trim(),
+    tel:document.getElementById('fnTel').value.trim(),
+    email:document.getElementById('fnEmail').value.trim(),
+    admissao:document.getElementById('fnAdmissao').value||'',
+    expIni:document.getElementById('fnExpIni').value||'',
+    expDias:document.getElementById('fnExpDias').value||'',
+    expSegunda:document.getElementById('fnExpSegunda').checked,
+    ferIni:document.getElementById('fnFerIni').value||'',
+    ferFim:document.getElementById('fnFerFim').value||'',
+    ferAquis:document.getElementById('fnFerAquis').value||'',
+    ferDias:document.getElementById('fnFerDias').value||'',
+    nrs:nrsObj,
+    criadoEm:funcionarios[fid]?.criadoEm||Date.now(),
+    atualizadoPor:curUser.uid
+  };
+  await db.ref('erp/funcionarios/'+fid).set(data);
   closeOvl('ovlFunc');
+}
+
+// ── Recrutamento Kanban ──
+const KAN_ETAPAS=[
+  {id:'curriculo',label:'📄 Currículo'},
+  {id:'entrevista',label:'💬 Entrevista'},
+  {id:'proposta',label:'📋 Proposta'},
+  {id:'admitido',label:'✅ Admitido'},
+  {id:'rejeitado',label:'❌ Não Aprovado'}
+];
+function renderKanban(){
+  const el=document.getElementById('kanbanBoard');
+  if(!el) return;
+  const cands=Object.values(candidatos);
+  el.innerHTML=KAN_ETAPAS.map(et=>{
+    const cards=cands.filter(c=>c.etapa===et.id).sort((a,b)=>b.criadoEm-a.criadoEm);
+    const moves=KAN_ETAPAS.filter(e=>e.id!==et.id);
+    return`<div class="kan-col">
+      <div class="kan-col-head">${et.label} <span class="kan-cnt">${cards.length}</span></div>
+      ${cards.map(c=>`<div class="kan-card" onclick="openCandModal('${c.id}')">
+        <div class="kan-card-name">${c.nome||'—'}</div>
+        <div class="kan-card-cargo">${c.cargo||'—'}</div>
+        ${c.data?`<div class="kan-card-date">${fmtD(c.data)}</div>`:''}
+        <div class="kan-moves">
+          ${moves.filter(m=>['curriculo','entrevista','proposta','admitido','rejeitado'].includes(m.id)).slice(0,3).map(m=>`<button class="kan-mv" onclick="event.stopPropagation();moveCand('${c.id}','${m.id}')">${m.label.split(' ')[0]}</button>`).join('')}
+        </div>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+function openCandModal(cid){
+  const c=cid?candidatos[cid]:null;
+  document.getElementById('editCandId').value=cid||'';
+  document.getElementById('candModalTitle').textContent=cid?'Editar Candidato':'Novo Candidato';
+  if(c){
+    document.getElementById('cNome').value=c.nome||'';
+    document.getElementById('cCargo').value=c.cargo||'';
+    document.getElementById('cTel').value=c.tel||'';
+    document.getElementById('cEmail').value=c.email||'';
+    document.getElementById('cEtapa').value=c.etapa||'curriculo';
+    document.getElementById('cData').value=c.data||'';
+    document.getElementById('cLink').value=c.link||'';
+    document.getElementById('cObs').value=c.obs||'';
+  } else {
+    ['cNome','cCargo','cTel','cEmail','cLink','cObs'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('cEtapa').value='curriculo';
+    document.getElementById('cData').value=todayStr();
+  }
+  document.getElementById('ovlCand').classList.add('v');
+}
+async function saveCand(){
+  const nome=(document.getElementById('cNome').value||'').trim();
+  if(!nome){alert('Informe o nome do candidato.');return;}
+  const cid=document.getElementById('editCandId').value||genId();
+  await db.ref('erp/candidatos/'+cid).set({id:cid,nome,cargo:document.getElementById('cCargo').value.trim(),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),etapa:document.getElementById('cEtapa').value,data:document.getElementById('cData').value||'',link:document.getElementById('cLink').value.trim(),obs:document.getElementById('cObs').value.trim(),criadoEm:candidatos[cid]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
+  closeOvl('ovlCand');
+}
+async function moveCand(cid,etapa){
+  await db.ref('erp/candidatos/'+cid+'/etapa').set(etapa);
+}
+
+// ── Ausências ──
+function renderAusencias(){
+  const el=document.getElementById('ausList');
+  if(!el) return;
+  const arr=Object.values(ausencias).sort((a,b)=>b.criadoEm-a.criadoEm);
+  if(!arr.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--sub);font-size:0.83rem">Nenhuma ausência registrada.</div>';return;}
+  const tipoLabel={falta:'Falta',afastamento:'Afastamento',licenca:'Licença',ferias:'Férias',outro:'Outro'};
+  const tipoCls={falta:'aus-falta',afastamento:'aus-afastamento',licenca:'aus-licenca',ferias:'aus-ferias',outro:''};
+  el.innerHTML=arr.map(a=>`
+    <div class="aus-card" onclick="openAusModal('${a.id}')">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.86rem;font-weight:700;color:var(--dark);margin-bottom:2px">${a.funcNome||'—'}</div>
+        <div style="font-size:0.72rem;color:var(--sub)">${fmtD(a.ini)||'—'} → ${fmtD(a.retorno)||'sem retorno definido'}</div>
+        ${a.obs?`<div style="font-size:0.73rem;color:var(--sub);margin-top:3px">${a.obs}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+        <span class="nr-badge ${tipoCls[a.tipo]||''}" style="background:#f3f4f6">${tipoLabel[a.tipo]||a.tipo}</span>
+        ${a.link?`<a href="${a.link}" target="_blank" onclick="event.stopPropagation()" style="font-size:0.68rem;color:var(--blue)">📎 Doc</a>`:''}
+      </div>
+    </div>`).join('');
+}
+function openAusModal(aid){
+  const a=aid?ausencias[aid]:null;
+  document.getElementById('editAusId').value=aid||'';
+  document.getElementById('ausModalTitle').textContent=aid?'Editar Ausência':'Registrar Ausência';
+  // Fill func select
+  const sel=document.getElementById('ausFuncId');
+  sel.innerHTML='<option value="">Selecione</option>'+
+    Object.values(funcionarios).filter(f=>f.status==='ativo').sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+  if(a){
+    sel.value=a.funcId||'';
+    document.getElementById('ausFuncNome').value=a.funcNome||'';
+    document.getElementById('ausTipo').value=a.tipo||'falta';
+    document.getElementById('ausIni').value=a.ini||'';
+    document.getElementById('ausRetorno').value=a.retorno||'';
+    document.getElementById('ausLink').value=a.link||'';
+    document.getElementById('ausObs').value=a.obs||'';
+  } else {
+    sel.value='';
+    ['ausIni','ausRetorno','ausLink','ausObs'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('ausTipo').value='falta';
+    document.getElementById('ausIni').value=todayStr();
+  }
+  document.getElementById('ovlAus').classList.add('v');
+}
+async function saveAus(){
+  const funcId=document.getElementById('ausFuncId').value;
+  if(!funcId){alert('Selecione o funcionário.');return;}
+  const aid=document.getElementById('editAusId').value||genId();
+  const funcNome=funcionarios[funcId]?.nome||document.getElementById('ausFuncId').options[document.getElementById('ausFuncId').selectedIndex].text;
+  await db.ref('erp/ausencias/'+aid).set({id:aid,funcId,funcNome,tipo:document.getElementById('ausTipo').value,ini:document.getElementById('ausIni').value||'',retorno:document.getElementById('ausRetorno').value||'',link:document.getElementById('ausLink').value.trim(),obs:document.getElementById('ausObs').value.trim(),criadoEm:ausencias[aid]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
+  closeOvl('ovlAus');
+}
+
+// ── Fechamento Mensal ──
+function renderFechamentos(){
+  const el=document.getElementById('fechList');
+  if(!el) return;
+  const arr=Object.values(fechamentos).sort((a,b)=>(b.mes||'').localeCompare(a.mes||''));
+  if(!arr.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--sub);font-size:0.83rem">Nenhum fechamento registrado.</div>';return;}
+  const stLabel={aberto:'Em aberto',aguardando:'Aguard. Contab.',concluido:'Concluído ✅'};
+  const stColor={aberto:'var(--amber)',aguardando:'var(--blue)',concluido:'var(--green)'};
+  el.innerHTML=arr.map(f=>`
+    <div class="fech-card" onclick="openFechModal('${f.id}')">
+      <div>
+        <div style="font-size:0.92rem;font-weight:800;color:var(--dark)">${f.mes?fmtMesRef(f.mes):'—'}</div>
+        ${f.obs?`<div style="font-size:0.73rem;color:var(--sub);margin-top:2px">${f.obs.slice(0,60)}${f.obs.length>60?'…':''}</div>`:''}
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+          ${f.ponto?`<a href="${f.ponto}" target="_blank" onclick="event.stopPropagation()" style="font-size:0.68rem;color:var(--blue)">⏱️ Ponto</a>`:''}
+          ${f.horas?`<a href="${f.horas}" target="_blank" onclick="event.stopPropagation()" style="font-size:0.68rem;color:var(--blue)">📊 Horas</a>`:''}
+          ${f.atestados?`<a href="${f.atestados}" target="_blank" onclick="event.stopPropagation()" style="font-size:0.68rem;color:var(--blue)">📋 Atestados</a>`:''}
+          ${f.outros?`<a href="${f.outros}" target="_blank" onclick="event.stopPropagation()" style="font-size:0.68rem;color:var(--blue)">📎 Outros</a>`:''}
+        </div>
+      </div>
+      <span style="color:${stColor[f.status]||'var(--sub)'};font-size:0.72rem;font-weight:700;white-space:nowrap">${stLabel[f.status]||f.status}</span>
+    </div>`).join('');
+}
+function fmtMesRef(m){ if(!m) return '—'; const [y,mo]=m.split('-'); const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']; return `${meses[parseInt(mo)-1]||mo}/${y}`; }
+function openFechModal(fid){
+  const f=fid?fechamentos[fid]:null;
+  document.getElementById('editFechId').value=fid||'';
+  document.getElementById('fechModalTitle').textContent=fid?'Editar Fechamento':'Novo Fechamento';
+  if(f){
+    document.getElementById('fechMes').value=f.mes||'';
+    document.getElementById('fechStatus').value=f.status||'aberto';
+    document.getElementById('fechPonto').value=f.ponto||'';
+    document.getElementById('fechHoras').value=f.horas||'';
+    document.getElementById('fechAtestados').value=f.atestados||'';
+    document.getElementById('fechOutros').value=f.outros||'';
+    document.getElementById('fechObs').value=f.obs||'';
+  } else {
+    ['fechPonto','fechHoras','fechAtestados','fechOutros','fechObs'].forEach(id=>document.getElementById(id).value='');
+    const now=new Date(); document.getElementById('fechMes').value=now.toISOString().slice(0,7);
+    document.getElementById('fechStatus').value='aberto';
+  }
+  document.getElementById('ovlFech').classList.add('v');
+}
+async function saveFech(){
+  const mes=document.getElementById('fechMes').value;
+  if(!mes){alert('Informe o mês de referência.');return;}
+  const fid=document.getElementById('editFechId').value||genId();
+  await db.ref('erp/fechamentos/'+fid).set({id:fid,mes,status:document.getElementById('fechStatus').value,ponto:document.getElementById('fechPonto').value.trim(),horas:document.getElementById('fechHoras').value.trim(),atestados:document.getElementById('fechAtestados').value.trim(),outros:document.getElementById('fechOutros').value.trim(),obs:document.getElementById('fechObs').value.trim(),criadoEm:fechamentos[fid]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
+  closeOvl('ovlFech');
+}
+
+// ── Empresa Docs ──
+function renderEmpresaDocs(){
+  const el=document.getElementById('empDocList');
+  if(!el) return;
+  const arr=Object.values(empresaDocs).sort((a,b)=>(a.vencimento||'').localeCompare(b.vencimento||''));
+  if(!arr.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--sub);font-size:0.83rem">Nenhum documento cadastrado.</div>';return;}
+  el.innerHTML=arr.map(d=>{
+    const days=d.vencimento?diffD(d.vencimento):null;
+    const cls=days===null?'':'nr-badge '+(days<0?'nr-venc':days<=45?'nr-pend':'nr-ok');
+    const tag=days===null?'':`<span class="${cls}" style="margin-left:auto">${days<0?'VENCIDO':days+'d'}</span>`;
+    return`<div class="edoc-card" onclick="openEmpDocModal('${d.id}')">
+      <div class="edoc-icon">${days!==null&&days<0?'🔴':days!==null&&days<=45?'🟡':'📄'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.86rem;font-weight:700;color:var(--dark)">${d.tipo||'—'}</div>
+        <div style="font-size:0.71rem;color:var(--sub);margin-top:1px">${d.desc||''} ${d.vencimento?'· Vence '+fmtD(d.vencimento):''}</div>
+      </div>
+      ${tag}
+      ${d.link?`<a href="${d.link}" target="_blank" onclick="event.stopPropagation()" style="font-size:1rem">🔗</a>`:''}
+    </div>`;}).join('');
+}
+function openEmpDocModal(did){
+  const d=did?empresaDocs[did]:null;
+  document.getElementById('editEmpDocId').value=did||'';
+  document.getElementById('empDocModalTitle').textContent=did?'Editar Documento':'Novo Documento';
+  if(d){
+    document.getElementById('edTipo').value=d.tipo||'';
+    document.getElementById('edVenc').value=d.vencimento||'';
+    document.getElementById('edDesc').value=d.desc||'';
+    document.getElementById('edLink').value=d.link||'';
+    document.getElementById('edObs').value=d.obs||'';
+  } else {
+    ['edDesc','edVenc','edLink','edObs'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('edTipo').value='';
+  }
+  document.getElementById('ovlEmpDoc').classList.add('v');
+}
+async function saveEmpDoc(){
+  const tipo=document.getElementById('edTipo').value;
+  if(!tipo){alert('Selecione o tipo de documento.');return;}
+  const did=document.getElementById('editEmpDocId').value||genId();
+  await db.ref('erp/empresa_docs/'+did).set({id:did,tipo,vencimento:document.getElementById('edVenc').value||'',desc:document.getElementById('edDesc').value.trim(),link:document.getElementById('edLink').value.trim(),obs:document.getElementById('edObs').value.trim(),criadoEm:empresaDocs[did]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
+  closeOvl('ovlEmpDoc');
+}
+
+// ── ControlID iDCloud ──
+async function saveCIDConfig(){
+  const email=document.getElementById('cidEmail').value.trim();
+  const url=document.getElementById('cidUrl').value.trim();
+  const msg=document.getElementById('cidMsg');
+  if(!email){msg.textContent='Informe o e-mail.';return;}
+  await db.ref('erp/cidconfig').set({email,url:url||'https://idsecure.com.br'});
+  msg.textContent='✅ Credenciais salvas. A senha não é armazenada — será solicitada ao sincronizar.';
+}
+async function syncPonto(){
+  const msg=document.getElementById('cidMsg');
+  const email=document.getElementById('cidEmail').value.trim();
+  const senha=document.getElementById('cidSenha').value;
+  const baseUrl=(document.getElementById('cidUrl').value.trim()||'https://idsecure.com.br').replace(/\/$/,'');
+  if(!email||!senha){msg.textContent='Informe e-mail e senha para sincronizar.';return;}
+  msg.textContent='🔄 Conectando ao iDCloud...';
+  try {
+    const loginRes=await fetch(`${baseUrl}/login.fcgi`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:email,password:senha})});
+    if(!loginRes.ok){msg.textContent='❌ Erro ao conectar. Verifique a URL e credenciais.';return;}
+    const loginData=await loginRes.json();
+    const token=loginData.session||loginData.token;
+    if(!token){msg.textContent='❌ Não foi possível obter o token. Verifique as credenciais.';return;}
+    msg.textContent='✅ Conectado! Buscando registros...';
+    const pontoRes=await fetch(`${baseUrl}/get_afd_report.fcgi?session=${token}&last=200`);
+    if(!pontoRes.ok){msg.textContent='⚠️ Conectado mas não foi possível buscar registros. API CORS pode estar bloqueada.';return;}
+    const pontoData=await pontoRes.json();
+    const regs=pontoData.afd||pontoData.records||[];
+    const batch={};
+    regs.forEach(r=>{const rid=genId();batch[rid]={id:rid,...r,importadoEm:Date.now()};});
+    if(Object.keys(batch).length){ await db.ref('erp/ponto').update(batch); msg.textContent=`✅ ${Object.keys(batch).length} registros importados com sucesso!`; }
+    else { msg.textContent='ℹ️ Nenhum registro novo encontrado.'; }
+  } catch(e){
+    msg.textContent='⚠️ Erro de conexão (possível bloqueio CORS). Use a importação CSV como alternativa.';
+  }
+}
+async function importPontoCSV(input){
+  const file=input.files[0]; if(!file) return;
+  const text=await file.text();
+  const lines=text.trim().split('\n');
+  const headers=lines[0].split(';').map(h=>h.trim().replace(/"/g,''));
+  const batch={};
+  lines.slice(1).forEach(line=>{
+    if(!line.trim()) return;
+    const cols=line.split(';').map(c=>c.trim().replace(/"/g,''));
+    const row={};
+    headers.forEach((h,i)=>row[h]=cols[i]||'');
+    const rid=genId();
+    batch[rid]={id:rid,...row,importadoEm:Date.now()};
+  });
+  if(Object.keys(batch).length){
+    await db.ref('erp/ponto').update(batch);
+    document.getElementById('cidMsg').textContent=`✅ ${Object.keys(batch).length} registros importados do CSV!`;
+  }
+  input.value='';
+}
+function renderPonto(){
+  const el=document.getElementById('pontoList');
+  if(!el) return;
+  const arr=Object.values(pontoReg).sort((a,b)=>b.importadoEm-a.importadoEm).slice(0,100);
+  if(!arr.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--sub);font-size:0.82rem">Nenhum registro importado ainda.</div>';return;}
+  const sample=arr[0];
+  const keys=Object.keys(sample).filter(k=>!['id','importadoEm'].includes(k));
+  el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>
+    ${arr.map(r=>`<tr>${keys.map(k=>`<td>${r[k]||'—'}</td>`).join('')}</tr>`).join('')}
+  </tbody></table></div>`;
 }
 
 // ══════════════════════════════════════════════
