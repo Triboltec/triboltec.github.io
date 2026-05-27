@@ -12,6 +12,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pizzip@3.1.7/dist/pizzip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docxtemplater@3.47.0/build/docxtemplater.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--red:#8B2020;--dark:#1a1a1a;--green:#16a34a;--amber:#d97706;--blue:#1d4ed8;
@@ -2956,51 +2958,91 @@ function openPropView(pid){
     <button class="btn btn-ghost" onclick="closeOvl('ovlPropView')">Fechar</button>
     <button class="btn btn-ghost" onclick="closeOvl('ovlPropView');openPropModal('${pid}')">✏️ Editar</button>
     <button class="btn btn-ghost" onclick="setPropStatus('${pid}','aprovada')" style="background:#dcfce7;color:var(--green)">✅ Aprovar</button>
-    <button class="btn btn-red" onclick="gerarProposta('${pid}')">🖨️ Gerar PDF</button>`;
+    <button class="btn btn-red" onclick="gerarProposta('${pid}')">📄 Gerar Proposta</button>`;
   document.getElementById('ovlPropView').classList.add('v');
 }
 async function setPropStatus(pid,s){ await db.ref('erp/propostas/'+pid+'/status').set(s); closeOvl('ovlPropView'); }
 
-function gerarProposta(pid){
+async function gerarProposta(pid){
   const p=propostas[pid]; if(!p) return;
   const cli=clientes[p.clienteId]||{};
-  const dt=new Date(p.criadoEm); const dtFmt=dt.toLocaleDateString('pt-BR');
-  const venc=new Date(dt.getTime()+p.validade*864e5).toLocaleDateString('pt-BR');
-  const moHtml=(p.moRows||[]).map(r=>`<tr><td>${r.cargo}</td><td>${r.qtd} prof. × ${r.dias}d × 8h</td><td style="text-align:right">${fmtBRL(r.qtd*r.dias*8*custoH(CARGOS.find(c=>c.label===r.cargo)?.sal||0)*parseFloat(r.tipo))}</td></tr>`).join('');
-  const matHtml=(p.matRows||[]).map(r=>`<tr><td>${r.desc}${r.esp?' — '+r.esp:''}</td><td>${r.qtd} ${r.unid}</td><td style="text-align:right">${fmtBRL(r.qtd*r.vu)}</td></tr>`).join('');
-  const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Proposta ${p.numero}</title>
-  <style>body{font-family:Arial,sans-serif;color:#111;max-width:800px;margin:0 auto;padding:30px}
-  h1{color:#C8102E}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{padding:7px 9px;border:1px solid #ddd;font-size:13px}th{background:#f5f5f5}
-  .total-row{font-weight:bold;background:#f0f0f0}.venda-row{font-weight:bold;background:#111;color:#fff;font-size:15px}
-  .footer{margin-top:30px;font-size:11px;color:#666;border-top:1px solid #ddd;padding-top:10px}
-  @media print{button{display:none}}</style></head><body>
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
-    <div><h1>Triboltec Engenharia Industrial e Civil</h1><div style="font-size:12px;color:#555">CNPJ: 16.852.312/0001-63 · contato@triboltec.com.br</div></div>
-    <div style="text-align:right"><div style="font-size:20px;font-weight:bold;color:#C8102E">${p.numero}</div><div style="font-size:12px;color:#555">${dtFmt}</div></div>
-  </div>
-  <h2 style="border-bottom:2px solid #C8102E;padding-bottom:6px">PROPOSTA TÉCNICO-COMERCIAL</h2>
-  <table><tr><th>Cliente</th><td>${cli.nome||p.clienteNome}</td><th>CNPJ</th><td>${cli.cnpj||'—'}</td></tr>
-  <tr><th>Contato</th><td>${cli.contatoNome||'—'}</td><th>Telefone</th><td>${cli.telefone||'—'}</td></tr>
-  <tr><th>Serviço</th><td colspan="3">${p.desc}</td></tr>
-  ${p.local?`<tr><th>Local</th><td colspan="3">${p.local}</td></tr>`:''}
-  ${p.prazo?`<tr><th>Prazo</th><td colspan="3">${p.prazo}</td></tr>`:''}
-  <tr><th>Validade</th><td>Até ${venc}</td><th>Elaborado por</th><td>${p.criadoPorNome||'André Aguiar'}</td></tr></table>
-  ${moHtml?`<h3>Mão de Obra</h3><table><tr><th>Cargo</th><th>Quantidade</th><th style="text-align:right">Custo</th></tr>${moHtml}</table>`:''}
-  ${matHtml?`<h3>Materiais</h3><table><tr><th>Material</th><th>Quantidade</th><th style="text-align:right">Custo</th></tr>${matHtml}</table>`:''}
-  <h3>Resumo Financeiro</h3>
-  <table><tr><td>Mão de Obra</td><td style="text-align:right">${fmtBRL(p.moTotal)}</td></tr>
-  <tr><td>Materiais</td><td style="text-align:right">${fmtBRL(p.matTotal)}</td></tr>
-  <tr><td>Outros Custos (diárias, combustível, etc.)</td><td style="text-align:right">${fmtBRL(p.outTotal)}</td></tr>
-  <tr class="total-row"><td>CUSTO TOTAL</td><td style="text-align:right">${fmtBRL(p.custo)}</td></tr>
-  <tr class="venda-row"><td>💰 VALOR DA PROPOSTA</td><td style="text-align:right">${fmtBRL(p.oferta)}</td></tr></table>
-  <h3>Condições</h3>
-  <p>• Pagamento: A combinar conforme negociação.<br>• Os serviços acima descritos serão executados por profissionais qualificados da Triboltec Engenharia Industrial e Civil.<br>• Esta proposta é válida até ${venc}.</p>
-  ${p.obs?`<p><strong>Exclusões / Observações:</strong> ${p.obs}</p>`:''}
-  <div class="footer">Triboltec Engenharia Industrial e Civil · CNPJ 16.852.312/0001-63<br>Representante: André Aguiar · contato@a2ei.com.br</div>
-  <br><button onclick="window.print()" style="background:#C8102E;color:#fff;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-size:14px">🖨️ Imprimir / Salvar PDF</button>
-  </body></html>`);
-  w.document.close();
+  const dt=new Date(p.criadoEm);
+  const fmtDate=d=>d.toLocaleDateString('pt-BR');
+  const venc=new Date(dt.getTime()+(p.validade||30)*864e5);
+
+  // First contact for ATT field
+  const contatosList=cli.contatos?Object.values(cli.contatos):cli.contatoNome?[{nome:cli.contatoNome,cargo:cli.cargo||'',tel:cli.telefone||'',email:cli.email||''}]:[];
+  const primeiroContato=contatosList[0]||{};
+
+  // Scope lines from MO + description
+  const escopoLines=[];
+  if(p.desc) escopoLines.push(p.desc);
+  (p.moRows||[]).forEach(r=>{ if(r.cargo&&!escopoLines.includes(r.cargo)) escopoLines.push(`Fornecimento de ${r.cargo} (${r.qtd} prof. × ${r.dias} dias)`); });
+  (p.matRows||[]).forEach(r=>{ if(r.desc) escopoLines.push(`Fornecimento de material: ${r.desc}`); });
+
+  const tags={
+    NUMERO:       p.numero||'',
+    DATA:         fmtDate(dt),
+    VALIDADE:     String(p.validade||30),
+    DATA_INICIO:  '',
+    // Cliente
+    CLIENTE:          cli.nome||p.clienteNome||'',
+    CNPJ_CLIENTE:     cli.cnpj||'',
+    ENDERECO_CLIENTE: cli.cidade||'',
+    ATT:              primeiroContato.nome||'',
+    TELEFONE:         primeiroContato.tel||cli.telefone||'',
+    EMAIL:            primeiroContato.email||cli.email||'',
+    // Projeto
+    OBJETO:  p.desc||'',
+    LOCAL:   p.local||'',
+    PRAZO:   p.prazo||'',
+    CIDADE:  (cli.cidade||'').split('/')[0].trim()||'Campinas',
+    UF:      (cli.cidade||'').split('/')[1]?.trim()||'SP',
+    OBS:     p.obs||'',
+    VALOR_TOTAL: fmtBRL(p.oferta||0),
+    // Escopo (até 5 linhas)
+    SERVICO_1: escopoLines[0]||'', SERVICO_2: escopoLines[1]||'',
+    SERVICO_3: escopoLines[2]||'', SERVICO_4: escopoLines[3]||'',
+    SERVICO_5: escopoLines[4]||'',
+    // Pagamento eventos (deixa em branco para preencher manualmente)
+    EVENTO_1:'', EVENTO_2:'', EVENTO_3:'',
+    ITENS_INCLUSOS:'', ITEM_FORA_ESCOPO:'', OBRIGACOES_ESPECIFICAS:'', OUTROS_MATERIAIS:'',
+    DOC_REF_1:'', DOC_REF_2:'', DOC_REF_3:'',
+    // Triboltec fixo
+    CNPJ_TRIBOLTEC:     '16.852.312/0001-63',
+    ENDERECO_TRIBOLTEC: 'Rua José de Oliveira Coelho, 1730 — Jd. São Luiz — Hortolândia/SP',
+    RESPONSAVEL:           p.criadoPorNome||'André Aguiar',
+    RESPONSAVEL_TRIBOLTEC: p.criadoPorNome||'André Aguiar',
+    CARGO_TRIBOLTEC:    'Diretor',
+    CPF_TRIBOLTEC:      '',
+    // Cliente contrato
+    REPRESENTANTE_LEGAL: primeiroContato.nome||'',
+    CARGO_CLIENTE:       primeiroContato.cargo||'',
+    CPF_REPRESENTANTE:   '',
+    // Banco (preencher manualmente)
+    BANCO:'', AGENCIA:'', CONTA:'', CHAVE_PIX:'contato@triboltec.com.br',
+  };
+
+  try{
+    const resp=await fetch('/template_proposta.docx');
+    if(!resp.ok) throw new Error('Template não encontrado ('+resp.status+')');
+    const buf=await resp.arrayBuffer();
+    const zip=new PizZip(buf);
+    const doc=new window.Docxtemplater(zip,{
+      paragraphLoop:true, linebreaks:true,
+      nullGetter:()=>''  // blank for missing tags
+    });
+    doc.render(tags);
+    const out=doc.getZip().generate({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(out);
+    a.download=`Proposta_${p.numero||'Triboltec'}_${cli.nome||'Cliente'}.docx`.replace(/[/\\:*?"<>|]/g,'_');
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }catch(e){
+    alert('Erro ao gerar proposta: '+e.message+'\n\nVerifique se o template está no servidor.');
+    console.error(e);
+  }
 }
 
 // ══════════════════════════════════════════════
