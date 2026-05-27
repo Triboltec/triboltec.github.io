@@ -370,6 +370,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .edoc-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.06)}
 /* Exp period badge */
 .exp-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.6rem;font-weight:700;background:#ede9fe;color:#7c3aed}
+/* ── ALERT BADGE sidebar ── */
+.alert-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--red);animation:alertPulse 1.2s ease-in-out infinite;pointer-events:none}
+@keyframes alertPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:0.6}}
+.sni{position:relative}
+@media(min-width:768px){.alert-dot{top:50%;right:12px;transform:translateY(-50%)}}
+/* ── FECH TABLE ── */
+.fech-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:10px}
+.fech-table{width:100%;border-collapse:collapse;font-size:0.72rem;min-width:900px}
+.fech-table th{background:#1a1a1a;color:#fff;padding:6px 8px;text-align:center;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap}
+.fech-table th:nth-child(1),.fech-table th:nth-child(2){text-align:left}
+.fech-table td{padding:6px 8px;border-bottom:1px solid #f3f4f6;vertical-align:middle;text-align:center}
+.fech-table td:nth-child(2){text-align:left;font-weight:600}
+.fech-table tbody tr:hover{background:#f9fafb}
+.fech-table tfoot td{font-weight:800;background:#f8f9fa;border-top:2px solid #e5e7eb}
+.fech-table .atestado-cell{background:#fff8f8;color:var(--red);font-size:0.65rem;white-space:nowrap}
+.fech-table .ausencia-link{color:var(--blue);cursor:pointer;text-decoration:underline;font-size:0.65rem}
 
 /* ── NOTAS FISCAIS ── */
 .nf-card{background:var(--card);border-radius:11px;border:1px solid var(--border);padding:13px 14px;margin-bottom:7px;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;transition:box-shadow 0.12s}
@@ -1221,6 +1237,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <div class="fg"><label>E-mail</label><input type="email" id="fnEmail" placeholder="email@empresa.com"/></div>
         <div class="fg"><label>Admissão</label><input type="date" id="fnAdmissao"/></div>
       </div>
+      <div class="f2">
+        <div class="fg"><label>CEP</label><input type="text" id="fnCEP" placeholder="00000-000" maxlength="9"/></div>
+        <div class="fg"><label>Cidade / UF</label><input type="text" id="fnCidade" placeholder="São Paulo / SP"/></div>
+      </div>
+      <div class="fg"><label>Endereço (Rua, Nº, Bairro)</label><input type="text" id="fnEndereco" placeholder="Rua Exemplo, 123 — Bairro"/></div>
       <div class="fg" style="background:#f8f9fa;border-radius:8px;padding:10px">
         <label style="display:block;margin-bottom:8px">Período de Experiência</label>
         <div class="f2" style="gap:8px">
@@ -1332,17 +1353,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="fg"><label>E-mail</label><input type="email" id="cEmail" placeholder="candidato@email.com"/></div>
     </div>
     <div class="f2">
-      <div class="fg"><label>Etapa</label>
+      <div class="fg"><label>Etapa / Status</label>
         <select id="cEtapa">
           <option value="curriculo">📄 Currículo Recebido</option>
           <option value="entrevista">💬 Em Entrevista</option>
+          <option value="aguardando">⏳ Aguardando Proposta</option>
           <option value="proposta">📋 Proposta Enviada</option>
+          <option value="contraproposta">🔄 Contraproposta</option>
           <option value="admitido">✅ Admitido</option>
+          <option value="banco_dados">🗄️ Banco de Dados</option>
+          <option value="nao_compareceu">🚫 Não Compareceu</option>
+          <option value="sem_interesse">✋ Sem Interesse</option>
           <option value="rejeitado">❌ Não Aprovado</option>
         </select>
       </div>
       <div class="fg"><label>Data</label><input type="date" id="cData"/></div>
     </div>
+    <div class="f2">
+      <div class="fg"><label>Cidade / Obra</label><input type="text" id="cCidade" placeholder="Ex: Salvador / Obra Honda"/></div>
+      <div class="fg"><label>Recrutador</label><input type="text" id="cRecrutador" placeholder="Nome de quem recrutou"/></div>
+    </div>
+    <div class="fg"><label>Entrevistador</label><input type="text" id="cEntrevistador" placeholder="Nome de quem entrevistou"/></div>
     <div class="fg"><label>Link Currículo (Drive)</label><input type="url" id="cLink" placeholder="https://drive.google.com/..."/></div>
     <div class="fg"><label>Observações</label><textarea id="cObs" rows="2" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit;resize:vertical" placeholder="Anotações da entrevista, perfil..."></textarea></div>
     <div class="mact">
@@ -1408,13 +1439,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         </select>
       </div>
     </div>
-    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--sub);letter-spacing:0.5px;margin:12px 0 6px">Links dos Documentos</div>
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--sub);letter-spacing:0.5px;margin:12px 0 6px">📊 Planilha de Fechamento</div>
+    <div style="background:#f0f9ff;border:1.5px dashed #93c5fd;border-radius:9px;padding:12px;margin-bottom:10px">
+      <div style="font-size:0.76rem;color:#1e40af;margin-bottom:8px">Faça upload da planilha XLS preenchida. O sistema vai ler os dados automaticamente.</div>
+      <label class="btn btn-ghost" style="cursor:pointer;font-size:0.76rem">📎 Carregar Planilha XLS<input type="file" id="fechXLS" accept=".xls,.xlsx" style="display:none" onchange="parseFechXLS(this)"/></label>
+      <div id="fechXLSInfo" style="font-size:0.72rem;color:var(--sub);margin-top:6px"></div>
+    </div>
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--sub);letter-spacing:0.5px;margin:10px 0 6px">🔗 Links dos Documentos</div>
     <div class="f2">
-      <div class="fg"><label>Folha de Ponto</label><input type="url" id="fechPonto" placeholder="Link Drive"/></div>
-      <div class="fg"><label>Planilha de Horas</label><input type="url" id="fechHoras" placeholder="Link Drive"/></div>
+      <div class="fg"><label>Folha de Ponto (Drive)</label><input type="url" id="fechPonto" placeholder="Link Drive"/></div>
+      <div class="fg"><label>Planilha de Horas (Drive)</label><input type="url" id="fechHoras" placeholder="Link Drive"/></div>
     </div>
     <div class="f2">
-      <div class="fg"><label>Atestados / Afastamentos</label><input type="url" id="fechAtestados" placeholder="Link Drive"/></div>
+      <div class="fg"><label>Atestados (Drive)</label><input type="url" id="fechAtestados" placeholder="Link Drive"/></div>
       <div class="fg"><label>Outros Documentos</label><input type="url" id="fechOutros" placeholder="Link Drive"/></div>
     </div>
     <div class="fg"><label>Observações para a Contabilidade</label><textarea id="fechObs" rows="2" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit;resize:vertical" placeholder="Admissões, demissões, férias, observações especiais..."></textarea></div>
@@ -1831,7 +1868,7 @@ function buildNav(){
   let sHtml = '';
   accessible.forEach((m,i)=>{
     if(m.id==='admin' && i>0) sHtml += '<div class="sni-sep"></div>';
-    sHtml += `<div class="sni" id="sn-${m.id}" onclick="navTo('${m.id}')"><span class="sni-ico">${m.icon}</span><span class="sni-lbl">${m.label}</span></div>`;
+    sHtml += `<div class="sni" id="sn-${m.id}" onclick="navTo('${m.id}')"><span class="sni-ico">${m.icon}</span><span class="sni-lbl">${m.label}</span>${m.id==='rh'?'<span class="alert-dot" id="rhAlertDot" style="display:none"></span>':''}</div>`;
   });
   sHtml += '<div class="sni-sep"></div>';
   sHtml += `<a href="https://triboltec.com.br" target="_blank" class="sni" style="text-decoration:none" title="Ir ao site Triboltec"><span class="sni-ico">🌐</span><span class="sni-lbl">Ir ao Site</span></a>`;
@@ -1869,14 +1906,14 @@ function startListeners(){
   db.ref('erp/pedidos').on('value', snap=>{ pedidos=snap.val()||{}; renderPedidos(); });
   db.ref('erp/estoque').on('value', snap=>{ estoque=snap.val()||{}; renderEst(); });
   db.ref('erp/movimentos').on('value', snap=>{ movimentos=snap.val()||{}; });
-  db.ref('erp/funcionarios').on('value', snap=>{ funcionarios=snap.val()||{}; renderFuncionarios(); renderRHAlerts(); renderDash(); });
+  db.ref('erp/funcionarios').on('value', snap=>{ funcionarios=snap.val()||{}; renderFuncionarios(); renderRHAlerts(); updateRHBadge(); renderDash(); });
   db.ref('lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); });
   db.ref('erp/notas').on('value', snap=>{ notas=snap.val()||{}; renderNF(); });
   db.ref('erp/nfconfig').on('value', snap=>{ nfConfig=snap.val()||{}; renderNF(); });
   db.ref('erp/candidatos').on('value', snap=>{ candidatos=snap.val()||{}; renderKanban(); });
   db.ref('erp/ausencias').on('value', snap=>{ ausencias=snap.val()||{}; renderAusencias(); });
   db.ref('erp/fechamentos').on('value', snap=>{ fechamentos=snap.val()||{}; renderFechamentos(); });
-  db.ref('erp/empresa_docs').on('value', snap=>{ empresaDocs=snap.val()||{}; renderEmpresaDocs(); renderRHAlerts(); renderDash(); });
+  db.ref('erp/empresa_docs').on('value', snap=>{ empresaDocs=snap.val()||{}; renderEmpresaDocs(); renderRHAlerts(); updateRHBadge(); renderDash(); });
   db.ref('erp/ponto').on('value', snap=>{ pontoReg=snap.val()||{}; renderPonto(); });
   // Load ControlID config
   db.ref('erp/cidconfig').once('value', snap=>{ const c=snap.val()||{}; if(c.email)document.getElementById('cidEmail').value=c.email; if(c.url)document.getElementById('cidUrl').value=c.url; });
@@ -3209,8 +3246,37 @@ function getRHAlerts(){
   return alerts.sort((a,b)=>a.tipo==='venc'?-1:1);
 }
 
+// ── Alert beep (Web Audio API) ──
+let alertBeepDone = false;
+function playAlertBeep(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const beep=(freq,start,dur)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type='sine';o.frequency.value=freq;
+      g.gain.setValueAtTime(0.25,ctx.currentTime+start);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+start+dur);
+      o.start(ctx.currentTime+start);o.stop(ctx.currentTime+start+dur+0.05);
+    };
+    beep(880,0,0.15);beep(660,0.2,0.15);beep(440,0.4,0.2); // 3 descending tones
+  }catch(e){}
+}
+function updateRHBadge(){
+  const count=getRHAlerts().length;
+  const dot=document.getElementById('rhAlertDot');
+  if(dot) dot.style.display=count>0?'':'none';
+  if(count>0&&!alertBeepDone){
+    alertBeepDone=true;
+    // Play on first user interaction
+    const playOnce=()=>{ playAlertBeep(); document.removeEventListener('click',playOnce); };
+    document.addEventListener('click',playOnce,{once:true});
+  }
+}
+
 // ── Render RH Alerts panel ──
 function renderRHAlerts(){
+  updateRHBadge();
   const el=document.getElementById('rhAlertList');
   if(!el) return;
   const alerts=getRHAlerts();
@@ -3330,6 +3396,9 @@ function openFuncModal(fid){
     document.getElementById('fnTel').value=f.tel||'';
     document.getElementById('fnEmail').value=f.email||'';
     document.getElementById('fnAdmissao').value=f.admissao||'';
+    document.getElementById('fnCEP').value=f.cep||'';
+    document.getElementById('fnCidade').value=f.cidade||'';
+    document.getElementById('fnEndereco').value=f.endereco||'';
     document.getElementById('fnExpIni').value=f.expIni||'';
     document.getElementById('fnExpDias').value=f.expDias||'';
     document.getElementById('fnExpSegunda').checked=!!f.expSegunda;
@@ -3345,7 +3414,7 @@ function openFuncModal(fid){
       });
     }
   } else {
-    ['fnNome','fnCPF','fnTel','fnEmail','fnAdmissao','fnExpIni','fnFerIni','fnFerFim','fnFerAquis'].forEach(id=>document.getElementById(id).value='');
+    ['fnNome','fnCPF','fnTel','fnEmail','fnAdmissao','fnCEP','fnCidade','fnEndereco','fnExpIni','fnFerIni','fnFerFim','fnFerAquis'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('fnCargo').value='';
     document.getElementById('fnTipo').value='clt';
     document.getElementById('fnStatus').value='ativo';
@@ -3373,6 +3442,9 @@ async function saveFunc(){
     cpf:document.getElementById('fnCPF').value.trim(),
     tel:document.getElementById('fnTel').value.trim(),
     email:document.getElementById('fnEmail').value.trim(),
+    cep:document.getElementById('fnCEP').value.trim(),
+    cidade:document.getElementById('fnCidade').value.trim(),
+    endereco:document.getElementById('fnEndereco').value.trim(),
     admissao:document.getElementById('fnAdmissao').value||'',
     expIni:document.getElementById('fnExpIni').value||'',
     expDias:document.getElementById('fnExpDias').value||'',
@@ -3391,32 +3463,59 @@ async function saveFunc(){
 
 // ── Recrutamento Kanban ──
 const KAN_ETAPAS=[
-  {id:'curriculo',label:'📄 Currículo'},
-  {id:'entrevista',label:'💬 Entrevista'},
-  {id:'proposta',label:'📋 Proposta'},
-  {id:'admitido',label:'✅ Admitido'},
-  {id:'rejeitado',label:'❌ Não Aprovado'}
+  {id:'curriculo',label:'📄 Currículo',ativo:true},
+  {id:'entrevista',label:'💬 Entrevista',ativo:true},
+  {id:'aguardando',label:'⏳ Ag. Proposta',ativo:true},
+  {id:'proposta',label:'📋 Proposta',ativo:true},
+  {id:'contraproposta',label:'🔄 Contraproposta',ativo:true},
+  {id:'admitido',label:'✅ Admitido',ativo:false},
+  {id:'banco_dados',label:'🗄️ Banco Dados',ativo:false},
+  {id:'nao_compareceu',label:'🚫 Não Compareceu',ativo:false},
+  {id:'sem_interesse',label:'✋ Sem Interesse',ativo:false},
+  {id:'rejeitado',label:'❌ Não Aprovado',ativo:false}
 ];
+let kanCidadeFilter='';
 function renderKanban(){
   const el=document.getElementById('kanbanBoard');
   if(!el) return;
-  const cands=Object.values(candidatos);
-  el.innerHTML=KAN_ETAPAS.map(et=>{
+  const allCands=Object.values(candidatos);
+  // Build city filter bar
+  const cidades=[...new Set(allCands.map(c=>c.cidade||'').filter(Boolean))].sort();
+  const filterBar=cidades.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+    <span style="font-size:0.7rem;font-weight:700;color:var(--sub)">Cidade/Obra:</span>
+    <span class="ftab ${!kanCidadeFilter?'active':''}" onclick="setKanCidade('')" style="cursor:pointer">Todas</span>
+    ${cidades.map(c=>`<span class="ftab ${kanCidadeFilter===c?'active':''}" onclick="setKanCidade('${c.replace(/'/g,"&#39;")}')" style="cursor:pointer">${c}</span>`).join('')}
+  </div>`:'';
+  const cands=kanCidadeFilter?allCands.filter(c=>(c.cidade||'')==kanCidadeFilter):allCands;
+  const ativos=KAN_ETAPAS.filter(e=>e.ativo);
+  const finais=KAN_ETAPAS.filter(e=>!e.ativo);
+  el.parentElement.querySelector('#kanFilterBar')?.remove();
+  if(filterBar){ const fb=document.createElement('div');fb.id='kanFilterBar';fb.innerHTML=filterBar;el.parentElement.insertBefore(fb,el); }
+  el.innerHTML=ativos.map(et=>{
     const cards=cands.filter(c=>c.etapa===et.id).sort((a,b)=>b.criadoEm-a.criadoEm);
-    const moves=KAN_ETAPAS.filter(e=>e.id!==et.id);
     return`<div class="kan-col">
       <div class="kan-col-head">${et.label} <span class="kan-cnt">${cards.length}</span></div>
       ${cards.map(c=>`<div class="kan-card" onclick="openCandModal('${c.id}')">
         <div class="kan-card-name">${c.nome||'—'}</div>
         <div class="kan-card-cargo">${c.cargo||'—'}</div>
-        ${c.data?`<div class="kan-card-date">${fmtD(c.data)}</div>`:''}
+        ${c.cidade?`<div class="kan-card-date">📍 ${c.cidade}</div>`:''}
+        ${c.recrutador?`<div class="kan-card-date">👤 ${c.recrutador}</div>`:''}
         <div class="kan-moves">
-          ${moves.filter(m=>['curriculo','entrevista','proposta','admitido','rejeitado'].includes(m.id)).slice(0,3).map(m=>`<button class="kan-mv" onclick="event.stopPropagation();moveCand('${c.id}','${m.id}')">${m.label.split(' ')[0]}</button>`).join('')}
+          ${ativos.filter(m=>m.id!==et.id).slice(0,2).map(m=>`<button class="kan-mv" onclick="event.stopPropagation();moveCand('${c.id}','${m.id}')">${m.label.split(' ')[0]}</button>`).join('')}
+          ${finais.slice(0,2).map(m=>`<button class="kan-mv" onclick="event.stopPropagation();moveCand('${c.id}','${m.id}')">${m.label.split(' ')[0]}</button>`).join('')}
         </div>
       </div>`).join('')}
     </div>`;
-  }).join('');
+  }).join('')+`<div class="kan-col" style="background:#f3f4f6;opacity:0.85">
+    <div class="kan-col-head" style="color:var(--sub)">Encerrados <span class="kan-cnt">${finais.reduce((s,e)=>s+cands.filter(c=>c.etapa===e.id).length,0)}</span></div>
+    ${finais.flatMap(et=>cands.filter(c=>c.etapa===et.id).map(c=>`<div class="kan-card" onclick="openCandModal('${c.id}')" style="opacity:0.7">
+      <div class="kan-card-name">${c.nome||'—'}</div>
+      <div class="kan-card-cargo">${KAN_ETAPAS.find(e=>e.id===c.etapa)?.label||c.etapa}</div>
+      ${c.cidade?`<div class="kan-card-date">📍 ${c.cidade}</div>`:''}
+    </div>`)).join('')}
+  </div>`;
 }
+function setKanCidade(c){kanCidadeFilter=c;renderKanban();}
 function openCandModal(cid){
   const c=cid?candidatos[cid]:null;
   document.getElementById('editCandId').value=cid||'';
@@ -3428,10 +3527,13 @@ function openCandModal(cid){
     document.getElementById('cEmail').value=c.email||'';
     document.getElementById('cEtapa').value=c.etapa||'curriculo';
     document.getElementById('cData').value=c.data||'';
+    document.getElementById('cCidade').value=c.cidade||'';
+    document.getElementById('cRecrutador').value=c.recrutador||'';
+    document.getElementById('cEntrevistador').value=c.entrevistador||'';
     document.getElementById('cLink').value=c.link||'';
     document.getElementById('cObs').value=c.obs||'';
   } else {
-    ['cNome','cCargo','cTel','cEmail','cLink','cObs'].forEach(id=>document.getElementById(id).value='');
+    ['cNome','cCargo','cTel','cEmail','cCidade','cRecrutador','cEntrevistador','cLink','cObs'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('cEtapa').value='curriculo';
     document.getElementById('cData').value=todayStr();
   }
@@ -3441,7 +3543,7 @@ async function saveCand(){
   const nome=(document.getElementById('cNome').value||'').trim();
   if(!nome){alert('Informe o nome do candidato.');return;}
   const cid=document.getElementById('editCandId').value||genId();
-  await db.ref('erp/candidatos/'+cid).set({id:cid,nome,cargo:document.getElementById('cCargo').value.trim(),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),etapa:document.getElementById('cEtapa').value,data:document.getElementById('cData').value||'',link:document.getElementById('cLink').value.trim(),obs:document.getElementById('cObs').value.trim(),criadoEm:candidatos[cid]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
+  await db.ref('erp/candidatos/'+cid).set({id:cid,nome,cargo:document.getElementById('cCargo').value.trim(),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),etapa:document.getElementById('cEtapa').value,data:document.getElementById('cData').value||'',cidade:document.getElementById('cCidade').value.trim(),recrutador:document.getElementById('cRecrutador').value.trim(),entrevistador:document.getElementById('cEntrevistador').value.trim(),link:document.getElementById('cLink').value.trim(),obs:document.getElementById('cObs').value.trim(),criadoEm:candidatos[cid]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
   closeOvl('ovlCand');
 }
 async function moveCand(cid,etapa){
@@ -3511,21 +3613,85 @@ function renderFechamentos(){
   const stLabel={aberto:'Em aberto',aguardando:'Aguard. Contab.',concluido:'Concluído ✅'};
   const stColor={aberto:'var(--amber)',aguardando:'var(--blue)',concluido:'var(--green)'};
   el.innerHTML=arr.map(f=>`
-    <div class="fech-card" onclick="openFechModal('${f.id}')">
-      <div>
-        <div style="font-size:0.92rem;font-weight:800;color:var(--dark)">${f.mes?fmtMesRef(f.mes):'—'}</div>
-        ${f.obs?`<div style="font-size:0.73rem;color:var(--sub);margin-top:2px">${f.obs.slice(0,60)}${f.obs.length>60?'…':''}</div>`:''}
-        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-          ${f.ponto?`<a href="${f.ponto}" target="_blank" onclick="event.stopPropagation()" style="font-size:0.68rem;color:var(--blue)">⏱️ Ponto</a>`:''}
-          ${f.horas?`<a href="${f.horas}" target="_blank" onclick="event.stopPropagation()" style="font-size:0.68rem;color:var(--blue)">📊 Horas</a>`:''}
-          ${f.atestados?`<a href="${f.atestados}" target="_blank" onclick="event.stopPropagation()" style="font-size:0.68rem;color:var(--blue)">📋 Atestados</a>`:''}
-          ${f.outros?`<a href="${f.outros}" target="_blank" onclick="event.stopPropagation()" style="font-size:0.68rem;color:var(--blue)">📎 Outros</a>`:''}
+    <div style="background:var(--card);border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:0.98rem;font-weight:800;color:var(--dark)">${f.mes?fmtMesRef(f.mes):'—'}</div>
+          <span style="color:${stColor[f.status]||'var(--sub)'};font-size:0.7rem;font-weight:700">${stLabel[f.status]||f.status}</span>
+          ${f.planilha?`<span style="font-size:0.66rem;color:var(--green);margin-left:8px">✅ Planilha carregada (${(f.planilha.rows||[]).length} func.)</span>`:'<span style="font-size:0.66rem;color:var(--amber);margin-left:8px">⚠️ Sem planilha</span>'}
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          ${f.ponto?`<a href="${f.ponto}" target="_blank" style="font-size:0.7rem;color:var(--blue)">⏱️ Ponto</a>`:''}
+          ${f.horas?`<a href="${f.horas}" target="_blank" style="font-size:0.7rem;color:var(--blue)">📊 Horas</a>`:''}
+          ${f.atestados?`<a href="${f.atestados}" target="_blank" style="font-size:0.7rem;color:var(--blue)">📋 Atestados</a>`:''}
+          <button class="btn btn-ghost" style="font-size:0.72rem;padding:5px 10px" onclick="openFechModal('${f.id}')">✏️ Editar</button>
+          ${f.planilha?`<button class="btn btn-red" style="font-size:0.72rem;padding:5px 10px" onclick="gerarFechamento('${f.id}')">📤 Gerar para Contabilidade</button>`:''}
         </div>
       </div>
-      <span style="color:${stColor[f.status]||'var(--sub)'};font-size:0.72rem;font-weight:700;white-space:nowrap">${stLabel[f.status]||f.status}</span>
+      ${f.planilha?renderFechTable(f):''}
+      ${f.obs?`<div style="font-size:0.73rem;color:var(--sub);margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">${f.obs}</div>`:''}
     </div>`).join('');
 }
 function fmtMesRef(m){ if(!m) return '—'; const [y,mo]=m.split('-'); const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']; return `${meses[parseInt(mo)-1]||mo}/${y}`; }
+
+function renderFechTable(f){
+  const p=f.planilha; if(!p||!p.rows||!p.rows.length) return '';
+  // Get ausências for this month
+  const ausDoMes=Object.values(ausencias).filter(a=>a.ini&&a.ini.startsWith(f.mes||'9999'));
+  // Identify key columns (hide empty ones)
+  const skipCols=[''];
+  const visibleCols=p.cols.filter(c=>c&&!skipCols.includes(c)&&p.rows.some(r=>r[c]&&r[c]!==''));
+  const colsToShow=visibleCols.slice(0,10); // max 10 cols for readability
+  return`<div class="fech-table-wrap">
+    <table class="fech-table">
+      <thead><tr>${colsToShow.map(c=>`<th>${c}</th>`).join('')}<th>Atestados</th></tr></thead>
+      <tbody>${p.rows.map(row=>{
+        const nomeRow=(row['NOME']||'').toUpperCase();
+        const ausFunc=ausDoMes.filter(a=>(a.funcNome||'').toUpperCase().includes(nomeRow.split(' ')[0])||nomeRow.includes((a.funcNome||'').toUpperCase().split(' ')[0]));
+        const atCell=ausFunc.length?`<span class="atestado-cell">📋 ${ausFunc.map(a=>a.tipo+(a.link?` <a href="${a.link}" target="_blank" style="color:var(--blue)">ver</a>`:'')).join(', ')}</span>`:'—';
+        return`<tr>${colsToShow.map(c=>`<td>${row[c]||'—'}</td>`).join('')}<td>${atCell}</td></tr>`;
+      }).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function gerarFechamento(fid){
+  const f=fechamentos[fid]; if(!f) return;
+  const p=f.planilha;
+  const ausDoMes=Object.values(ausencias).filter(a=>a.ini&&f.mes&&a.ini.startsWith(f.mes));
+  const funcAtivos=Object.values(funcionarios).filter(x=>x.status==='ativo');
+  const win=window.open('','_blank');
+  const colsToShow=p?.cols?.filter(c=>c&&p.rows.some(r=>r[c]&&r[c]!==''))||[];
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fechamento ${fmtMesRef(f.mes)}</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:10px;margin:20px;color:#111}
+    h1{font-size:14px;margin:0 0 2px}h2{font-size:11px;color:#555;margin:0 0 12px;font-weight:normal}
+    .section{margin-bottom:18px}
+    .section-title{font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;background:#1a1a1a;color:#fff;padding:5px 8px;margin-bottom:0}
+    table{width:100%;border-collapse:collapse;font-size:9px}
+    th{background:#f3f4f6;padding:4px 6px;text-align:left;border:1px solid #ddd;font-weight:bold;text-transform:uppercase;font-size:8px}
+    td{padding:4px 6px;border:1px solid #eee;vertical-align:top}
+    tr:nth-child(even){background:#f9f9f9}
+    .red{color:#c00;font-weight:bold}.green{color:#16a34a;font-weight:bold}
+    .footer{margin-top:20px;border-top:1px solid #ddd;padding-top:8px;font-size:9px;color:#888;display:flex;justify-content:space-between}
+    @media print{body{margin:10px}.footer{position:fixed;bottom:0;left:0;right:0}}
+  </style></head><body>
+  <h1>${p?.empresa||'TRIBOLTEC ENGENHARIA INDUSTRIAL E CIVIL'}</h1>
+  <h2>${p?.periodo||('FECHAMENTO FOLHA '+fmtMesRef(f.mes))} &nbsp;|&nbsp; Gerado em ${new Date().toLocaleDateString('pt-BR')}</h2>
+  ${p?.rows?.length?`<div class="section"><div class="section-title">Planilha de Fechamento</div>
+  <table><thead><tr>${colsToShow.slice(0,12).map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+  <tbody>${p.rows.map(r=>`<tr>${colsToShow.slice(0,12).map(c=>`<td>${r[c]||''}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}
+  ${ausDoMes.length?`<div class="section"><div class="section-title">Ausências / Atestados do Período</div>
+  <table><thead><tr><th>Funcionário</th><th>Tipo</th><th>Início</th><th>Retorno</th><th>Observação</th></tr></thead>
+  <tbody>${ausDoMes.map(a=>`<tr><td>${a.funcNome||'—'}</td><td>${a.tipo}</td><td>${fmtD(a.ini)}</td><td>${fmtD(a.retorno)||'—'}</td><td>${a.obs||''} ${a.link?`<a href="${a.link}" target="_blank">[doc]</a>`:''}</td></tr>`).join('')}</tbody></table></div>`:''}
+  <div class="section"><div class="section-title">Equipe Ativa (${funcAtivos.length} funcionários)</div>
+  <table><thead><tr><th>Nome</th><th>Cargo</th><th>Tipo</th><th>Admissão</th></tr></thead>
+  <tbody>${funcAtivos.map(x=>`<tr><td>${x.nome}</td><td>${x.cargo||'—'}</td><td>${(x.tipo||'CLT').toUpperCase()}</td><td>${fmtD(x.admissao)||'—'}</td></tr>`).join('')}</tbody></table></div>
+  ${f.obs?`<div style="background:#fef3c7;padding:8px;border-radius:4px;margin-top:8px"><strong>Obs:</strong> ${f.obs}</div>`:''}
+  <div class="footer"><span>Documento gerado pelo sistema ERP Triboltec</span><span>erp.triboltec.com.br</span></div>
+  <script>window.onload=()=>window.print()<\/script></body></html>`);
+  win.document.close();
+}
 function openFechModal(fid){
   const f=fid?fechamentos[fid]:null;
   document.getElementById('editFechId').value=fid||'';
@@ -3545,11 +3711,40 @@ function openFechModal(fid){
   }
   document.getElementById('ovlFech').classList.add('v');
 }
+let pendingFechPlanilha = null; // holds parsed XLS data while modal is open
+
+async function parseFechXLS(input){
+  const file=input.files[0]; if(!file) return;
+  const info=document.getElementById('fechXLSInfo');
+  info.textContent='⏳ Lendo planilha...';
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    // Find header row (contains COD, NOME)
+    let hIdx=raw.findIndex(r=>r.some(c=>String(c).toUpperCase().includes('NOME')&&r.some(d=>String(d).toUpperCase().includes('COD'))));
+    if(hIdx<0) hIdx=3; // fallback
+    const empresa=String(raw[0]?.[0]||'').trim();
+    const periodo=String(raw[1]?.[0]||'').trim();
+    const cols=raw[hIdx].map(c=>String(c).trim());
+    const rows=raw.slice(hIdx+1).filter(r=>r.some(c=>String(c).trim()!=='')).map(r=>{
+      const obj={};cols.forEach((c,i)=>obj[c]=String(r[i]||'').trim());return obj;
+    }).filter(r=>r['NOME']||r[cols[1]]); // filter non-empty name rows
+    pendingFechPlanilha={empresa,periodo,cols,rows,importadoEm:Date.now()};
+    info.textContent=`✅ ${rows.length} funcionários carregados — ${periodo}`;
+  }catch(e){info.textContent='❌ Erro ao ler planilha: '+e.message; pendingFechPlanilha=null;}
+}
+
 async function saveFech(){
   const mes=document.getElementById('fechMes').value;
   if(!mes){alert('Informe o mês de referência.');return;}
   const fid=document.getElementById('editFechId').value||genId();
-  await db.ref('erp/fechamentos/'+fid).set({id:fid,mes,status:document.getElementById('fechStatus').value,ponto:document.getElementById('fechPonto').value.trim(),horas:document.getElementById('fechHoras').value.trim(),atestados:document.getElementById('fechAtestados').value.trim(),outros:document.getElementById('fechOutros').value.trim(),obs:document.getElementById('fechObs').value.trim(),criadoEm:fechamentos[fid]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
+  const obj={id:fid,mes,status:document.getElementById('fechStatus').value,ponto:document.getElementById('fechPonto').value.trim(),horas:document.getElementById('fechHoras').value.trim(),atestados:document.getElementById('fechAtestados').value.trim(),outros:document.getElementById('fechOutros').value.trim(),obs:document.getElementById('fechObs').value.trim(),criadoEm:fechamentos[fid]?.criadoEm||Date.now(),atualizadoPor:curUser.uid};
+  if(pendingFechPlanilha) obj.planilha=pendingFechPlanilha;
+  else if(fechamentos[fid]?.planilha) obj.planilha=fechamentos[fid].planilha; // preserve existing
+  await db.ref('erp/fechamentos/'+fid).set(obj);
+  pendingFechPlanilha=null;
   closeOvl('ovlFech');
 }
 
