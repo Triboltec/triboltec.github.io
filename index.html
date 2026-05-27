@@ -1979,7 +1979,7 @@ function logout(){
   sessionStorage.removeItem('a2erp_uid');
   curUser=null; clientes={}; interacoes={};
   propostas={}; projetos={}; fornecedores={}; pedidos={}; estoque={}; movimentos={}; funcionarios={}; lancamentos={}; notas={}; nfConfig={};
-  if(db){ ['erp/clientes','erp/interacoes','erp/usuarios','erp/propostas','erp/projetos','erp/fornecedores','erp/pedidos','erp/estoque','erp/movimentos','erp/funcionarios','lancamentos','erp/notas','erp/nfconfig'].forEach(p=>db.ref(p).off()); }
+  if(db){ ['erp/clientes','erp/interacoes','erp/usuarios','erp/propostas','erp/projetos','erp/fornecedores','erp/pedidos','erp/estoque','erp/movimentos','erp/funcionarios','erp/lancamentos','erp/notas','erp/nfconfig'].forEach(p=>db.ref(p).off()); }
   document.getElementById('app').classList.remove('v');
   document.getElementById('loginScreen').classList.remove('h');
   renderUserGrid();
@@ -2045,7 +2045,7 @@ function startListeners(){
   db.ref('erp/estoque').on('value', snap=>{ estoque=snap.val()||{}; renderEst(); });
   db.ref('erp/movimentos').on('value', snap=>{ movimentos=snap.val()||{}; });
   db.ref('erp/funcionarios').on('value', snap=>{ funcionarios=snap.val()||{}; renderFuncionarios(); renderRHAlerts(); updateRHBadge(); renderDash(); });
-  db.ref('lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); renderFin(); });
+  db.ref('erp/lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); renderFin(); });
   db.ref('erp/notas').on('value', snap=>{ notas=snap.val()||{}; renderNF(); });
   db.ref('erp/nfconfig').on('value', snap=>{ nfConfig=snap.val()||{}; renderNF(); });
   db.ref('erp/candidatos').on('value', snap=>{ candidatos=snap.val()||{}; renderKanban(); });
@@ -2643,7 +2643,7 @@ async function confirmarRestore(){
       ['erp/propostas',d.propostas],['erp/projetos',d.projetos],
       ['erp/fornecedores',d.fornecedores],['erp/pedidos',d.pedidos],
       ['erp/estoque',d.estoque],['erp/movimentos',d.movimentos],
-      ['erp/funcionarios',d.funcionarios],['lancamentos',d.lancamentos],
+      ['erp/funcionarios',d.funcionarios],['erp/lancamentos',d.lancamentos],
       ['erp/notas',d.notas]
     ];
     for(const [path,val] of ops){ if(val) await db.ref(path).set(val); }
@@ -3563,7 +3563,7 @@ async function saveLanc(){
     uid:curUser?.uid||''
   };
   try{
-    await db.ref('lancamentos/'+lid).set(obj);
+    await db.ref('erp/lancamentos/'+lid).set(obj);
     closeOvl('ovlLanc');
   }catch(e){ alert('Erro ao salvar: '+e.message); }
 }
@@ -3571,12 +3571,12 @@ async function saveLanc(){
 async function markLancPago(lid){
   const l=lancamentos[lid]; if(!l) return;
   const novoSt=l.tipo==='receita'?'pago':'pago';
-  await db.ref('lancamentos/'+lid+'/status').set(novoSt);
+  await db.ref('erp/lancamentos/'+lid+'/status').set(novoSt);
 }
 
 async function delLanc(lid){
   if(!confirm('Excluir este lançamento?')) return;
-  await db.ref('lancamentos/'+lid).remove();
+  await db.ref('erp/lancamentos/'+lid).remove();
 }
 
 // ── CEP lookup (ViaCEP) ──
