@@ -319,6 +319,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .nr-venc{background:#fee2e2;color:var(--red)}
 .nr-pend{background:#fef3c7;color:var(--amber)}
 
+/* ── CRM CONTATOS ── */
+.cnt-item{display:flex;gap:8px;align-items:flex-start;background:var(--bg);border-radius:8px;padding:10px;margin-bottom:6px}
+.cnt-fields{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cnt-fields input{padding:6px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit;background:#fff;width:100%}
+.cnt-del{background:none;border:none;cursor:pointer;color:var(--sub);font-size:1rem;padding:4px;margin-top:2px;border-radius:4px;flex-shrink:0}
+.cnt-del:hover{background:#fee2e2;color:var(--red)}
+.panel-contact{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.panel-contact:last-child{border-bottom:none}
+.panel-contact-av{width:32px;height:32px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;flex-shrink:0}
+.panel-contact-info{flex:1;min-width:0}
+.panel-contact-name{font-size:0.83rem;font-weight:700;color:var(--dark)}
+.panel-contact-meta{font-size:0.69rem;color:var(--sub);margin-top:1px}
+.panel-contact-acts{display:flex;gap:4px}
+.cnt-act-btn{border:none;background:var(--bg);cursor:pointer;font-size:0.8rem;padding:4px 7px;border-radius:6px;color:var(--dark)}
+
 /* ── FINANCEIRO ── */
 .fin-tabs{display:flex;gap:2px;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:14px}
 .fin-tab{flex:1;padding:8px 6px;border-radius:7px;border:none;background:transparent;color:var(--sub);font-size:0.76rem;font-weight:600;cursor:pointer;transition:all 0.15s;text-align:center;font-family:inherit}
@@ -859,7 +874,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <input type="hidden" id="editClientId"/>
     <div class="f2">
       <div class="fg"><label>Nome da Empresa *</label><input type="text" id="cNome" placeholder="Honda do Brasil"/></div>
-      <div class="fg"><label>CNPJ</label><input type="text" id="cCNPJ" placeholder="00.000.000/0001-00"/></div>
+      <div class="fg"><label>CNPJ <span id="cnpjMsg" style="font-weight:400;font-size:0.65rem;color:var(--sub)"></span></label><input type="text" id="cCNPJ" placeholder="00.000.000/0001-00" maxlength="18" oninput="fmtCNPJ(this)" onblur="buscaCNPJ(this)"/></div>
     </div>
     <div class="f2">
       <div class="fg"><label>Segmento</label>
@@ -877,10 +892,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="fg"><label>Telefone</label><input type="text" id="cTel" placeholder="(19) 00000-0000"/></div>
       <div class="fg"><label>E-mail</label><input type="text" id="cEmail" placeholder="contato@empresa.com"/></div>
     </div>
-    <div class="f2">
-      <div class="fg"><label>Contato (nome)</label><input type="text" id="cContato" placeholder="Nome do responsável"/></div>
-      <div class="fg"><label>Cargo</label><input type="text" id="cCargo" placeholder="Gerente de Manutenção"/></div>
+    <!-- Multi-contatos -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:12px 0 6px">
+      <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--sub)">👥 Contatos da Empresa</div>
+      <button type="button" onclick="addContato()" style="border:none;background:var(--red);color:#fff;border-radius:6px;padding:3px 10px;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit">+ Add</button>
     </div>
+    <div id="contatoList"></div>
     <div class="f2">
       <div class="fg"><label>Estágio</label>
         <select id="cEstagio">
@@ -1823,6 +1840,7 @@ const STAGES = [
 // ══════════════════════════════════════════════
 let db = null, curUser = null, curMod = 'dash';
 let usuarios = {}, clientes = {}, interacoes = {};
+let curContatos = []; // contacts being edited in client modal
 let propostas = {}, projetos = {}, fornecedores = {}, pedidos = {}, estoque = {}, movimentos = {}, funcionarios = {};
 let lancamentos = {};
 let notas = {}, nfConfig = {};
@@ -2279,12 +2297,29 @@ function renderPanel(cid){
   document.getElementById('cpSeg').textContent=[(c.segmento||''),(c.cidade||''),(c.prioridade||'')].filter(Boolean).join(' · ');
   document.getElementById('cpInfo').innerHTML=`
     <div class="iitem"><label>CNPJ</label><span>${c.cnpj||'—'}</span></div>
-    <div class="iitem"><label>Contato</label><span>${[c.contatoNome,c.cargo?'('+c.cargo+')':null].filter(Boolean).join(' ')||'—'}</span></div>
-    <div class="iitem"><label>Telefone</label>${c.telefone?`<a href="tel:${c.telefone}">${c.telefone}</a>`:'<span>—</span>'}</div>
-    <div class="iitem"><label>E-mail</label>${c.email?`<a href="mailto:${c.email}">${c.email}</a>`:'<span>—</span>'}</div>
     <div class="iitem"><label>Responsável</label><span>${c.responsavelNome||'—'}</span></div>
+    <div class="iitem"><label>Cidade / UF</label><span>${c.cidade||'—'}</span></div>
     <div class="iitem"><label>Distância</label><span>${c.distancia||'—'}</span></div>
-    ${c.obs?`<div class="iitem" style="grid-column:1/-1"><label>Observações</label><span>${c.obs}</span></div>`:''}`;
+    ${c.obs?`<div class="iitem" style="grid-column:1/-1"><label>Observações</label><span>${c.obs}</span></div>`:''}
+    <div style="grid-column:1/-1;margin-top:8px">
+      <div style="font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--sub);margin-bottom:6px">👥 Contatos</div>
+      ${(()=>{
+        const cts=c.contatos?Object.values(c.contatos):c.contatoNome?[{nome:c.contatoNome,cargo:c.cargo||'',tel:c.telefone||'',email:c.email||''}]:[];
+        if(!cts.length) return '<div style="font-size:0.75rem;color:var(--sub)">Nenhum contato cadastrado.</div>';
+        return cts.map(ct=>`<div class="panel-contact">
+          <div class="panel-contact-av">${(ct.nome||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()}</div>
+          <div class="panel-contact-info">
+            <div class="panel-contact-name">${ct.nome}${ct.cargo?` <span style="font-weight:400;color:var(--sub);font-size:0.72rem">· ${ct.cargo}</span>`:''}</div>
+            <div class="panel-contact-meta">${[ct.tel,ct.email].filter(Boolean).join(' · ')||'—'}</div>
+          </div>
+          <div class="panel-contact-acts">
+            ${ct.tel?`<button class="cnt-act-btn" onclick="window.open('tel:${ct.tel}')" title="Ligar">📞</button>
+             <button class="cnt-act-btn" onclick="window.open('https://wa.me/55${(ct.tel||'').replace(/\D/g,'')}')" title="WhatsApp">💬</button>`:''}
+            ${ct.email?`<button class="cnt-act-btn" onclick="window.open('mailto:${ct.email}')" title="E-mail">✉️</button>`:''}
+          </div>
+        </div>`).join('');
+      })()}
+    </div>`;
 
   document.getElementById('cpStages').innerHTML=STAGES.map(s=>
     `<button class="stbtn ${s.cls} ${c.estagio===s.id?'cur':''}" onclick="setStage('${cid}','${s.id}')">${s.label}</button>`
@@ -2342,6 +2377,8 @@ async function saveInter(){
 function openClientModal(cid){
   document.getElementById('editClientId').value=cid||'';
   document.getElementById('clientModalTitle').textContent=cid?'Editar Empresa':'Nova Empresa';
+  document.getElementById('cnpjMsg').textContent='';
+  _cnpjLast='';
   if(cid){
     const c=clientes[cid];
     document.getElementById('cNome').value=c.nome||'';
@@ -2350,22 +2387,48 @@ function openClientModal(cid){
     document.getElementById('cCidade').value=c.cidade||'';
     document.getElementById('cTel').value=c.telefone||'';
     document.getElementById('cEmail').value=c.email||'';
-    document.getElementById('cContato').value=c.contatoNome||'';
-    document.getElementById('cCargo').value=c.cargo||'';
     document.getElementById('cEstagio').value=c.estagio||'prospect';
     document.getElementById('cResp').value=c.responsavelId||'';
     document.getElementById('cPrio').value=c.prioridade||'P1';
     document.getElementById('cDist').value=c.distancia||'';
     document.getElementById('cObs').value=c.obs||'';
+    // Load contacts — migrate legacy single-contact if needed
+    if(c.contatos && Object.keys(c.contatos).length){
+      curContatos=Object.values(c.contatos);
+    } else if(c.contatoNome) {
+      curContatos=[{id:genId(),nome:c.contatoNome,cargo:c.cargo||'',tel:c.telefone||'',email:c.email||''}];
+    } else { curContatos=[]; }
   } else {
-    ['cNome','cCNPJ','cCidade','cTel','cEmail','cContato','cCargo','cDist','cObs'].forEach(id=>document.getElementById(id).value='');
+    ['cNome','cCNPJ','cCidade','cTel','cEmail','cDist','cObs'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('cSeg').value='';
     document.getElementById('cEstagio').value='prospect';
     document.getElementById('cPrio').value='P1';
+    curContatos=[];
   }
+  renderContatoList();
   fillRespSelect();
   document.getElementById('ovlClient').classList.add('v');
 }
+
+function renderContatoList(){
+  const el=document.getElementById('contatoList'); if(!el) return;
+  if(!curContatos.length){
+    el.innerHTML='<div style="font-size:0.75rem;color:var(--sub);padding:8px 0">Nenhum contato adicionado. Clique em "+ Add".</div>';
+    return;
+  }
+  el.innerHTML=curContatos.map((ct,i)=>`
+    <div class="cnt-item">
+      <div class="cnt-fields">
+        <input placeholder="Nome *" value="${ct.nome||''}" oninput="curContatos[${i}].nome=this.value"/>
+        <input placeholder="Cargo" value="${ct.cargo||''}" oninput="curContatos[${i}].cargo=this.value"/>
+        <input placeholder="Telefone / WhatsApp" value="${ct.tel||''}" oninput="curContatos[${i}].tel=this.value"/>
+        <input placeholder="E-mail" type="email" value="${ct.email||''}" oninput="curContatos[${i}].email=this.value"/>
+      </div>
+      <button class="cnt-del" onclick="removeContato(${i})" title="Remover">🗑️</button>
+    </div>`).join('');
+}
+function addContato(){ curContatos.push({id:genId(),nome:'',cargo:'',tel:'',email:''}); renderContatoList(); }
+function removeContato(i){ curContatos.splice(i,1); renderContatoList(); }
 
 function fillRespSelect(){
   const sel=document.getElementById('cResp'); if(!sel) return;
@@ -2382,22 +2445,26 @@ async function saveClient(){
   const cid=document.getElementById('editClientId').value||genId();
   const rid=document.getElementById('cResp').value;
   const rUser=rid?usuarios[rid]:null;
+  // Build contatos object (keyed by id)
+  const contatosObj={};
+  curContatos.filter(ct=>ct.nome.trim()).forEach(ct=>{ contatosObj[ct.id]=ct; });
+  // Primary contact for backwards compat (first contact)
+  const primeiro=curContatos.find(ct=>ct.nome.trim());
   await db.ref('erp/clientes/'+cid).set({
     id:cid, nome,
     cnpj:document.getElementById('cCNPJ').value.trim(),
     segmento:document.getElementById('cSeg').value,
     cidade:document.getElementById('cCidade').value.trim(),
-    telefone:document.getElementById('cTel').value.trim(),
-    email:document.getElementById('cEmail').value.trim(),
-    contatoNome:document.getElementById('cContato').value.trim(),
-    cargo:document.getElementById('cCargo').value.trim(),
+    telefone:document.getElementById('cTel').value.trim()||(primeiro?.tel||''),
+    email:document.getElementById('cEmail').value.trim()||(primeiro?.email||''),
+    contatos:contatosObj,
     estagio:document.getElementById('cEstagio').value,
     responsavelId:rid, responsavelNome:rUser?rUser.nome.split(' ')[0]:'',
     prioridade:document.getElementById('cPrio').value,
     distancia:document.getElementById('cDist').value.trim(),
     obs:document.getElementById('cObs').value.trim(),
     criadoEm:clientes[cid]?.criadoEm||Date.now(),
-    criadoPor:curUser.uid, atualizadoEm:Date.now()
+    criadoPor:curUser?.uid||'', atualizadoEm:Date.now()
   });
   closeOvl('ovlClient');
 }
@@ -3609,6 +3676,47 @@ async function buscaCEP(input){
       input.style.borderColor='var(--green)';
     }catch(e){input.style.borderColor='var(--red)';}
   },400);
+}
+
+// ── CNPJ lookup (BrasilAPI) ──
+let _cnpjLast='';
+function fmtCNPJ(input){
+  let v=input.value.replace(/\D/g,'').slice(0,14);
+  if(v.length>12) v=v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12);
+  else if(v.length>8) v=v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);
+  else if(v.length>5) v=v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);
+  else if(v.length>2) v=v.slice(0,2)+'.'+v.slice(2);
+  input.value=v;
+  if(v.replace(/\D/g,'').length===14) buscaCNPJ(input);
+}
+async function buscaCNPJ(input){
+  const v=input.value.replace(/\D/g,'');
+  if(v.length!==14) return;
+  if(v===_cnpjLast) return;
+  const msg=document.getElementById('cnpjMsg'); if(msg) msg.textContent='⏳ Buscando...';
+  try{
+    const r=await fetch('https://brasilapi.com.br/api/cnpj/v1/'+v);
+    if(!r.ok) throw new Error('não encontrado');
+    const d=await r.json();
+    _cnpjLast=v;
+    // Fill nome if empty
+    const nomeEl=document.getElementById('cNome');
+    if(nomeEl&&!nomeEl.value) nomeEl.value=d.nome_fantasia||d.razao_social||'';
+    // Fill cidade
+    const cidEl=document.getElementById('cCidade');
+    if(cidEl) cidEl.value=[d.municipio,d.uf].filter(Boolean).join(' / ');
+    // Fill tel
+    const telEl=document.getElementById('cTel');
+    if(telEl&&!telEl.value&&d.ddd_telefone_1) telEl.value=d.ddd_telefone_1.replace(/[^0-9]/g,'').replace(/^(\d{2})(\d+)/,'($1) $2');
+    // Fill email
+    const emEl=document.getElementById('cEmail');
+    if(emEl&&!emEl.value&&d.email) emEl.value=d.email;
+    if(msg) msg.textContent='✅ '+( d.nome_fantasia||d.razao_social||'encontrado');
+    setTimeout(()=>{ if(msg) msg.textContent=''; },4000);
+  }catch(e){
+    if(msg) msg.textContent='⚠️ CNPJ não encontrado';
+    setTimeout(()=>{ if(msg) msg.textContent=''; },3000);
+  }
 }
 
 // ── Alert beep (Web Audio API) ──
