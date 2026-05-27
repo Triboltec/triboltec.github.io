@@ -3688,11 +3688,11 @@ function renderFuncionarios(){
     return true;
   }).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
   const allF=Object.values(funcionarios);
-  const cnts={all:allF.length,ativo:allF.filter(f=>f.status==='ativo').length,ferias:allF.filter(f=>f.status==='ferias').length,afastado:allF.filter(f=>f.status==='afastado').length};
+  const cnts={all:allF.length,ativo:allF.filter(f=>f.status==='ativo').length,ferias:allF.filter(f=>f.status==='ferias').length,afastado:allF.filter(f=>f.status==='afastado').length,inativo:allF.filter(f=>f.status==='inativo').length};
   const rhTabsEl=document.getElementById('rhTabs');
   if(rhTabsEl) rhTabsEl.innerHTML=
     `<div class="ftab ${rhFilter==='all'?'active':''}" onclick="setRHFilter('all')">Todos (${cnts.all})</div>`+
-    [['ativo','Ativos'],['ferias','Férias'],['afastado','Afastados']]
+    [['ativo','Ativos'],['ferias','Férias'],['afastado','Afastados'],['inativo','Inativos']]
     .map(([id,l])=>`<div class="ftab ${rhFilter===id?'active':''}" onclick="setRHFilter('${id}')">${l} (${cnts[id]})</div>`).join('');
   const funcListEl=document.getElementById('funcList');
   if(!funcListEl) return;
