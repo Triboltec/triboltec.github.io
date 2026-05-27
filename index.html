@@ -666,10 +666,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <div class="scard" style="margin-top:20px">
             <div class="s-title" style="font-size:0.8rem;font-weight:800;margin-bottom:12px">✉️ Configurações de Envio</div>
             <div class="fg" style="margin-bottom:10px">
-              <label>E-mail da Contabilidade</label>
+              <label>E-mail da Contabilidade <span style="color:var(--sub);font-weight:400">(destinatário)</span></label>
               <input type="email" id="configContEmail" placeholder="contabilidade@escritorio.com.br" style="width:100%"/>
             </div>
-            <div style="font-size:0.72rem;color:var(--sub);margin-bottom:10px">Usado no botão "Enviar para Contabilidade" no fechamento mensal.</div>
+            <div class="fg" style="margin-bottom:10px">
+              <label>E-mail do RH <span style="color:var(--sub);font-weight:400">(em cópia — CC)</span></label>
+              <input type="email" id="configRhEmail" placeholder="rh@triboltec.com.br" style="width:100%"/>
+            </div>
+            <div style="font-size:0.72rem;color:var(--sub);margin-bottom:10px">Usados no botão "✉️ Enviar por E-mail" no fechamento mensal. O RH fica em cópia automaticamente.</div>
             <button class="btn btn-red" onclick="saveEmpConfig()">💾 Salvar</button>
             <span id="configMsg" style="font-size:0.73rem;color:var(--sub);margin-left:10px"></span>
           </div>
@@ -1933,8 +1937,14 @@ function startListeners(){
   db.ref('erp/ponto').on('value', snap=>{ pontoReg=snap.val()||{}; renderPonto(); });
   // Load ControlID config
   db.ref('erp/cidconfig').once('value', snap=>{ const c=snap.val()||{}; if(c.email)document.getElementById('cidEmail').value=c.email; if(c.url)document.getElementById('cidUrl').value=c.url; });
-  // Load system config (accounting email etc.)
-  db.ref('erp/config').on('value', snap=>{ sysConfig=snap.val()||{}; const el=document.getElementById('configContEmail'); if(el&&sysConfig.contEmail) el.value=sysConfig.contEmail; });
+  // Load system config (accounting email, RH email, etc.)
+  db.ref('erp/config').on('value', snap=>{
+    sysConfig=snap.val()||{};
+    const el=document.getElementById('configContEmail');
+    const elRh=document.getElementById('configRhEmail');
+    if(el&&sysConfig.contEmail) el.value=sysConfig.contEmail;
+    if(elRh&&sysConfig.rhEmail) elRh.value=sysConfig.rhEmail;
+  });
 }
 
 // ══════════════════════════════════════════════
@@ -3752,6 +3762,7 @@ function gerarFechamento(fid){
 function enviarEmailContador(fid){
   const f=fechamentos[fid]; if(!f) return;
   const dest=sysConfig.contEmail||'';
+  const ccRh=sysConfig.rhEmail||'';
   if(!dest){
     alert('Configure o e-mail da contabilidade em Admin → Docs Empresa (parte inferior da página).');
     return;
@@ -3787,7 +3798,8 @@ function enviarEmailContador(fid){
   ].filter(l=>l!==undefined).join('\n');
   const subject=encodeURIComponent(`Fechamento de Folha — ${mes} — Triboltec Engenharia`);
   const bodyEnc=encodeURIComponent(body);
-  window.location.href=`mailto:${dest}?subject=${subject}&body=${bodyEnc}`;
+  const cc=ccRh?`&cc=${encodeURIComponent(ccRh)}`:'';
+  window.location.href=`mailto:${dest}${cc}?subject=${subject}&body=${bodyEnc}`;
 }
 
 function openFechModal(fid){
@@ -3892,10 +3904,12 @@ async function saveEmpDoc(){
 
 // ── System Config ──
 async function saveEmpConfig(){
-  const email=(document.getElementById('configContEmail').value||'').trim();
+  const contEmail=(document.getElementById('configContEmail').value||'').trim();
+  const rhEmail=(document.getElementById('configRhEmail').value||'').trim();
   const msg=document.getElementById('configMsg');
-  await db.ref('erp/config').update({contEmail:email});
-  sysConfig.contEmail=email;
+  await db.ref('erp/config').update({contEmail, rhEmail});
+  sysConfig.contEmail=contEmail;
+  sysConfig.rhEmail=rhEmail;
   msg.textContent='✅ Salvo!';
   setTimeout(()=>{msg.textContent=''},3000);
 }
