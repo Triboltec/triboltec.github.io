@@ -1257,10 +1257,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div style="text-align:right;margin-top:10px;font-size:0.9rem;font-weight:800;color:var(--dark)">Total: <span id="pedTotal">R$ 0,00</span></div>
     </div>
     <div class="fg"><label>Observações / Prazo de entrega</label><textarea id="pedObs" placeholder="Prazo, local de entrega, observações..."></textarea></div>
-    <div class="mact">
+    <div class="mact" style="flex-wrap:wrap;gap:6px">
       <button class="btn btn-ghost" onclick="closeOvl('ovlPedido')">Cancelar</button>
+      <button class="btn btn-ghost" id="btnGerarPedido" onclick="gerarPedidoHTML()" style="display:none">🖨️ Gerar PDF</button>
       <button class="btn btn-ghost" onclick="savePedido('pendente')">Salvar Rascunho</button>
-      <button class="btn btn-red" onclick="savePedido('aprovado')">Aprovar e Enviar →</button>
+      <button class="btn btn-red" onclick="savePedido('aprovado')">Aprovar →</button>
     </div>
   </div>
 </div>
@@ -1637,6 +1638,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
     <input type="hidden" id="lancTipo" value="receita"/>
     <div class="fg"><label>Descrição *</label><input type="text" id="lancDesc" placeholder="Ex: Fatura OS-042, Pagamento fornecedor…"/></div>
+    <div class="fg"><label>Fornecedor (opcional)</label><select id="lancForn"><option value="">— Nenhum —</option></select></div>
     <div class="f2">
       <div class="fg"><label>Valor (R$) *</label><input type="number" id="lancValor" placeholder="0,00" min="0" step="0.01"/></div>
       <div class="fg"><label>Data *</label><input type="date" id="lancData"/></div>
@@ -2291,7 +2293,7 @@ function startListeners(){
   db.ref('erp/usuarios').on('value', snap=>{ usuarios=snap.val()||{}; renderAdminUsers(); fillRespSelect(); fillProjSelects(); });
   db.ref('erp/propostas').on('value', snap=>{ propostas=snap.val()||{}; renderProp(); renderDash(); });
   db.ref('erp/projetos').on('value', snap=>{ projetos=snap.val()||{}; renderProj(); renderDash(); fillProjSelects(); });
-  db.ref('erp/fornecedores').on('value', snap=>{ fornecedores=snap.val()||{}; renderForn(); });
+  db.ref('erp/fornecedores').on('value', snap=>{ fornecedores=snap.val()||{}; renderForn(); fillProjSelects(); });
   db.ref('erp/pedidos').on('value', snap=>{ pedidos=snap.val()||{}; renderPedidos(); });
   db.ref('erp/estoque').on('value', snap=>{ estoque=snap.val()||{}; renderEst(); });
   db.ref('erp/movimentos').on('value', snap=>{ movimentos=snap.val()||{}; });
@@ -3335,6 +3337,9 @@ function fillProjSelects(){
   // forn select in pedido
   const pfEl=document.getElementById('pedForn');
   if(pfEl) pfEl.innerHTML='<option value="">— Selecione —</option>'+Object.values(fornecedores).map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+  // forn select in lancamento
+  const lfEl=document.getElementById('lancForn');
+  if(lfEl) lfEl.innerHTML='<option value="">— Nenhum —</option>'+Object.values(fornecedores).sort((a,b)=>a.nome.localeCompare(b.nome)).map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
 }
 
 function openProjModal(pid){
@@ -3501,15 +3506,16 @@ function renderPedidos(){
   if(!arr.length){el.innerHTML='<div class="empty">Nenhum pedido de compra.</div>';return;}
   el.innerHTML=arr.map(p=>{
     const forn=fornecedores[p.fornId]||{};
-    return`<div class="ped-card" onclick="openPedidoModal('${p.id}')">
-      <div>
+    return`<div class="ped-card">
+      <div onclick="openPedidoModal('${p.id}')" style="flex:1;cursor:pointer">
         <div class="ped-num">${p.numero||'—'}</div>
         <div class="ped-forn">${forn.nome||'—'}</div>
         <div class="ped-desc">${p.obs||''}</div>
       </div>
-      <div style="text-align:right">
+      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
         <div style="font-size:0.9rem;font-weight:800;color:var(--dark)">${fmtBRL(p.total||0)}</div>
-        <span class="stbdg pst-${p.status||'pendente'}" style="margin-top:4px;display:inline-block">${({pendente:'Rascunho',aprovado:'Aprovado',enviado:'Enviado'})[p.status]||p.status}</span>
+        <span class="stbdg pst-${p.status||'pendente'}">${({pendente:'Rascunho',aprovado:'Aprovado',enviado:'Enviado'})[p.status]||p.status}</span>
+        <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px" onclick="event.stopPropagation();gerarPedidoHTML('${p.id}')">🖨️ PDF</button>
       </div>
     </div>`;}).join('');
 }
@@ -3519,6 +3525,7 @@ function openPedidoModal(pid){
   const p=pid?pedidos[pid]:null;
   document.getElementById('editPedId').value=pid||'';
   document.getElementById('pedModalTitle').textContent=pid?'Editar Pedido':'Novo Pedido de Compra';
+  document.getElementById('btnGerarPedido').style.display=pid?'':'none';
   if(p){
     document.getElementById('pedForn').value=p.fornId||'';
     document.getElementById('pedProj').value=p.projId||'';
@@ -3574,10 +3581,115 @@ async function savePedido(status){
     if(!desc)return;
     itens.push({desc,unid:tr.querySelector('.ped-unid')?.value||'un',qtd:parseFloat(tr.querySelector('.ped-qtd')?.value||0),vu:parseFloat(tr.querySelector('.ped-vu')?.value||0)});
   });
+  if(!itens.length){alert('Adicione ao menos um item ao pedido.');return;}
   const total=itens.reduce((s,it)=>s+it.qtd*it.vu,0);
   const yr=new Date().getFullYear(); const n=Object.values(pedidos).filter(p=>(p.numero||'').startsWith('PC'+yr)).length;
-  await db.ref('erp/pedidos/'+pid).set({id:pid,numero:existing.numero||'PC'+yr+String(n+1).padStart(3,'0'),fornId,projId:document.getElementById('pedProj').value,pgto:document.getElementById('pedPgto').value,obs:document.getElementById('pedObs').value.trim(),itens,total,status,criadoEm:existing.criadoEm||Date.now(),criadoPor:curUser.uid,atualizadoEm:Date.now()});
+  const numero=existing.numero||'PC'+yr+String(n+1).padStart(3,'0');
+  await db.ref('erp/pedidos/'+pid).set({id:pid,numero,fornId,projId:document.getElementById('pedProj').value,pgto:document.getElementById('pedPgto').value,obs:document.getElementById('pedObs').value.trim(),itens,total,status,criadoEm:existing.criadoEm||Date.now(),criadoPor:curUser.uid,atualizadoEm:Date.now()});
   closeOvl('ovlPedido');
+  if(status==='aprovado'){
+    // Small delay to let Firebase listener update pedidos object before generating PDF
+    setTimeout(()=>gerarPedidoHTML(pid), 600);
+  }
+}
+
+function gerarPedidoHTML(pid){
+  pid = pid || document.getElementById('editPedId').value;
+  const p = pedidos[pid]; if(!p){ alert('Salve o pedido antes de gerar o PDF.'); return; }
+  const forn = fornecedores[p.fornId]||{};
+  const proj = projetos[p.projId]||{};
+  const emitidoEm = new Date().toLocaleDateString('pt-BR');
+  const itensHtml = (p.itens||[]).map((it,i)=>`
+    <tr>
+      <td style="text-align:center">${i+1}</td>
+      <td>${it.desc||'—'}</td>
+      <td style="text-align:center">${it.unid||'un'}</td>
+      <td style="text-align:center">${(+it.qtd||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:3})}</td>
+      <td style="text-align:right">${fmtBRL(it.vu||0)}</td>
+      <td style="text-align:right"><strong>${fmtBRL((it.qtd||0)*(it.vu||0))}</strong></td>
+    </tr>`).join('');
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>
+  <title>Pedido de Compra ${p.numero||''}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:24px;max-width:800px;margin:0 auto}
+    .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:14px;border-bottom:3px solid #8B2020}
+    .co-name{font-size:18px;font-weight:900;color:#8B2020;letter-spacing:-0.5px}
+    .co-sub{font-size:9px;color:#666;letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+    .pc-num{font-size:22px;font-weight:900;color:#1a1a1a}
+    .pc-label{font-size:9px;color:#888;text-align:right;letter-spacing:1px}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+    .info-box{background:#f8f8f8;border:1px solid #e5e7eb;border-radius:6px;padding:10px}
+    .info-box h3{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:6px}
+    .info-box p{font-size:11px;line-height:1.6;color:#111}
+    table{width:100%;border-collapse:collapse;margin-bottom:12px}
+    thead th{background:#1a1a1a;color:#fff;padding:7px 8px;text-align:left;font-size:9px;letter-spacing:0.5px;text-transform:uppercase}
+    tbody td{padding:6px 8px;border-bottom:1px solid #eee;font-size:11px}
+    tbody tr:nth-child(even){background:#f9f9f9}
+    .total-row{background:#f0f0f0!important;font-weight:700}
+    .obs-box{background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:10px;margin-bottom:14px}
+    .obs-box h3{font-size:9px;letter-spacing:1px;color:#92400e;text-transform:uppercase;margin-bottom:4px}
+    .assin{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:28px}
+    .assin-line{border-top:1px solid #999;padding-top:6px;font-size:9px;color:#555;text-align:center}
+    .footer{margin-top:20px;border-top:1px solid #ddd;padding-top:8px;font-size:9px;color:#aaa;display:flex;justify-content:space-between}
+    @media print{body{padding:10mm} .no-print{display:none!important}}
+    .no-print{text-align:center;margin-bottom:16px}
+    .no-print button{padding:10px 24px;background:#8B2020;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:700;margin:0 6px}
+  </style></head><body>
+  <div class="no-print">
+    <button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+    <button onclick="window.close()">✕ Fechar</button>
+  </div>
+  <div class="hdr">
+    <div>
+      <div class="co-name">TRIBOLTEC</div>
+      <div class="co-sub">Engenharia Industrial e Civil</div>
+    </div>
+    <div style="text-align:right">
+      <div class="pc-label">PEDIDO DE COMPRA</div>
+      <div class="pc-num">${p.numero||'—'}</div>
+      <div style="font-size:10px;color:#555;margin-top:4px">Emitido em ${emitidoEm}</div>
+    </div>
+  </div>
+  <div class="info-grid">
+    <div class="info-box">
+      <h3>Fornecedor</h3>
+      <p><strong>${forn.nome||'—'}</strong></p>
+      ${forn.cnpj?`<p>CNPJ: ${forn.cnpj}</p>`:''}
+      ${forn.contato?`<p>Contato: ${forn.contato}</p>`:''}
+      ${forn.tel?`<p>Tel: ${forn.tel}</p>`:''}
+      ${forn.email?`<p>E-mail: ${forn.email}</p>`:''}
+    </div>
+    <div class="info-box">
+      <h3>Informações do Pedido</h3>
+      ${proj.titulo?`<p><strong>OS/Projeto:</strong> ${proj.numero?proj.numero+' — ':''}${proj.titulo}</p>`:''}
+      <p><strong>Pagamento:</strong> ${p.pgto||'—'}</p>
+      <p><strong>Status:</strong> ${({pendente:'Rascunho',aprovado:'Aprovado',enviado:'Enviado'})[p.status]||p.status||'—'}</p>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th style="text-align:center;width:30px">#</th><th>Descrição</th><th style="text-align:center;width:50px">Unid</th><th style="text-align:center;width:60px">Qtd</th><th style="text-align:right;width:90px">Vlr Unit</th><th style="text-align:right;width:90px">Total</th></tr></thead>
+    <tbody>
+      ${itensHtml}
+      <tr class="total-row"><td colspan="5" style="text-align:right">TOTAL</td><td style="text-align:right">${fmtBRL(p.total||0)}</td></tr>
+    </tbody>
+  </table>
+  ${p.obs?`<div class="obs-box"><h3>Observações / Prazo de Entrega</h3><p>${p.obs}</p></div>`:''}
+  <div class="assin">
+    <div class="assin-line">Emitido por / Triboltec</div>
+    <div class="assin-line">Aceite do Fornecedor</div>
+  </div>
+  <div class="footer">
+    <span>Documento gerado pelo sistema ERP Triboltec · erp.triboltec.com.br</span>
+    <span>${emitidoEm}</span>
+  </div>
+  <script>
+    // Auto-print after short delay to allow styles to load
+    // User can also click the button above
+  <\/script>
+  </body></html>`);
+  win.document.close();
 }
 
 // ══════════════════════════════════════════════
@@ -3837,7 +3949,8 @@ function renderLancItem(l, today){
       : `<span class="st-badge st-pend">Pendente${diasVenc!==null&&diasVenc<=7?' · '+diasVenc+'d':''}</span>`;
 
   const parcTag=l.parcelaNum?`<span style="font-size:0.62rem;background:#e0e7ff;color:#3730a3;border-radius:4px;padding:1px 5px;font-weight:700">${l.parcelaNum}/${l.parcelaTotal}</span> `:'';
-  const metaParts=[l.cat||l.categoria, l.data?fmtD(l.data):'', l.venc?'Venc: '+fmtD(l.venc):'', l.projeto?'📋 '+l.projeto:''].filter(Boolean);
+  const fornNome=l.fornId&&fornecedores[l.fornId]?'🏢 '+fornecedores[l.fornId].nome:'';
+  const metaParts=[l.cat||l.categoria, l.data?fmtD(l.data):'', l.venc?'Venc: '+fmtD(l.venc):'', l.projeto?'📋 '+l.projeto:'', fornNome].filter(Boolean);
 
   return `<div class="lan-item">
     <div class="lan-bar" style="background:${isRec?'var(--green)':'var(--red)'}"></div>
@@ -3872,6 +3985,7 @@ function setLancTipo(t){
 }
 
 function openLancModal(lid){
+  fillProjSelects();
   const l=lid?lancamentos[lid]:null;
   document.getElementById('editLancId').value=lid||'';
   document.getElementById('lancModalTitle').textContent=lid?'Editar Lançamento':'Novo Lançamento';
@@ -3886,6 +4000,7 @@ function openLancModal(lid){
     document.getElementById('lancStatus').value=l.status||'pendente';
     document.getElementById('lancProjeto').value=l.projeto||'';
     document.getElementById('lancObs').value=l.obs||'';
+    document.getElementById('lancForn').value=l.fornId||'';
     // Anexo existente
     const arqDiv=document.getElementById('lancArqAtual');
     const arqLnk=document.getElementById('lancArqLink');
@@ -3897,6 +4012,7 @@ function openLancModal(lid){
     document.getElementById('lancValor').value='';
     document.getElementById('lancData').value=hoje;
     document.getElementById('lancStatus').value='pendente';
+    document.getElementById('lancForn').value='';
     document.getElementById('lancArqAtual').style.display='none';
   }
   document.getElementById('lancArqFile').value='';
@@ -3943,6 +4059,7 @@ async function saveLanc(){
   const obs=document.getElementById('lancObs').value.trim();
   const data=document.getElementById('lancData').value||new Date().toISOString().slice(0,10);
   const venc=document.getElementById('lancVenc').value||'';
+  const fornId=document.getElementById('lancForn').value||'';
 
   // Parcelamento
   const parcelado=document.getElementById('lancParcelado').checked;
@@ -3962,7 +4079,7 @@ async function saveLanc(){
         await db.ref('erp/lancamentos/'+pid).set({
           id:pid, tipo, desc:`${desc} (${i+1}/${n})`,
           valor:valParc, data, venc:vencParc,
-          cat, status:'pendente', projeto, obs,
+          cat, status:'pendente', projeto, obs, fornId,
           parcelaGrupo:grupoId, parcelaNum:i+1, parcelaTotal:n,
           criadoEm:base+i, uid:curUser?.uid||''
         });
@@ -3973,7 +4090,7 @@ async function saveLanc(){
   }
 
   const obj={
-    id:lid, tipo, desc, valor, data, venc, cat, status, projeto, obs,
+    id:lid, tipo, desc, valor, data, venc, cat, status, projeto, obs, fornId,
     arqUrl, arqNome,
     criadoEm:lancamentos[lid]?.criadoEm||Date.now(),
     uid:curUser?.uid||''
