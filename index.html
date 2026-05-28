@@ -600,7 +600,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <div class="pg-title">🛒 Compras</div>
           <div style="display:flex;gap:7px">
             <button class="btn btn-ghost" id="btnForn" onclick="compTab('forn')">Fornecedores</button>
-            <button class="btn btn-red" id="btnPed" onclick="compTab('ped')">+ Pedido</button>
+            <button class="btn btn-ghost" id="btnPed" onclick="compTab('ped')">Pedidos</button>
+            <button class="btn btn-red" onclick="compTab('ped');openPedidoModal()">+ Novo Pedido</button>
           </div>
         </div>
         <div id="compContent"></div>
