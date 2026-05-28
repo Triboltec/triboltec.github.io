@@ -2546,46 +2546,59 @@ function renderDash(){
 
 function renderCashFlow(lanArr){
   // Build 6-month bars
+  // 3 meses passados + mês atual + 4 meses futuros = 8 meses
   const months=[];
-  for(let i=5;i>=0;i--){
+  for(let i=3;i>=-4;i--){
     const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-i);
     months.push(d.toISOString().slice(0,7));
   }
+  const ymAtual=new Date().toISOString().slice(0,7);
   const data=months.map(ym=>{
     const cfMes=l=>(l.venc||l.data||'').slice(0,7)===ym;
-    const rec=lanArr.filter(l=>l.tipo==='receita'&&cfMes(l)).reduce((s,l)=>s+(l.valor||0),0);
-    const des=lanArr.filter(l=>l.tipo==='despesa'&&cfMes(l)).reduce((s,l)=>s+(l.valor||0),0);
-    return{ym,rec,des,saldo:rec-des};
+    const isPast=ym<ymAtual;
+    // Passado: só realizado (pago). Atual/futuro: tudo (projetado)
+    const recLanc=lanArr.filter(l=>l.tipo==='receita'&&cfMes(l)&&(!isPast||l.status==='pago'));
+    const desLanc=lanArr.filter(l=>l.tipo==='despesa'&&cfMes(l)&&(!isPast||l.status==='pago'));
+    const rec=recLanc.reduce((s,l)=>s+(l.valor||0),0);
+    const des=desLanc.reduce((s,l)=>s+(l.valor||0),0);
+    return{ym,rec,des,saldo:rec-des,isPast,isCurrent:ym===ymAtual};
   });
   const maxVal=Math.max(...data.map(d=>Math.max(d.rec,d.des)),1);
   const monthNames=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const bars=data.map(d=>{
     const [y,m]=d.ym.split('-');
     const mn=monthNames[parseInt(m)-1];
-    const rH=Math.round((d.rec/maxVal)*80);
-    const dH=Math.round((d.des/maxVal)*80);
+    const rH=Math.max(Math.round((d.rec/maxVal)*80),d.rec>0?2:0);
+    const dH=Math.max(Math.round((d.des/maxVal)*80),d.des>0?2:0);
     const sColor=d.saldo>=0?'var(--green)':'var(--red)';
-    return`<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
-      <div style="font-size:0.6rem;color:${sColor};font-weight:700">${d.saldo>=0?'+':''}${d.saldo>=1000?(d.saldo/1000).toFixed(0)+'k':Math.round(d.saldo)}</div>
+    const opacity=d.isPast?'1':'0.45';
+    const border=d.isCurrent?'border:2px solid var(--blue);border-radius:6px;padding:2px':'';
+    const label=d.isPast?'Realizado':'Projetado';
+    return`<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;${border}" title="${mn} — ${label}">
+      <div style="font-size:0.58rem;color:${d.rec+d.des>0?sColor:'var(--border)'};font-weight:700;white-space:nowrap">${d.saldo!==0?(d.saldo>=0?'+':'')+(Math.abs(d.saldo)>=1000?(d.saldo/1000).toFixed(0)+'k':Math.round(d.saldo)):'—'}</div>
       <div style="display:flex;align-items:flex-end;gap:2px;height:80px">
-        <div style="width:10px;background:var(--green);opacity:0.8;height:${rH}px;border-radius:2px 2px 0 0" title="Receita: ${fmtBRL(d.rec)}"></div>
-        <div style="width:10px;background:var(--red);opacity:0.7;height:${dH}px;border-radius:2px 2px 0 0" title="Despesa: ${fmtBRL(d.des)}"></div>
+        <div style="width:10px;background:var(--green);opacity:${opacity};height:${rH}px;border-radius:2px 2px 0 0" title="Receita: ${fmtBRL(d.rec)}"></div>
+        <div style="width:10px;background:var(--red);opacity:${opacity};height:${dH}px;border-radius:2px 2px 0 0" title="Despesa: ${fmtBRL(d.des)}"></div>
       </div>
-      <div style="font-size:0.62rem;color:var(--sub)">${mn}</div>
+      <div style="font-size:0.62rem;color:${d.isCurrent?'var(--blue)':'var(--sub)'};font-weight:${d.isCurrent?'700':'400'}">${mn}</div>
     </div>`;
   }).join('');
-  const totRec=data.reduce((s,d)=>s+d.rec,0);
-  const totDes=data.reduce((s,d)=>s+d.des,0);
+  const recReal=data.filter(d=>d.isPast||d.isCurrent).reduce((s,d)=>s+d.rec,0);
+  const desReal=data.filter(d=>d.isPast||d.isCurrent).reduce((s,d)=>s+d.des,0);
+  const recProj=data.filter(d=>!d.isPast&&!d.isCurrent).reduce((s,d)=>s+d.rec,0);
   return`<div class="dash-card">
     <h3 style="display:flex;justify-content:space-between;align-items:center">
-      <span>💰 Fluxo de Caixa — últimos 6 meses</span>
+      <span>💰 Fluxo de Caixa</span>
       <a href="#" onclick="navTo('fin');return false" style="font-size:0.71rem;color:var(--blue);text-decoration:none;font-weight:600">Abrir →</a>
     </h3>
-    <div style="display:flex;align-items:flex-end;gap:6px;padding:8px 0 4px;overflow-x:auto">${bars}</div>
-    <div style="display:flex;gap:16px;margin-top:6px;font-size:0.72rem">
-      <span style="color:var(--green)">■ Receitas: ${fmtBRL(totRec)}</span>
-      <span style="color:var(--red)">■ Despesas: ${fmtBRL(totDes)}</span>
-      <span style="color:${totRec-totDes>=0?'var(--green)':'var(--red)'};font-weight:700">Resultado: ${fmtBRL(totRec-totDes)}</span>
+    <div style="display:flex;align-items:flex-end;gap:4px;padding:8px 0 4px;overflow-x:auto">${bars}</div>
+    <div style="display:flex;gap:12px;margin-top:6px;font-size:0.72rem;flex-wrap:wrap">
+      <span style="color:var(--sub)">■ Barras cheias = realizado &nbsp;■ transparente = projetado</span>
+    </div>
+    <div style="display:flex;gap:16px;margin-top:4px;font-size:0.72rem">
+      <span style="color:var(--green)">Recebido: ${fmtBRL(recReal)}</span>
+      <span style="color:var(--red)">Pago: ${fmtBRL(desReal)}</span>
+      ${recProj>0?`<span style="color:var(--sub)">Projetado rec: ${fmtBRL(recProj)}</span>`:''}
     </div>
   </div>`;
 }
