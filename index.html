@@ -626,6 +626,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="sec" id="secRH">
         <div class="pgh">
           <div class="pg-title">👷 RH — Gestão de Pessoas</div>
+          <button class="btn btn-ghost" onclick="openFolhaModal()" style="font-size:0.8rem">💰 Folha de Pagamento</button>
         </div>
         <div class="rh-tabs">
           <button class="rh-tab active" id="rhTab-alertas" onclick="rhTab('alertas')">🔔 Alertas</button>
@@ -1697,6 +1698,77 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="mact">
       <button class="btn btn-ghost" onclick="closeOvl('ovlFech')">Cancelar</button>
       <button class="btn btn-red" onclick="saveFech()">Salvar Fechamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: FOLHA DE PAGAMENTO ═══ -->
+<div class="ovl" id="ovlFolha" onclick="if(event.target===this)closeOvl('ovlFolha')">
+  <div class="modal" style="max-width:520px">
+    <div class="mhead">
+      <div class="mtitle">💰 Registrar Folha de Pagamento</div>
+      <button class="mclose" onclick="closeOvl('ovlFolha')">✕</button>
+    </div>
+    <input type="hidden" id="editFolhaId"/>
+    <div class="mbody">
+      <div class="fg" style="margin-bottom:12px">
+        <label>Mês de referência *</label>
+        <input type="month" id="folhaMes" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.9rem;font-family:inherit"/>
+      </div>
+      <!-- Tabela de itens -->
+      <div style="background:#f8f9fa;border-radius:10px;padding:10px;margin-bottom:12px">
+        <div style="display:grid;grid-template-columns:1fr 130px 120px;gap:6px;margin-bottom:6px">
+          <div style="font-size:0.68rem;font-weight:700;color:var(--sub);padding:0 4px">Item</div>
+          <div style="font-size:0.68rem;font-weight:700;color:var(--sub);padding:0 4px">Valor (R$)</div>
+          <div style="font-size:0.68rem;font-weight:700;color:var(--sub);padding:0 4px">Vencimento</div>
+        </div>
+        <!-- Adiantamento -->
+        <div style="display:grid;grid-template-columns:1fr 130px 120px;gap:6px;align-items:center;margin-bottom:6px">
+          <div style="font-size:0.82rem;padding:0 4px;font-weight:600">Adiantamento <span style="font-size:0.68rem;color:var(--sub)">dia 15</span></div>
+          <input type="number" id="folhaAdtVal" placeholder="0,00" min="0" step="0.01" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+          <input type="date" id="folhaAdtVenc" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+        </div>
+        <!-- Saldo -->
+        <div style="display:grid;grid-template-columns:1fr 130px 120px;gap:6px;align-items:center;margin-bottom:6px">
+          <div style="font-size:0.82rem;padding:0 4px;font-weight:600">Saldo <span style="font-size:0.68rem;color:var(--sub)">último dia</span></div>
+          <input type="number" id="folhaSalVal" placeholder="0,00" min="0" step="0.01" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+          <input type="date" id="folhaSalVenc" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+        </div>
+        <!-- Caju VA -->
+        <div style="display:grid;grid-template-columns:1fr 130px 120px;gap:6px;align-items:center;margin-bottom:6px">
+          <div style="font-size:0.82rem;padding:0 4px;font-weight:600">Caju <span style="font-size:0.68rem;color:var(--sub)">VA</span></div>
+          <input type="number" id="folhaCajuVAVal" placeholder="0,00" min="0" step="0.01" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+          <input type="date" id="folhaCajuVAVenc" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+        </div>
+        <!-- Caju Mobilidade -->
+        <div style="display:grid;grid-template-columns:1fr 130px 120px;gap:6px;align-items:center;margin-bottom:6px">
+          <div style="font-size:0.82rem;padding:0 4px;font-weight:600">Caju <span style="font-size:0.68rem;color:var(--sub)">Mobilidade</span></div>
+          <input type="number" id="folhaCajuMobVal" placeholder="0,00" min="0" step="0.01" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+          <input type="date" id="folhaCajuMobVenc" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+        </div>
+        <!-- Swile VT -->
+        <div style="display:grid;grid-template-columns:1fr 130px 120px;gap:6px;align-items:center">
+          <div style="font-size:0.82rem;padding:0 4px;font-weight:600">Swile <span style="font-size:0.68rem;color:var(--sub)">VT</span></div>
+          <input type="number" id="folhaSwileVal" placeholder="0,00" min="0" step="0.01" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+          <input type="date" id="folhaSwileVenc" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+        </div>
+        <!-- Total -->
+        <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.8rem;font-weight:700;color:var(--sub)">Total da folha</span>
+          <span id="folhaTotal" style="font-size:1rem;font-weight:800;color:var(--red)">R$ 0,00</span>
+        </div>
+      </div>
+      <!-- Boletos -->
+      <div style="background:#f8f9fa;border-radius:10px;padding:10px">
+        <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:8px">📎 Boletos / Comprovantes</label>
+        <div id="folhaArqsAtual" style="margin-bottom:6px"></div>
+        <input type="file" id="folhaArqFile" accept=".pdf,.jpg,.jpeg,.png" multiple style="font-size:0.78rem;width:100%"/>
+        <div id="folhaArqProgress" style="font-size:0.72rem;color:var(--sub);margin-top:4px;min-height:14px"></div>
+      </div>
+    </div>
+    <div class="mact">
+      <button class="btn btn-ghost" onclick="closeOvl('ovlFolha')">Cancelar</button>
+      <button class="btn btn-red" onclick="saveFolha()">Salvar Folha</button>
     </div>
   </div>
 </div>
@@ -4604,6 +4676,120 @@ async function markLancPago(lid){
 async function delLanc(lid){
   if(!confirm('Excluir este lançamento?')) return;
   await db.ref('erp/lancamentos/'+lid).remove();
+}
+
+// ══════════════════════════════════════════════
+// FOLHA DE PAGAMENTO
+// ══════════════════════════════════════════════
+const FOLHA_ITENS=[
+  {id:'Adt', label:'Adiantamento', valId:'folhaAdtVal',    vencId:'folhaAdtVenc'},
+  {id:'Sal', label:'Saldo',        valId:'folhaSalVal',    vencId:'folhaSalVenc'},
+  {id:'CVA', label:'Caju VA',      valId:'folhaCajuVAVal', vencId:'folhaCajuVAVenc'},
+  {id:'CMb', label:'Caju Mobilidade', valId:'folhaCajuMobVal', vencId:'folhaCajuMobVenc'},
+  {id:'Swi', label:'Swile VT',     valId:'folhaSwileVal',  vencId:'folhaSwileVenc'},
+];
+
+function atualizaTotalFolha(){
+  const total=FOLHA_ITENS.reduce((s,it)=>s+parseFloat(document.getElementById(it.valId)?.value||0),0);
+  const el=document.getElementById('folhaTotal');
+  if(el) el.textContent=fmtBRL(total);
+}
+// Adiciona oninput ao salvar no modal via JS (evita repetir inline)
+function bindFolhaInputs(){
+  FOLHA_ITENS.forEach(it=>{
+    const el=document.getElementById(it.valId);
+    if(el) el.oninput=atualizaTotalFolha;
+  });
+}
+
+function openFolhaModal(mesRef){
+  const hoje=new Date().toISOString().slice(0,10);
+  const mesAtual=hoje.slice(0,7);
+  document.getElementById('editFolhaId').value='';
+  document.getElementById('folhaMes').value=mesRef||mesAtual;
+  // Auto-preenche vencimentos: dia 15 e último dia do mês
+  const [y,m]=((mesRef||mesAtual)+'-01').split('-').map(Number);
+  const dia15=`${mesRef||mesAtual}-15`;
+  const ultimoDia=new Date(y,m,0).toISOString().slice(0,10); // último dia do mês
+  document.getElementById('folhaAdtVenc').value=dia15;
+  document.getElementById('folhaSalVenc').value=ultimoDia;
+  // Limpa outros campos
+  FOLHA_ITENS.forEach(it=>{
+    document.getElementById(it.valId).value='';
+    if(it.id!=='Adt'&&it.id!=='Sal') document.getElementById(it.vencId).value='';
+  });
+  document.getElementById('folhaArqsAtual').innerHTML='';
+  document.getElementById('folhaArqFile').value='';
+  document.getElementById('folhaArqProgress').textContent='';
+  atualizaTotalFolha();
+  bindFolhaInputs();
+  // Atualiza venc ao mudar mês
+  document.getElementById('folhaMes').onchange=()=>{
+    const mv=document.getElementById('folhaMes').value;
+    if(!mv) return;
+    const [yy,mm]=mv.split('-').map(Number);
+    document.getElementById('folhaAdtVenc').value=mv+'-15';
+    document.getElementById('folhaSalVenc').value=new Date(yy,mm,0).toISOString().slice(0,10);
+  };
+  document.getElementById('ovlFolha').classList.add('v');
+}
+
+async function saveFolha(){
+  const mes=document.getElementById('folhaMes').value;
+  if(!mes){alert('Selecione o mês de referência.');return;}
+  const [yy,mm]=mes.split('-').map(Number);
+  const mesLabel=new Date(yy,mm-1,1).toLocaleString('pt-BR',{month:'long',year:'numeric'});
+
+  // Verifica duplicata
+  const jaExiste=Object.values(lancamentos).filter(l=>l.folhaMes===mes);
+  if(jaExiste.length>0){
+    if(!confirm(`Já existem ${jaExiste.length} lançamento(s) para ${mesLabel}.\nRecriar (apaga os anteriores)?`)) return;
+    await Promise.all(jaExiste.map(l=>db.ref('erp/lancamentos/'+l.id).remove()));
+  }
+
+  // Upload de boletos (múltiplos arquivos)
+  const fileInput=document.getElementById('folhaArqFile');
+  const prog=document.getElementById('folhaArqProgress');
+  const arqsRefs=[];
+  if(fileInput.files.length){
+    prog.textContent='⏳ Enviando boletos...';
+    for(let i=0;i<fileInput.files.length;i++){
+      const file=fileInput.files[i];
+      try{
+        const b64=await uploadFile(file,'',pct=>{prog.textContent=`⏳ Arquivo ${i+1}/${fileInput.files.length} — ${pct}%`;});
+        const key='folha_'+mes+'_'+i+'_'+Math.random().toString(36).slice(2,5);
+        await db.ref('erp/folha_arqs/'+key).set({b64,nome:file.name,atualizadoEm:Date.now()});
+        arqsRefs.push({key,nome:file.name});
+      }catch(e){prog.textContent='⚠️ Erro: '+e.message;return;}
+    }
+    prog.textContent='✅ '+arqsRefs.length+' arquivo(s) salvo(s)';
+  }
+
+  // Cria lançamentos no Financeiro
+  const base=Date.now();
+  let criados=0;
+  for(let i=0;i<FOLHA_ITENS.length;i++){
+    const it=FOLHA_ITENS[i];
+    const val=parseFloat(document.getElementById(it.valId).value||0);
+    const venc=document.getElementById(it.vencId).value||'';
+    if(!val) continue; // pula itens zerados
+    const lid=base.toString(36)+'_folha_'+it.id+'_'+Math.random().toString(36).slice(2,4);
+    await db.ref('erp/lancamentos/'+lid).set({
+      id:lid, tipo:'despesa',
+      desc:`${it.label} — ${mesLabel}`,
+      valor:val, data:venc||mes+'-01', venc,
+      cat:'Folha de Pagamento', status:'pendente', projeto:'',
+      obs:`Folha de pagamento ${mesLabel}`,
+      folhaMes:mes, folhaItem:it.id,
+      arqsRefs: arqsRefs.length ? arqsRefs : [],
+      aprovStatus:'aprovado', aprovadoPor:curUser?.uid||'',
+      criadoEm:base+i, uid:curUser?.uid||''
+    });
+    criados++;
+  }
+
+  closeOvl('ovlFolha');
+  alert(`✅ Folha de ${mesLabel} registrada — ${criados} lançamento(s) criado(s) no Financeiro!`);
 }
 
 // ── Correção de datas de parcelas antigas (admin) ──
