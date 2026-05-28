@@ -3506,8 +3506,8 @@ function renderPedidos(){
   if(!arr.length){el.innerHTML='<div class="empty">Nenhum pedido de compra.</div>';return;}
   el.innerHTML=arr.map(p=>{
     const forn=fornecedores[p.fornId]||{};
-    return`<div class="ped-card">
-      <div onclick="openPedidoModal('${p.id}')" style="flex:1;cursor:pointer">
+    return`<div class="ped-card" onclick="openPedidoModal('${p.id}')">
+      <div style="flex:1">
         <div class="ped-num">${p.numero||'—'}</div>
         <div class="ped-forn">${forn.nome||'—'}</div>
         <div class="ped-desc">${p.obs||''}</div>
