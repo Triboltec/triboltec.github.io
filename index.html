@@ -1453,6 +1453,44 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <label for="fnExpSegunda" style="font-size:0.75rem;color:var(--txt);font-weight:500;letter-spacing:normal;text-transform:none;cursor:pointer">2ª experiência (renova por mais 30/45 dias)</label>
         </div>
       </div>
+      <!-- ASO -->
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-top:4px">
+        <div style="font-size:0.8rem;font-weight:700;color:#166534;margin-bottom:10px">🩺 ASO — Atestado de Saúde Ocupacional</div>
+        <div class="f2">
+          <div class="fg"><label style="font-size:0.72rem">Tipo</label>
+            <select id="fnAsoTipo" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:0.79rem;font-family:inherit">
+              <option value="">—</option>
+              <option>Admissional</option><option>Periódico</option><option>Retorno ao trabalho</option>
+              <option>Mudança de função</option><option>Demissional</option>
+            </select>
+          </div>
+          <div class="fg"><label style="font-size:0.72rem">Resultado</label>
+            <select id="fnAsoResult" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:0.79rem;font-family:inherit">
+              <option value="">—</option>
+              <option value="apto">Apto</option>
+              <option value="apto_restrito">Apto com restrição</option>
+              <option value="inapto">Inapto</option>
+            </select>
+          </div>
+        </div>
+        <div class="f2">
+          <div class="fg"><label style="font-size:0.72rem">Data do exame</label>
+            <input type="date" id="fnAsoData" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:0.79rem;font-family:inherit"/>
+          </div>
+          <div class="fg"><label style="font-size:0.72rem">Próximo exame (vencimento)</label>
+            <input type="date" id="fnAsoVenc" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:0.79rem;font-family:inherit"/>
+          </div>
+        </div>
+        <div class="fg" style="margin-top:4px">
+          <label style="font-size:0.72rem">📎 Arquivo do ASO (PDF, JPG — máx. 2MB)</label>
+          <div id="fnAsoArqAtual" style="display:none;margin-bottom:6px;font-size:0.78rem">
+            <span id="fnAsoArqLink" style="color:var(--blue);cursor:pointer;text-decoration:underline" onclick="abrirAsoArq()"></span>
+            <button onclick="fnAsoRemoverArq()" style="margin-left:8px;background:none;border:none;color:var(--red);cursor:pointer;font-size:0.78rem">✕ remover</button>
+          </div>
+          <input type="file" id="fnAsoFile" accept=".pdf,.jpg,.jpeg,.png" style="font-size:0.78rem;width:100%"/>
+          <div id="fnAsoProgress" style="font-size:0.72rem;color:var(--sub);margin-top:3px;min-height:14px"></div>
+        </div>
+      </div>
     </div>
     <!-- NRs -->
     <div id="fmPane-nrs" style="display:none">
@@ -4130,6 +4168,14 @@ function getRHAlerts(){
       const d=diffD(f.ferIni);
       if(d!==null&&d>=0&&d<=30) alerts.push({tipo:'pend',nome:`${f.nome} — Férias`,desc:`Início em ${d} dias (${fmtD(f.ferIni)}) — emitir aviso`,link:`#func-${f.id}`});
     }
+    // ASO vencido / a vencer (60 dias)
+    if(f.asoVenc){
+      const d=diffD(f.asoVenc);
+      if(d!==null){
+        if(d<0) alerts.push({tipo:'venc',nome:`${f.nome} — ASO`,desc:`Vencido há ${Math.abs(d)} dias (${fmtD(f.asoVenc)}) — agendar novo exame`,link:`#func-${f.id}`});
+        else if(d<=60) alerts.push({tipo:'pend',nome:`${f.nome} — ASO`,desc:`Vence em ${d} dias (${fmtD(f.asoVenc)}) — agendar exame periódico`,link:`#func-${f.id}`});
+      }
+    }
     // Período de experiência
     if(f.expIni&&f.expDias){
       const expDias=parseInt(f.expDias)||0;
@@ -4697,12 +4743,24 @@ function renderFuncionarios(){
       const d=diffD(f.expIni);
       if(d!==null) expBadge=`<span class="exp-badge">${f.expSegunda?'2ª':'1ª'} exp ${f.expDias}d</span>`;
     }
+    // ASO badge
+    let asoBadge='';
+    if(f.asoVenc){
+      const da=diffD(f.asoVenc);
+      if(da!==null){
+        if(da<0) asoBadge=`<span class="nr-badge nr-venc">ASO VENC</span>`;
+        else if(da<=60) asoBadge=`<span class="nr-badge nr-pend">ASO ${da}d</span>`;
+        else asoBadge=`<span class="nr-badge nr-ok">ASO ✓</span>`;
+      }
+    } else if(f.asoData){
+      asoBadge=`<span class="nr-badge nr-ok">ASO s/ venc.</span>`;
+    }
     return`<div class="func-card" onclick="openFuncModal('${f.id}')">
       <div class="func-av">${initials(f.nome)}</div>
       <div class="func-info">
         <div class="func-name">${f.nome} ${sts} ${expBadge}</div>
         <div class="func-cargo">${f.cargo||'—'} · ${(f.tipo||'clt').toUpperCase()} · Adm: ${fmtD(f.admissao)||'—'}</div>
-        <div style="margin-top:4px">${nrBadges||'<span style="font-size:0.68rem;color:var(--sub)">Sem NRs</span>'}</div>
+        <div style="margin-top:4px">${asoBadge}${nrBadges||''}</div>
       </div>
     </div>`;}).join('');
 }
@@ -4753,6 +4811,17 @@ function openFuncModal(fid){
     document.getElementById('fnFerFim').value=f.ferFim||'';
     document.getElementById('fnFerAquis').value=f.ferAquis||'';
     document.getElementById('fnFerDias').value=f.ferDias||'';
+    // ASO
+    document.getElementById('fnAsoTipo').value=f.asoTipo||'';
+    document.getElementById('fnAsoResult').value=f.asoResult||'';
+    document.getElementById('fnAsoData').value=f.asoData||'';
+    document.getElementById('fnAsoVenc').value=f.asoVenc||'';
+    const asoDiv=document.getElementById('fnAsoArqAtual');
+    const asoLnk=document.getElementById('fnAsoArqLink');
+    if(f.asoArqUrl){ asoDiv.style.display=''; asoLnk.textContent='📎 '+(f.asoArqNome||'Ver ASO'); }
+    else { asoDiv.style.display='none'; }
+    document.getElementById('fnAsoFile').value='';
+    document.getElementById('fnAsoProgress').textContent='';
     // NRs: load dynamic NRs; also migrate legacy if present
     curNRs=f.nrs?Object.values(f.nrs):[];
     if(!curNRs.length){
@@ -4770,6 +4839,11 @@ function openFuncModal(fid){
     document.getElementById('fnExpSegunda').checked=false;
     document.getElementById('fnFerDias').value='';
     curNRs=[];
+    // ASO reset
+    ['fnAsoTipo','fnAsoResult','fnAsoData','fnAsoVenc'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('fnAsoArqAtual').style.display='none';
+    document.getElementById('fnAsoFile').value='';
+    document.getElementById('fnAsoProgress').textContent='';
   }
   renderNRList();
   document.getElementById('ovlFunc').classList.add('v');
@@ -4779,9 +4853,27 @@ async function saveFunc(){
   const nome=(document.getElementById('fnNome').value||'').trim();
   if(!nome){alert('Informe o nome do funcionário.');return;}
   const fid=document.getElementById('editFuncId').value||genId();
+  const existing=funcionarios[fid]||{};
   // Convert curNRs array to object
   const nrsObj={};
   curNRs.forEach((nr,i)=>{ if(nr.nome) nrsObj['nr'+i]={nome:nr.nome,vencimento:nr.vencimento||'',link:nr.link||''}; });
+  // ASO arquivo
+  let asoArqUrl=existing.asoArqUrl||'';
+  let asoArqNome=existing.asoArqNome||'';
+  const asoLnk=document.getElementById('fnAsoArqLink');
+  if(asoLnk.dataset.removed==='1'){ asoArqUrl=''; asoArqNome=''; asoLnk.dataset.removed=''; }
+  const asoFile=document.getElementById('fnAsoFile');
+  const asoProg=document.getElementById('fnAsoProgress');
+  if(asoFile.files[0]){
+    asoProg.textContent='⏳ Convertendo arquivo...';
+    try{
+      const b64=await uploadFile(asoFile.files[0],'',()=>{});
+      asoArqNome=asoFile.files[0].name;
+      await db.ref('erp/aso_arqs/'+fid).set({b64, nome:asoArqNome, atualizadoEm:Date.now()});
+      asoArqUrl='db:'+fid;
+      asoProg.textContent='✅ ASO salvo!';
+    }catch(e){ asoProg.textContent='⚠️ Erro: '+e.message; return; }
+  }
   const data={
     id:fid, nome,
     cargo:document.getElementById('fnCargo').value,
@@ -4804,11 +4896,29 @@ async function saveFunc(){
     ferAquis:document.getElementById('fnFerAquis').value||'',
     ferDias:document.getElementById('fnFerDias').value||'',
     nrs:nrsObj,
-    criadoEm:funcionarios[fid]?.criadoEm||Date.now(),
+    asoTipo:document.getElementById('fnAsoTipo').value,
+    asoResult:document.getElementById('fnAsoResult').value,
+    asoData:document.getElementById('fnAsoData').value||'',
+    asoVenc:document.getElementById('fnAsoVenc').value||'',
+    asoArqUrl, asoArqNome,
+    criadoEm:existing.criadoEm||Date.now(),
     atualizadoPor:curUser.uid
   };
   await db.ref('erp/funcionarios/'+fid).set(data);
   closeOvl('ovlFunc');
+}
+
+async function abrirAsoArq(){
+  const fid=document.getElementById('editFuncId').value; if(!fid) return;
+  const snap=await db.ref('erp/aso_arqs/'+fid).once('value');
+  const d=snap.val(); if(!d?.b64){alert('Arquivo não encontrado.');return;}
+  const win=window.open('','_blank');
+  win.document.write(`<html><body style="margin:0"><iframe src="${d.b64}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);
+  win.document.close();
+}
+function fnAsoRemoverArq(){
+  document.getElementById('fnAsoArqAtual').style.display='none';
+  document.getElementById('fnAsoArqLink').dataset.removed='1';
 }
 
 // ── Recrutamento Kanban ──
