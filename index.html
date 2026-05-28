@@ -563,6 +563,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <button class="fin-pill"        id="finSt-pago"     onclick="finSetSt('pago')">Pago / Recebido</button>
           <button class="fin-pill"        id="finSt-vencido"  onclick="finSetSt('vencido')">Vencido</button>
           <input type="month" id="finMesInput" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:20px;font-size:0.72rem;font-family:inherit;color:var(--dark);background:#fff" onchange="renderFin()"/>
+          <button class="fin-pill" id="finMesLimpar" onclick="document.getElementById('finMesInput').value='';renderFin()" style="display:none">✕ Todos os meses</button>
         </div>
 
         <!-- List -->
@@ -2434,10 +2435,10 @@ function renderDash(){
 
   // ── KPIs (8 cards, 2 rows)
   document.getElementById('dashKpis').innerHTML=`
-    <div class="kpi"><div class="kpi-lbl">Receitas do mês</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(recPago)}</div><div class="kpi-sub">total: ${fmtBRL(recTotal)}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Despesas do mês</div><div class="kpi-val" style="color:var(--red)">${fmtBRL(desPago)}</div><div class="kpi-sub">total: ${fmtBRL(desTotal)}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Saldo realizado</div><div class="kpi-val" style="color:${saldo>=0?'var(--green)':'var(--red)'}">${fmtBRL(saldo)}</div><div class="kpi-sub">a receber: ${fmtBRL(aReceber)}</div></div>
-    <div class="kpi"><div class="kpi-lbl">A pagar</div><div class="kpi-val" style="color:var(--amber)">${fmtBRL(aPagar)}</div><div class="kpi-sub">pendente este mês</div></div>
+    <div class="kpi" style="cursor:pointer" onclick="navTo('fin')"><div class="kpi-lbl">A Receber — ${new Date().toLocaleString('pt-BR',{month:'short'})}</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(aReceber)}</div><div class="kpi-sub">${recPago>0?'recebido: '+fmtBRL(recPago):'nenhum recebido ainda'}</div></div>
+    <div class="kpi" style="cursor:pointer" onclick="navTo('fin')"><div class="kpi-lbl">A Pagar — ${new Date().toLocaleString('pt-BR',{month:'short'})}</div><div class="kpi-val" style="color:var(--red)">${fmtBRL(aPagar)}</div><div class="kpi-sub">${desPago>0?'pago: '+fmtBRL(desPago):'nenhum pago ainda'}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Saldo Realizado</div><div class="kpi-val" style="color:${saldo>=0?'var(--green)':'var(--red)'}">${fmtBRL(saldo)}</div><div class="kpi-sub">recebido − pago no mês</div></div>
+    <div class="kpi"><div class="kpi-lbl">Saldo Projetado</div><div class="kpi-val" style="color:${(recTotal-desTotal)>=0?'var(--green)':'var(--amber)'}">${fmtBRL(recTotal-desTotal)}</div><div class="kpi-sub">total receitas − despesas</div></div>
     <div class="kpi"><div class="kpi-lbl">Empresas CRM</div><div class="kpi-val">${arr.length}</div><div class="kpi-sub">${byS.cliente||0} clientes ativos</div></div>
     <div class="kpi"><div class="kpi-lbl">Em Negociação</div><div class="kpi-val" style="color:var(--amber)">${(byS.negociacao||0)+(byS.proposta||0)}</div><div class="kpi-sub">${overdue} follow-ups venc.</div></div>
     <div class="kpi"><div class="kpi-lbl">Propostas Abertas</div><div class="kpi-val" style="color:var(--blue)">${propAberto}</div><div class="kpi-sub">aprovadas: ${fmtBRL(propValor)}</div></div>
@@ -4247,7 +4248,15 @@ function renderFin(){
   const listEl=document.getElementById('finList');
   if(!kpiEl||!listEl) return;
 
-  const mes=document.getElementById('finMesInput')?.value||'';
+  const mesInput=document.getElementById('finMesInput');
+  // Pré-seleciona mês atual na primeira abertura
+  if(mesInput&&!mesInput.dataset.touched&&!mesInput.value){
+    mesInput.value=new Date().toISOString().slice(0,7);
+    mesInput.dataset.touched='1';
+  }
+  const mes=mesInput?.value||'';
+  const btnLimpar=document.getElementById('finMesLimpar');
+  if(btnLimpar) btnLimpar.style.display=mes?'':'none';
   const today=new Date(); today.setHours(0,0,0,0);
   const all=Object.values(lancamentos);
 
