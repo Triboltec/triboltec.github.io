@@ -12,6 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/pizzip@3.1.7/dist/pizzip.min.js"></script>
 <script src="https://unpkg.com/docxtemplater@3.47.0/build/docxtemplater.js"></script>
@@ -1475,7 +1476,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
               </select>
             </div>
           </div>
-          <div style="margin-bottom:6px"><label style="font-size:0.64rem;color:var(--sub)">Link (Google Drive)</label><input type="url" id="arqLink" placeholder="https://drive.google.com/..." style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:0.79rem;font-family:inherit"/></div>
+          <div style="margin-bottom:6px">
+            <label style="font-size:0.64rem;color:var(--sub)">Arquivo (PDF, imagem) ou Link</label>
+            <input type="file" id="arqFile" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx" style="width:100%;font-size:0.78rem;margin-bottom:4px"/>
+            <input type="url" id="arqLink" placeholder="Ou cole link do Google Drive..." style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:0.79rem;font-family:inherit"/>
+            <div id="arqUploadProg" style="font-size:0.72rem;color:var(--sub);margin-top:3px;min-height:14px"></div>
+          </div>
           <div style="display:flex;gap:6px;justify-content:flex-end">
             <button class="btn btn-ghost" style="font-size:0.74rem;padding:5px 10px" onclick="document.getElementById('arqAddForm').style.display='none'">Cancelar</button>
             <button class="btn btn-red" style="font-size:0.74rem;padding:5px 10px" onclick="saveArquivo()">Salvar</button>
@@ -1656,6 +1662,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="fg"><label>Projeto (opcional)</label><input type="text" id="lancProjeto" placeholder="Nome ou OS"/></div>
     </div>
     <div class="fg"><label>Observações</label><textarea id="lancObs" rows="2" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit;resize:vertical" placeholder="Detalhes adicionais…"></textarea></div>
+    <!-- Comprovante / Boleto -->
+    <div class="fg" style="background:#f8f9fa;border-radius:8px;padding:10px;margin-top:4px">
+      <label style="margin-bottom:6px;display:block">📎 Comprovante / Boleto</label>
+      <div id="lancArqAtual" style="display:none;margin-bottom:8px;font-size:0.78rem">
+        <a id="lancArqLink" href="#" target="_blank" style="color:var(--blue);word-break:break-all"></a>
+        <button onclick="lancRemoveArq()" style="margin-left:8px;background:none;border:none;color:var(--red);cursor:pointer;font-size:0.78rem">✕ remover</button>
+      </div>
+      <input type="file" id="lancArqFile" accept=".pdf,.jpg,.jpeg,.png,.webp" style="font-size:0.78rem;width:100%"/>
+      <div id="lancArqProgress" style="font-size:0.72rem;color:var(--sub);margin-top:4px;min-height:16px"></div>
+    </div>
     <div class="mact">
       <button class="btn btn-ghost" onclick="closeOvl('ovlLanc')">Cancelar</button>
       <button class="btn btn-red" onclick="saveLanc()">Salvar</button>
@@ -1927,12 +1943,29 @@ function diffD(s){ if(!s) return null; const t=new Date(s+'T00:00:00'); const n=
 function stInfo(id){ return STAGES.find(s=>s.id===id)||{label:id,cls:'s-prospect'}; }
 
 // ══════════════════════════════════════════════
+// UPLOAD (Firebase Storage)
+// ══════════════════════════════════════════════
+async function uploadFile(file, storagePath, onProgress){
+  if(!window._storage) throw new Error('Storage não inicializado');
+  const ref = window._storage.ref(storagePath + '/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_'));
+  const task = ref.put(file);
+  return new Promise((resolve, reject)=>{
+    task.on('state_changed',
+      snap=>{ if(onProgress) onProgress(Math.round(snap.bytesTransferred/snap.totalBytes*100)); },
+      err=>reject(err),
+      async()=>{ resolve(await task.snapshot.ref.getDownloadURL()); }
+    );
+  });
+}
+
+// ══════════════════════════════════════════════
 // FIREBASE INIT
 // ══════════════════════════════════════════════
 function initFirebase(cfg){
   try {
     const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(cfg);
     db = firebase.database(app);
+    window._storage = firebase.storage(app);
     db.ref('.info/connected').on('value', snap=>{
       document.getElementById('syncDot').className = 'sync-dot ' + (snap.val() ? '' : 'off');
       document.getElementById('offWarn').className = 'offline-warn' + (snap.val() ? '' : ' show');
@@ -3761,6 +3794,7 @@ function renderLancItem(l, today){
       ${stBadge}
       <div class="lan-acts">
         ${!isPago?`<button class="lan-btn pay" onclick="markLancPago('${l.id}')" title="${isRec?'Marcar recebido':'Marcar pago'}">✓</button>`:''}
+        ${l.arqUrl?`<a class="lan-btn" href="${l.arqUrl}" target="_blank" title="Ver comprovante">📎</a>`:''}
         <button class="lan-btn" onclick="openLancModal('${l.id}')" title="Editar">✏️</button>
         <button class="lan-btn" onclick="delLanc('${l.id}')" title="Excluir">🗑️</button>
       </div>
@@ -3796,14 +3830,29 @@ function openLancModal(lid){
     document.getElementById('lancStatus').value=l.status||'pendente';
     document.getElementById('lancProjeto').value=l.projeto||'';
     document.getElementById('lancObs').value=l.obs||'';
+    // Anexo existente
+    const arqDiv=document.getElementById('lancArqAtual');
+    const arqLnk=document.getElementById('lancArqLink');
+    if(l.arqUrl){ arqDiv.style.display=''; arqLnk.href=l.arqUrl; arqLnk.textContent=l.arqNome||'📎 Anexo'; }
+    else { arqDiv.style.display='none'; }
   } else {
     setLancTipo('receita');
     ['lancDesc','lancCat','lancProjeto','lancObs','lancVenc'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('lancValor').value='';
     document.getElementById('lancData').value=hoje;
     document.getElementById('lancStatus').value='pendente';
+    document.getElementById('lancArqAtual').style.display='none';
   }
+  document.getElementById('lancArqFile').value='';
+  document.getElementById('lancArqProgress').textContent='';
   document.getElementById('ovlLanc').classList.add('v');
+}
+function lancRemoveArq(){
+  document.getElementById('lancArqAtual').style.display='none';
+  document.getElementById('lancArqLink').href='';
+  document.getElementById('lancArqLink').textContent='';
+  // mark for removal on save
+  document.getElementById('lancArqLink').dataset.removed='1';
 }
 
 async function saveLanc(){
@@ -3812,17 +3861,32 @@ async function saveLanc(){
   if(!desc){alert('Informe a descrição.');return;}
   if(!valor||valor<=0){alert('Informe um valor válido.');return;}
   const lid=document.getElementById('editLancId').value||genId();
+  // Handle file upload
+  let arqUrl=lancamentos[lid]?.arqUrl||'';
+  let arqNome=lancamentos[lid]?.arqNome||'';
+  const arqLnk=document.getElementById('lancArqLink');
+  if(arqLnk.dataset.removed==='1'){ arqUrl=''; arqNome=''; arqLnk.dataset.removed=''; }
+  const fileInput=document.getElementById('lancArqFile');
+  const prog=document.getElementById('lancArqProgress');
+  if(fileInput.files[0]){
+    prog.textContent='⏳ Enviando arquivo...';
+    try{
+      arqUrl=await uploadFile(fileInput.files[0],'erp/lancamentos/'+lid, pct=>{ prog.textContent=`⏳ ${pct}%`; });
+      arqNome=fileInput.files[0].name;
+      prog.textContent='✅ Arquivo enviado!';
+    }catch(e){ prog.textContent='⚠️ Erro no upload: '+e.message; return; }
+  }
   const obj={
     id:lid,
     tipo:document.getElementById('lancTipo').value,
-    desc,
-    valor,
+    desc, valor,
     data:document.getElementById('lancData').value||new Date().toISOString().slice(0,10),
     venc:document.getElementById('lancVenc').value||'',
     cat:document.getElementById('lancCat').value.trim(),
     status:document.getElementById('lancStatus').value,
     projeto:document.getElementById('lancProjeto').value.trim(),
     obs:document.getElementById('lancObs').value.trim(),
+    arqUrl, arqNome,
     criadoEm:lancamentos[lid]?.criadoEm||Date.now(),
     uid:curUser?.uid||''
   };
@@ -4761,17 +4825,34 @@ async function addClkItem(){
 const ARQ_CAT_LABEL={admissao:'Admissão',rescisao:'Rescisão',pessoal:'Pessoal',exame:'Exame/ASO',contrato:'Contrato',outro:'Outro'};
 const ARQ_CAT_ICO={admissao:'📥',rescisao:'📤',pessoal:'👤',exame:'🏥',contrato:'📄',outro:'📎'};
 
-function openArqForm(){ document.getElementById('arqAddForm').style.display=''; document.getElementById('arqNome').value=''; document.getElementById('arqLink').value=''; }
+function openArqForm(){
+  document.getElementById('arqAddForm').style.display='';
+  document.getElementById('arqNome').value='';
+  document.getElementById('arqLink').value='';
+  document.getElementById('arqFile').value='';
+  document.getElementById('arqUploadProg').textContent='';
+}
 
 async function saveArquivo(){
   const fid=document.getElementById('editFuncId').value;
   if(!fid) return;
-  const nome=document.getElementById('arqNome').value.trim();
-  const link=document.getElementById('arqLink').value.trim();
+  let nome=document.getElementById('arqNome').value.trim();
+  const cat=document.getElementById('arqCat').value;
+  const fileInput=document.getElementById('arqFile');
+  const prog=document.getElementById('arqUploadProg');
+  let link=document.getElementById('arqLink').value.trim();
+
+  // Upload file if selected
+  if(fileInput.files[0]){
+    if(!nome) nome=fileInput.files[0].name.replace(/\.[^.]+$/,'');
+    prog.textContent='⏳ Enviando...';
+    try{
+      link=await uploadFile(fileInput.files[0],`erp/funcionarios/${fid}/docs`, pct=>{ prog.textContent=`⏳ ${pct}%`; });
+      prog.textContent='✅ Enviado!';
+    }catch(e){ prog.textContent='⚠️ Erro: '+e.message; return; }
+  }
   if(!nome){alert('Informe o nome do arquivo.');return;}
   const aid=genId();
-  const cat=document.getElementById('arqCat').value;
-  // Store inline in the funcionario document
   await db.ref(`erp/funcionarios/${fid}/arquivos/${aid}`).set({id:aid,nome,cat,link,criadoEm:Date.now(),criadoPor:curUser?.nome?.split(' ')[0]||''});
   document.getElementById('arqAddForm').style.display='none';
   renderArquivos(fid);
