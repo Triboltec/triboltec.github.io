@@ -2420,8 +2420,9 @@ function renderDash(){
 
   // — Financeiro (lancamentos/)
   const lanArr = Object.values(lancamentos);
-  const mesRec = lanArr.filter(l=>l.tipo==='receita' && l.data?.startsWith(ym));
-  const mesDes = lanArr.filter(l=>l.tipo==='despesa' && l.data?.startsWith(ym));
+  const lanMes=l=>(l.venc||l.data||'').slice(0,7)===ym;
+  const mesRec = lanArr.filter(l=>l.tipo==='receita' && lanMes(l));
+  const mesDes = lanArr.filter(l=>l.tipo==='despesa' && lanMes(l));
   const recTotal  = mesRec.reduce((s,l)=>s+(l.valor||0),0);
   const recPago   = mesRec.filter(l=>l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
   const desTotal  = mesDes.reduce((s,l)=>s+(l.valor||0),0);
@@ -2451,8 +2452,8 @@ function renderDash(){
 
   // ── Vencimentos financeiros próximos (7 dias)
   const d7 = new Date(); d7.setDate(d7.getDate()+7); const d7s=d7.toISOString().slice(0,10);
-  const vencFin = lanArr.filter(l=>l.status==='pendente'&&l.data&&l.data>=today&&l.data<=d7s)
-    .sort((a,b)=>a.data.localeCompare(b.data)).slice(0,6);
+  const vencFin = lanArr.filter(l=>l.status!=='pago'&&(l.venc||l.data)>=(today)&&(l.venc||l.data)<=d7s)
+    .sort((a,b)=>(a.venc||a.data||'').localeCompare(b.venc||b.data||'')).slice(0,6);
 
   // ── RH Alerts for dashboard
   const rhAlertsDash = getRHAlerts().slice(0,5);
@@ -2543,8 +2544,9 @@ function renderCashFlow(lanArr){
     months.push(d.toISOString().slice(0,7));
   }
   const data=months.map(ym=>{
-    const rec=lanArr.filter(l=>l.tipo==='receita'&&l.data?.startsWith(ym)).reduce((s,l)=>s+(l.valor||0),0);
-    const des=lanArr.filter(l=>l.tipo==='despesa'&&l.data?.startsWith(ym)).reduce((s,l)=>s+(l.valor||0),0);
+    const cfMes=l=>(l.venc||l.data||'').slice(0,7)===ym;
+    const rec=lanArr.filter(l=>l.tipo==='receita'&&cfMes(l)).reduce((s,l)=>s+(l.valor||0),0);
+    const des=lanArr.filter(l=>l.tipo==='despesa'&&cfMes(l)).reduce((s,l)=>s+(l.valor||0),0);
     return{ym,rec,des,saldo:rec-des};
   });
   const maxVal=Math.max(...data.map(d=>Math.max(d.rec,d.des)),1);
@@ -4249,7 +4251,7 @@ function renderFin(){
   const all=Object.values(lancamentos);
 
   // KPIs (always full dataset or filtered by month)
-  const scope=mes?all.filter(l=>(l.data||'').startsWith(mes)||(l.venc||'').startsWith(mes)):all;
+  const scope=mes?all.filter(l=>(l.venc||l.data||'').startsWith(mes)):all;
   const rec=scope.filter(l=>l.tipo==='receita');
   const des=scope.filter(l=>l.tipo==='despesa');
   const sumV=arr=>arr.reduce((s,l)=>s+(Number(l.valor)||0),0);
@@ -4268,7 +4270,7 @@ function renderFin(){
 
   // List: apply filters
   let items=[...all];
-  if(mes) items=items.filter(l=>(l.data||'').startsWith(mes)||(l.venc||'').startsWith(mes));
+  if(mes) items=items.filter(l=>(l.venc||l.data||'').startsWith(mes));
   if(finTab!=='todos') items=items.filter(l=>l.tipo===finTab);
   if(finSt==='pendente') items=items.filter(l=>l.status!=='pago');
   if(finSt==='pago') items=items.filter(l=>l.status==='pago');
@@ -4277,7 +4279,7 @@ function renderFin(){
     const d=l.venc||l.data; if(!d) return false;
     return new Date(d)<today;
   });
-  items.sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  items.sort((a,b)=>(b.venc||b.data||'').localeCompare(a.venc||a.data||''));
 
   if(!items.length){
     listEl.innerHTML='<div class="fin-empty">Nenhum lançamento encontrado.</div>';
