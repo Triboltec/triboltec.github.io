@@ -476,10 +476,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div id="loginScreen">
   <div class="ll">TRIBO<span>LTEC</span></div>
   <div class="ls">Sistema ERP</div>
-  <div id="userGrid" class="ugrid"></div>
-  <div id="pinBox" style="display:none">
-    <h2 id="pinUser"></h2>
-    <p>Digite seu PIN de 4 dígitos</p>
+  <!-- hidden grid still used for first-admin creation -->
+  <div id="userGrid" class="ugrid" style="display:none"></div>
+  <div id="pinBox">
+    <div style="width:100%;max-width:290px;margin-bottom:16px">
+      <input id="loginName" type="text" placeholder="Seu nome" autocomplete="off" spellcheck="false"
+        style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;font-family:inherit;font-size:0.9rem;outline:none;text-align:center"
+        oninput="loginNameInput(this)"/>
+      <div id="loginNameErr" style="font-size:0.72rem;color:#f87171;min-height:16px;margin-top:4px;text-align:center"></div>
+    </div>
+    <p style="color:rgba(255,255,255,0.35);font-size:0.74rem;margin-bottom:14px">Digite seu PIN de 4 dígitos</p>
     <div class="dots">
       <div class="dot" id="d0"></div><div class="dot" id="d1"></div>
       <div class="dot" id="d2"></div><div class="dot" id="d3"></div>
@@ -491,7 +497,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <button class="pb" onclick="pp('←')">←</button><button class="pb" onclick="pp('0')">0</button><button class="pb" onclick="pp('OK')">OK</button>
     </div>
     <div class="perr" id="perr"></div>
-    <div class="lback" onclick="backToUsers()">← Trocar usuário</div>
   </div>
 </div>
 
@@ -1951,21 +1956,34 @@ function renderUserGrid(){
   const grid = document.getElementById('userGrid');
   const active = Object.entries(usuarios).filter(([,u])=>u.ativo!==false);
   if(!active.length){
+    // First run — no users yet, show creation form inside userGrid
+    grid.style.display = 'block';
+    document.getElementById('pinBox').style.display = 'none';
     grid.innerHTML = `<div class="first-run">
-      <p style="margin-bottom:14px">Bem-vindo ao A2 Sistema!<br>Crie o primeiro administrador:</p>
+      <p style="margin-bottom:14px">Bem-vindo ao Triboltec ERP!<br>Crie o primeiro administrador:</p>
       <input id="fr-nome" placeholder="Seu nome completo" style="background:#fff;color:#111;border-radius:8px;border:none;padding:10px 12px;width:100%;margin-bottom:8px;font-size:0.85rem;font-family:inherit"/>
       <input id="fr-pin" type="number" placeholder="PIN de 4 dígitos" style="background:#fff;color:#111;border-radius:8px;border:none;padding:10px 12px;width:100%;margin-bottom:12px;font-size:0.85rem;font-family:inherit"/>
       <button onclick="createFirstAdmin()" class="bsetup" style="margin-top:0">Criar conta →</button>
     </div>`;
     return;
   }
-  grid.innerHTML = active.map(([id,u])=>`
-    <div class="ucard" onclick="selectUser('${id}')">
-      <div class="uav">${u.iniciais||initials(u.nome)}</div>
-      <div class="uname">${u.nome.split(' ')[0]}</div>
-    </div>`).join('');
-  document.getElementById('pinBox').style.display = 'none';
-  grid.style.display = 'grid';
+  // Normal flow — show name + PIN screen
+  grid.style.display = 'none';
+  document.getElementById('pinBox').style.display = 'block';
+  document.getElementById('loginName').value = '';
+  document.getElementById('loginNameErr').textContent = '';
+  document.getElementById('perr').textContent = '';
+  pinBuf = ''; selUID = null;
+  for(let i=0;i<4;i++) document.getElementById('d'+i).className='dot';
+  setTimeout(()=>document.getElementById('loginName').focus(), 100);
+}
+
+function loginNameInput(input){
+  // Clear error on typing
+  document.getElementById('loginNameErr').textContent = '';
+  selUID = null; pinBuf = '';
+  for(let i=0;i<4;i++) document.getElementById('d'+i).className='dot';
+  document.getElementById('perr').textContent = '';
 }
 
 async function createFirstAdmin(){
@@ -1982,24 +2000,22 @@ async function createFirstAdmin(){
 }
 
 function selectUser(uid){
+  // kept for compatibility but not called in new flow
   selUID = uid; pinBuf = '';
-  document.getElementById('userGrid').style.display = 'none';
-  document.getElementById('pinBox').style.display = 'block';
-  document.getElementById('pinUser').textContent = usuarios[uid].nome.split(' ')[0];
-  for(let i=0;i<4;i++) document.getElementById('d'+i).className='dot';
-  document.getElementById('perr').textContent = '';
 }
 function backToUsers(){
   if(_lockTimer){ clearInterval(_lockTimer); _lockTimer=null; }
   selUID = null; pinBuf = '';
-  document.getElementById('pinBox').style.display = 'none';
   document.getElementById('perr').textContent = '';
-  document.getElementById('userGrid').style.display = 'grid';
+  document.getElementById('loginName').value = '';
+  document.getElementById('loginNameErr').textContent = '';
+  for(let i=0;i<4;i++) document.getElementById('d'+i).className='dot';
+  setTimeout(()=>document.getElementById('loginName').focus(), 100);
 }
 
 function pp(k){
-  // Block input during lockout
-  const fail = _pinFails[selUID] || {count:0, until:0};
+  // Block input during lockout (check by selUID if known, else skip)
+  const fail = selUID ? (_pinFails[selUID]||{count:0,until:0}) : {count:0,until:0};
   if(fail.until > Date.now()) return;
   if(k==='←'){ pinBuf=pinBuf.slice(0,-1); }
   else if(k==='OK'){ checkPin(); return; }
@@ -2010,8 +2026,31 @@ function pp(k){
 }
 
 async function checkPin(){
+  // Find user by name match
+  const nameVal = (document.getElementById('loginName').value||'').trim().toLowerCase();
+  if(!nameVal){
+    document.getElementById('loginNameErr').textContent = 'Informe seu nome.';
+    pinBuf=''; for(let i=0;i<4;i++) document.getElementById('d'+i).className='dot';
+    return;
+  }
+  // Match against active users (first name or full name, case-insensitive)
+  const match = Object.entries(usuarios).find(([,u])=>
+    u.ativo!==false && (
+      u.nome.toLowerCase()===nameVal ||
+      u.nome.toLowerCase().startsWith(nameVal+' ') ||
+      u.nome.split(' ')[0].toLowerCase()===nameVal
+    )
+  );
+  if(!match){
+    document.getElementById('loginNameErr').textContent = 'Nome não encontrado.';
+    pinBuf=''; for(let i=0;i<4;i++) document.getElementById('d'+i).className='dot';
+    return;
+  }
+  const [uid, u] = match;
+  selUID = uid;
+
   const now = Date.now();
-  const fail = _pinFails[selUID] || {count:0, until:0};
+  const fail = _pinFails[uid] || {count:0, until:0};
   // Locked out?
   if(fail.until > now){
     const secs = Math.ceil((fail.until - now)/1000);
@@ -2019,21 +2058,20 @@ async function checkPin(){
     pinBuf=''; for(let i=0;i<4;i++) document.getElementById('d'+i).className='dot';
     return;
   }
-  const u = usuarios[selUID];
   const h = await hashPin(pinBuf);
   if(h === u.pinHash){
-    _pinFails[selUID] = {count:0, until:0};
+    _pinFails[uid] = {count:0, until:0};
     if(_lockTimer){ clearInterval(_lockTimer); _lockTimer=null; }
-    doLogin(selUID, u);
+    doLogin(uid, u);
   } else {
     fail.count = (fail.count||0) + 1;
     if(fail.count >= 5){
       fail.until = now + 5*60*1000;
       fail.count = 0;
-      _pinFails[selUID] = fail;
+      _pinFails[uid] = fail;
       _startLockoutCountdown();
     } else {
-      _pinFails[selUID] = fail;
+      _pinFails[uid] = fail;
       const left = 5 - fail.count;
       document.getElementById('perr').textContent = `PIN incorreto — ${left} tentativa${left===1?'':'s'} restante${left===1?'':'s'}.`;
     }
