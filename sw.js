@@ -1,4 +1,4 @@
-const CACHE='triboltec-v8';
+const CACHE='triboltec-v9';
 const ASSETS=['/manifest.json',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js',

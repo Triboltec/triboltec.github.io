@@ -3584,11 +3584,13 @@ function renderPedidos(){
     const forn=fornecedores[p.fornId]||{};
     const isPedPend = p.aprovStatus==='pendente';
     const pedSolicit = isPedPend ? (usuarios[p.aprovSolicitadoPor]?.nome?.split(' ')[0]||'Usuário') : '';
+    const pedLancs = Object.values(lancamentos).filter(l=>l.pedidoId===p.id).length;
     return`<div class="ped-card" onclick="openPedidoModal('${p.id}')" style="${isPedPend?'border-left:3px solid #fcd34d':''}">
       <div style="flex:1">
         <div class="ped-num">${p.numero||'—'} ${isPedPend?'<span style="font-size:0.62rem;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:4px;padding:1px 5px;font-weight:700">⏳ Aprovação</span>':''}</div>
         <div class="ped-forn">${forn.nome||'—'}</div>
         <div class="ped-desc">${isPedPend?`Por: ${pedSolicit} · `:''}${p.obs||''}</div>
+        ${pedLancs?`<div style="font-size:0.68rem;color:var(--blue);margin-top:2px">💰 ${pedLancs} lançamento${pedLancs>1?'s':''} no financeiro</div>`:''}
       </div>
       <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px" onclick="event.stopPropagation()">
         <div style="font-size:0.9rem;font-weight:800;color:var(--dark)">${fmtBRL(p.total||0)}</div>
@@ -3596,6 +3598,7 @@ function renderPedidos(){
         ${isPedPend&&curUser?.isSuper?`
           <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px;background:#dcfce7;color:#166534;border-color:#86efac" onclick="aprovarPedido('${p.id}')">✅ Aprovar</button>
           <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px;background:#fee2e2;color:#991b1b;border-color:#fca5a5" onclick="rejeitarPedido('${p.id}')">✕ Rejeitar</button>`:''}
+        ${!isPedPend&&curUser?.isSuper&&!pedLancs?`<button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px" onclick="event.stopPropagation();criarLancsPedido('${p.id}')">💰 Criar Lançamentos</button>`:''}
         <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px" onclick="gerarPedidoHTML('${p.id}')">🖨️ PDF</button>
       </div>
     </div>`;}).join('');
@@ -3805,7 +3808,11 @@ async function savePedido(status){
   closeOvl('ovlPedido');
   if(aprovMsg) alert(aprovMsg);
   if(isSuper && status==='aprovado'){
-    setTimeout(()=>gerarPedidoHTML(pid), 600);
+    // Criar lançamentos no financeiro (aguarda pedidos ser atualizado no listener)
+    setTimeout(async()=>{
+      await criarLancsPedido(pid);
+      gerarPedidoHTML(pid);
+    }, 700);
   }
 }
 
@@ -3814,8 +3821,44 @@ function updateAprovBadge(count){
   if(dot) dot.style.display=(curUser?.isSuper && count>0)?'':'none';
 }
 
+async function criarLancsPedido(pid){
+  const p=pedidos[pid]; if(!p) return;
+  // Verificar se já existem lançamentos para este pedido
+  const existing=Object.values(lancamentos).filter(l=>l.pedidoId===pid);
+  if(existing.length){
+    if(!confirm(`Já existem ${existing.length} lançamento(s) para este pedido. Recriar?`)) return;
+    // Remover lançamentos anteriores
+    await Promise.all(existing.map(l=>db.ref('erp/lancamentos/'+l.id).remove()));
+  }
+  const forn=fornecedores[p.fornId]||{};
+  const proj=projetos[p.projId]||{};
+  const projNome=proj.numero?`${proj.numero} — ${proj.titulo||''}`:proj.titulo||'';
+  const hoje=new Date().toISOString().slice(0,10);
+  const base=Date.now();
+  const parcelas=p.pgtoParc&&p.pgtoParc.length ? p.pgtoParc : [{venc:'',valor:p.total||0}];
+  const n=parcelas.length;
+  for(let i=0;i<n;i++){
+    const pc=parcelas[i];
+    const lid=base.toString(36)+'_lanc_'+i+'_'+Math.random().toString(36).slice(2,4);
+    const desc=n>1?`${p.numero||'Pedido'} — ${forn.nome||''} (${i+1}/${n})`:`${p.numero||'Pedido'} — ${forn.nome||''}`;
+    await db.ref('erp/lancamentos/'+lid).set({
+      id:lid, tipo:'despesa',
+      desc, valor:pc.valor||0,
+      data:hoje, venc:pc.venc||'',
+      cat:'Fornecedores', status:'pendente',
+      projeto:projNome, obs:`Pedido de compra ${p.numero||''}`,
+      fornId:p.fornId||'', pedidoId:pid,
+      aprovStatus:'aprovado', aprovadoPor:curUser.uid,
+      ...(n>1?{parcelaNum:i+1,parcelaTotal:n,parcelaGrupo:pid}:{}),
+      criadoEm:base+i, uid:curUser?.uid||''
+    });
+  }
+  alert(`✅ ${n} lançamento${n>1?'s':''} criado${n>1?'s':''} no Financeiro!`);
+}
+
 async function aprovarPedido(pid){
   await db.ref('erp/pedidos/'+pid).update({aprovStatus:'aprovado', aprovadoPor:curUser.uid, aprovadoEm:Date.now()});
+  await criarLancsPedido(pid);
   setTimeout(()=>gerarPedidoHTML(pid), 500);
 }
 async function rejeitarPedido(pid){
