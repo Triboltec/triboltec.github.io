@@ -1244,9 +1244,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="fg"><label>Projeto / OS (referência)</label><select id="pedProj"></select></div>
     </div>
     <div class="fg"><label>Condições de Pagamento</label>
-      <select id="pedPgto">
-        <option>30 DDL</option><option>A vista</option><option>50% entrada + 50% entrega</option><option>Boleto 30/60</option>
-      </select>
+      <input type="text" id="pedPgto" list="pgtoData" placeholder="Ex: 30 DDL, À vista, 50%+50%..."/>
+      <datalist id="pgtoData">
+        <option>À vista</option>
+        <option>30 DDL</option><option>30/60 DDL</option><option>30/60/90 DDL</option>
+        <option>7 dias</option><option>14 dias</option><option>15 dias</option><option>21 dias</option>
+        <option>45 dias</option><option>60 dias</option><option>90 dias</option>
+        <option>50% entrada + 50% entrega</option>
+        <option>30% entrada + 70% entrega</option>
+        <option>50% entrada + 25% meio + 25% entrega</option>
+        <option>Boleto 30 dias</option><option>Boleto 30/60</option><option>Boleto 30/60/90</option>
+        <option>Cartão crédito 1x</option><option>Cartão crédito 2x</option><option>Cartão crédito 3x</option>
+        <option>Pix à vista</option>
+      </datalist>
     </div>
     <div class="orc-section">
       <h3>Itens do Pedido</h3>
@@ -1258,11 +1268,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div style="text-align:right;margin-top:10px;font-size:0.9rem;font-weight:800;color:var(--dark)">Total: <span id="pedTotal">R$ 0,00</span></div>
     </div>
     <div class="fg"><label>Observações / Prazo de entrega</label><textarea id="pedObs" placeholder="Prazo, local de entrega, observações..."></textarea></div>
+    <div id="pedAprovMsg" style="display:none;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;font-size:0.8rem;color:#92400e;margin-top:4px">
+      ⏳ Este pedido aguarda aprovação do administrador.
+    </div>
     <div class="mact" style="flex-wrap:wrap;gap:6px">
       <button class="btn btn-ghost" onclick="closeOvl('ovlPedido')">Cancelar</button>
       <button class="btn btn-ghost" id="btnGerarPedido" onclick="gerarPedidoHTML()" style="display:none">🖨️ Gerar PDF</button>
-      <button class="btn btn-ghost" onclick="savePedido('pendente')">Salvar Rascunho</button>
-      <button class="btn btn-red" onclick="savePedido('aprovado')">Aprovar →</button>
+      <button class="btn btn-ghost" onclick="savePedido('rascunho')">Salvar Rascunho</button>
+      <button class="btn btn-red" id="btnSalvarPedido" onclick="savePedido('aprovado')">Enviar →</button>
     </div>
   </div>
 </div>
@@ -2248,7 +2261,7 @@ function buildNav(){
   let sHtml = '';
   accessible.forEach((m,i)=>{
     if(m.id==='admin' && i>0) sHtml += '<div class="sni-sep"></div>';
-    sHtml += `<div class="sni" id="sn-${m.id}" onclick="navTo('${m.id}')"><span class="sni-ico">${m.icon}</span><span class="sni-lbl">${m.label}</span>${m.id==='rh'?'<span class="alert-dot" id="rhAlertDot" style="display:none"></span>':''}</div>`;
+    sHtml += `<div class="sni" id="sn-${m.id}" onclick="navTo('${m.id}')"><span class="sni-ico">${m.icon}</span><span class="sni-lbl">${m.label}</span>${m.id==='rh'?'<span class="alert-dot" id="rhAlertDot" style="display:none"></span>':''}${m.id==='dashboard'?'<span class="alert-dot" id="aprovDot" style="display:none"></span>':''}</div>`;
   });
   sHtml += '<div class="sni-sep"></div>';
   sHtml += `<a href="https://triboltec.com.br" target="_blank" class="sni" style="text-decoration:none" title="Ir ao site Triboltec"><span class="sni-ico">🌐</span><span class="sni-lbl">Ir ao Site</span></a>`;
@@ -2295,11 +2308,11 @@ function startListeners(){
   db.ref('erp/propostas').on('value', snap=>{ propostas=snap.val()||{}; renderProp(); renderDash(); });
   db.ref('erp/projetos').on('value', snap=>{ projetos=snap.val()||{}; renderProj(); renderDash(); fillProjSelects(); });
   db.ref('erp/fornecedores').on('value', snap=>{ fornecedores=snap.val()||{}; renderForn(); fillProjSelects(); });
-  db.ref('erp/pedidos').on('value', snap=>{ pedidos=snap.val()||{}; renderPedidos(); });
+  db.ref('erp/pedidos').on('value', snap=>{ pedidos=snap.val()||{}; renderPedidos(); renderDash(); updateAprovBadge(Object.values(lancamentos).filter(l=>l.aprovStatus==='pendente').length+Object.values(pedidos).filter(p=>p.aprovStatus==='pendente').length); });
   db.ref('erp/estoque').on('value', snap=>{ estoque=snap.val()||{}; renderEst(); });
   db.ref('erp/movimentos').on('value', snap=>{ movimentos=snap.val()||{}; });
   db.ref('erp/funcionarios').on('value', snap=>{ funcionarios=snap.val()||{}; renderFuncionarios(); renderRHAlerts(); updateRHBadge(); renderDash(); });
-  db.ref('erp/lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); renderFin(); });
+  db.ref('erp/lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); renderFin(); updateAprovBadge(Object.values(lancamentos).filter(l=>l.aprovStatus==='pendente').length+Object.values(pedidos).filter(p=>p.aprovStatus==='pendente').length); });
   db.ref('erp/notas').on('value', snap=>{ notas=snap.val()||{}; renderNF(); });
   db.ref('erp/nfconfig').on('value', snap=>{ nfConfig=snap.val()||{}; renderNF(); });
   db.ref('erp/candidatos').on('value', snap=>{ candidatos=snap.val()||{}; renderKanban(); });
@@ -2378,8 +2391,45 @@ function renderDash(){
   // ── RH Alerts for dashboard
   const rhAlertsDash = getRHAlerts().slice(0,5);
 
+  // ── Aprovações pendentes (só super)
+  const pendLanc = Object.values(lancamentos).filter(l=>l.aprovStatus==='pendente');
+  const pendPed  = Object.values(pedidos).filter(p=>p.aprovStatus==='pendente');
+  const totalPend = pendLanc.length + pendPed.length;
+  updateAprovBadge(totalPend);
+
   document.getElementById('dashCards').innerHTML=`
     ${cfHtml}
+    ${curUser?.isSuper && totalPend>0?`
+    <div class="dash-card" style="border-color:#fcd34d;border-width:2px">
+      <h3 style="color:#92400e">🔔 Aprovações Pendentes (${totalPend})</h3>
+      ${pendPed.map(p=>{
+        const forn=fornecedores[p.fornId]||{};
+        const sol=usuarios[p.aprovSolicitadoPor]?.nome?.split(' ')[0]||'—';
+        return`<div class="ritem" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div>
+            <div class="ritem-name">🛒 ${p.numero||'Pedido'} · ${forn.nome||'—'}</div>
+            <div class="ritem-sub">Por: ${sol} · ${fmtBRL(p.total||0)}</div>
+          </div>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 8px;background:#dcfce7;color:#166534;border-color:#86efac" onclick="aprovarPedido('${p.id}')">✅</button>
+            <button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 8px;background:#fee2e2;color:#991b1b;border-color:#fca5a5" onclick="rejeitarPedido('${p.id}')">✕</button>
+          </div>
+        </div>`;}).join('')}
+      ${pendLanc.map(l=>{
+        const sol=usuarios[l.aprovSolicitadoPor]?.nome?.split(' ')[0]||'—';
+        const isRec=l.tipo==='receita';
+        return`<div class="ritem" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div>
+            <div class="ritem-name">${isRec?'📈':'📉'} ${l.desc||'—'}</div>
+            <div class="ritem-sub">Por: ${sol} · ${isRec?'+':'-'}${fmtBRL(l.valor||0)}</div>
+          </div>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 8px;background:#dcfce7;color:#166534;border-color:#86efac" onclick="aprovarLanc('${l.id}')">✅</button>
+            <button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 8px;background:#fee2e2;color:#991b1b;border-color:#fca5a5" onclick="rejeitarLanc('${l.id}')">✕</button>
+          </div>
+        </div>`;}).join('')}
+      <span onclick="navTo('fin')" style="display:block;text-align:center;margin-top:10px;font-size:0.75rem;color:var(--blue);cursor:pointer">Ver lançamentos → &nbsp;|&nbsp;</span>
+    </div>`:''}
     ${rhAlertsDash.length?`
     <div class="dash-card" style="border-color:#fee2e2">
       <h3 style="color:var(--red)">⚠️ Alertas RH (${getRHAlerts().length})</h3>
@@ -3508,16 +3558,21 @@ function renderPedidos(){
   if(!arr.length){el.innerHTML='<div class="empty">Nenhum pedido de compra.</div>';return;}
   el.innerHTML=arr.map(p=>{
     const forn=fornecedores[p.fornId]||{};
-    return`<div class="ped-card" onclick="openPedidoModal('${p.id}')">
+    const isPedPend = p.aprovStatus==='pendente';
+    const pedSolicit = isPedPend ? (usuarios[p.aprovSolicitadoPor]?.nome?.split(' ')[0]||'Usuário') : '';
+    return`<div class="ped-card" onclick="openPedidoModal('${p.id}')" style="${isPedPend?'border-left:3px solid #fcd34d':''}">
       <div style="flex:1">
-        <div class="ped-num">${p.numero||'—'}</div>
+        <div class="ped-num">${p.numero||'—'} ${isPedPend?'<span style="font-size:0.62rem;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:4px;padding:1px 5px;font-weight:700">⏳ Aprovação</span>':''}</div>
         <div class="ped-forn">${forn.nome||'—'}</div>
-        <div class="ped-desc">${p.obs||''}</div>
+        <div class="ped-desc">${isPedPend?`Por: ${pedSolicit} · `:''}${p.obs||''}</div>
       </div>
-      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px" onclick="event.stopPropagation()">
         <div style="font-size:0.9rem;font-weight:800;color:var(--dark)">${fmtBRL(p.total||0)}</div>
-        <span class="stbdg pst-${p.status||'pendente'}">${({pendente:'Rascunho',aprovado:'Aprovado',enviado:'Enviado'})[p.status]||p.status}</span>
-        <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px" onclick="event.stopPropagation();gerarPedidoHTML('${p.id}')">🖨️ PDF</button>
+        <span class="stbdg pst-${p.aprovStatus||p.status||'pendente'}">${isPedPend?'Aguard. Aprovação':({rascunho:'Rascunho',aprovado:'Aprovado',enviado:'Enviado'})[p.status]||p.status}</span>
+        ${isPedPend&&curUser?.isSuper?`
+          <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px;background:#dcfce7;color:#166534;border-color:#86efac" onclick="aprovarPedido('${p.id}')">✅ Aprovar</button>
+          <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px;background:#fee2e2;color:#991b1b;border-color:#fca5a5" onclick="rejeitarPedido('${p.id}')">✕ Rejeitar</button>`:''}
+        <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px" onclick="gerarPedidoHTML('${p.id}')">🖨️ PDF</button>
       </div>
     </div>`;}).join('');
 }
@@ -3528,6 +3583,11 @@ function openPedidoModal(pid){
   document.getElementById('editPedId').value=pid||'';
   document.getElementById('pedModalTitle').textContent=pid?'Editar Pedido':'Novo Pedido de Compra';
   document.getElementById('btnGerarPedido').style.display=pid?'':'none';
+  // Adaptar label do botão principal e aviso de aprovação
+  const isSuper=curUser?.isSuper;
+  document.getElementById('btnSalvarPedido').textContent=isSuper?'Aprovar →':'Enviar para Aprovação →';
+  const msg=document.getElementById('pedAprovMsg');
+  if(msg) msg.style.display=(!isSuper&&p?.aprovStatus==='pendente')?'':'none';
   if(p){
     document.getElementById('pedForn').value=p.fornId||'';
     document.getElementById('pedProj').value=p.projId||'';
@@ -3587,12 +3647,55 @@ async function savePedido(status){
   const total=itens.reduce((s,it)=>s+it.qtd*it.vu,0);
   const yr=new Date().getFullYear(); const n=Object.values(pedidos).filter(p=>(p.numero||'').startsWith('PC'+yr)).length;
   const numero=existing.numero||'PC'+yr+String(n+1).padStart(3,'0');
-  await db.ref('erp/pedidos/'+pid).set({id:pid,numero,fornId,projId:document.getElementById('pedProj').value,pgto:document.getElementById('pedPgto').value,obs:document.getElementById('pedObs').value.trim(),itens,total,status,criadoEm:existing.criadoEm||Date.now(),criadoPor:curUser.uid,atualizadoEm:Date.now()});
+  // Aprovação: não-super envia para aprovação; super aprova direto
+  const isSuper=curUser?.isSuper;
+  let aprovStatus, aprovMsg='';
+  if(status==='rascunho'){
+    aprovStatus=existing.aprovStatus||'rascunho';
+  } else if(isSuper){
+    aprovStatus='aprovado';
+  } else {
+    aprovStatus='pendente';
+    aprovMsg='✅ Pedido enviado para aprovação!';
+  }
+  await db.ref('erp/pedidos/'+pid).set({
+    id:pid, numero, fornId,
+    projId:document.getElementById('pedProj').value,
+    pgto:document.getElementById('pedPgto').value,
+    obs:document.getElementById('pedObs').value.trim(),
+    itens, total, status: status==='rascunho'?'rascunho':'aprovado',
+    aprovStatus,
+    aprovSolicitadoPor: existing.aprovSolicitadoPor||curUser.uid,
+    criadoEm:existing.criadoEm||Date.now(), criadoPor:curUser.uid, atualizadoEm:Date.now()
+  });
   closeOvl('ovlPedido');
-  if(status==='aprovado'){
-    // Small delay to let Firebase listener update pedidos object before generating PDF
+  if(aprovMsg) alert(aprovMsg);
+  if(isSuper && status==='aprovado'){
     setTimeout(()=>gerarPedidoHTML(pid), 600);
   }
+}
+
+function updateAprovBadge(count){
+  const dot=document.getElementById('aprovDot');
+  if(dot) dot.style.display=(curUser?.isSuper && count>0)?'':'none';
+}
+
+async function aprovarPedido(pid){
+  await db.ref('erp/pedidos/'+pid).update({aprovStatus:'aprovado', aprovadoPor:curUser.uid, aprovadoEm:Date.now()});
+  setTimeout(()=>gerarPedidoHTML(pid), 500);
+}
+async function rejeitarPedido(pid){
+  const motivo=prompt('Motivo da rejeição (opcional):');
+  if(motivo===null) return;
+  await db.ref('erp/pedidos/'+pid).update({aprovStatus:'rejeitado', aprovadoPor:curUser.uid, aprovadoEm:Date.now(), aprovObs:motivo||''});
+}
+async function aprovarLanc(lid){
+  await db.ref('erp/lancamentos/'+lid).update({aprovStatus:'aprovado', aprovadoPor:curUser.uid, aprovadoEm:Date.now()});
+}
+async function rejeitarLanc(lid){
+  const motivo=prompt('Motivo da rejeição (opcional):');
+  if(motivo===null) return;
+  await db.ref('erp/lancamentos/'+lid).update({aprovStatus:'rejeitado', aprovadoPor:curUser.uid, aprovadoEm:Date.now(), aprovObs:motivo||''});
 }
 
 function gerarPedidoHTML(pid){
@@ -3954,17 +4057,26 @@ function renderLancItem(l, today){
   const fornNome=l.fornId&&fornecedores[l.fornId]?'🏢 '+fornecedores[l.fornId].nome:'';
   const metaParts=[l.cat||l.categoria, l.data?fmtD(l.data):'', l.venc?'Venc: '+fmtD(l.venc):'', l.projeto?'📋 '+l.projeto:'', fornNome].filter(Boolean);
 
-  return `<div class="lan-item">
+  const isPendAprov = l.aprovStatus==='pendente';
+  const aprovBadge = isPendAprov
+    ? `<span style="font-size:0.62rem;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:4px;padding:1px 6px;font-weight:700">⏳ Aprovação</span>`
+    : '';
+  const aprovActs = isPendAprov && curUser?.isSuper
+    ? `<button class="lan-btn" style="background:#dcfce7;color:#166534" onclick="aprovarLanc('${l.id}')" title="Aprovar">✅</button>
+       <button class="lan-btn" style="background:#fee2e2;color:#991b1b" onclick="rejeitarLanc('${l.id}')" title="Rejeitar">✕</button>`
+    : '';
+  return `<div class="lan-item" style="${isPendAprov?'opacity:0.85;border-left:3px solid #fcd34d':''}">
     <div class="lan-bar" style="background:${isRec?'var(--green)':'var(--red)'}"></div>
     <div class="lan-info">
-      <div class="lan-desc">${parcTag}${l.desc||l.descricao||'—'}</div>
+      <div class="lan-desc">${parcTag}${aprovBadge}${aprovBadge?' ':''}<span>${l.desc||l.descricao||'—'}</span></div>
       <div class="lan-meta">${metaParts.join(' · ')}</div>
     </div>
     <div class="lan-right">
       <div class="lan-val ${isRec?'rec':'des'}">${isRec?'+':'-'}${fmtBRL(l.valor||0)}</div>
       ${stBadge}
       <div class="lan-acts">
-        ${!isPago?`<button class="lan-btn pay" onclick="markLancPago('${l.id}')" title="${isRec?'Marcar recebido':'Marcar pago'}">✓</button>`:''}
+        ${aprovActs}
+        ${!isPendAprov&&!isPago?`<button class="lan-btn pay" onclick="markLancPago('${l.id}')" title="${isRec?'Marcar recebido':'Marcar pago'}">✓</button>`:''}
         ${l.arqUrl?`<button class="lan-btn" onclick="abrirAnexo('${l.id}')" title="Ver comprovante">📎</button>`:''}
         <button class="lan-btn" onclick="openLancModal('${l.id}')" title="Editar">✏️</button>
         <button class="lan-btn" onclick="delLanc('${l.id}')" title="Excluir">🗑️</button>
@@ -4082,6 +4194,8 @@ async function saveLanc(){
           id:pid, tipo, desc:`${desc} (${i+1}/${n})`,
           valor:valParc, data, venc:vencParc,
           cat, status:'pendente', projeto, obs, fornId,
+          aprovStatus: curUser?.isSuper?'aprovado':'pendente',
+          aprovSolicitadoPor: curUser?.uid||'',
           parcelaGrupo:grupoId, parcelaNum:i+1, parcelaTotal:n,
           criadoEm:base+i, uid:curUser?.uid||''
         });
@@ -4091,15 +4205,22 @@ async function saveLanc(){
     return;
   }
 
+  // Aprovação: não-super envia para aprovação; super registra direto
+  const lancIsSuper=curUser?.isSuper;
+  const lancAprovStatus=lancIsSuper?'aprovado':'pendente';
+  const lancExisting=lancamentos[lid];
   const obj={
     id:lid, tipo, desc, valor, data, venc, cat, status, projeto, obs, fornId,
     arqUrl, arqNome,
-    criadoEm:lancamentos[lid]?.criadoEm||Date.now(),
+    aprovStatus: lancExisting?.aprovStatus==='aprovado' ? 'aprovado' : lancAprovStatus,
+    aprovSolicitadoPor: lancExisting?.aprovSolicitadoPor||curUser?.uid||'',
+    criadoEm:lancExisting?.criadoEm||Date.now(),
     uid:curUser?.uid||''
   };
   try{
     await db.ref('erp/lancamentos/'+lid).set(obj);
     closeOvl('ovlLanc');
+    if(!lancIsSuper && !lancExisting) alert('✅ Lançamento enviado para aprovação!');
   }catch(e){ alert('Erro ao salvar: '+e.message); }
 }
 
