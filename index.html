@@ -1494,11 +1494,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
     <!-- NRs -->
     <div id="fmPane-nrs" style="display:none">
-      <div style="font-size:0.74rem;color:var(--sub);margin-bottom:10px;line-height:1.5">Adicione as NRs deste funcionário. Use o link do Google Drive para o certificado.</div>
-      <div style="display:grid;grid-template-columns:100px 1fr 1fr auto;gap:5px;padding:4px 8px;margin-bottom:4px">
+      <div style="font-size:0.74rem;color:var(--sub);margin-bottom:10px;line-height:1.5">Adicione as NRs deste funcionário. Anexe o certificado (PDF/JPG, máx. 2MB).</div>
+      <div style="display:grid;grid-template-columns:110px 130px 1fr auto;gap:5px;padding:4px 8px;margin-bottom:4px">
         <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase;color:var(--sub)">NR</span>
         <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase;color:var(--sub)">Vencimento</span>
-        <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase;color:var(--sub)">Link (Drive)</span>
+        <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase;color:var(--sub)">Arquivo</span>
         <span></span>
       </div>
       <div class="nr-list" id="nrList"></div>
@@ -1714,7 +1714,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
     <input type="hidden" id="lancTipo" value="receita"/>
     <div class="fg"><label>Descrição *</label><input type="text" id="lancDesc" placeholder="Ex: Fatura OS-042, Pagamento fornecedor…"/></div>
-    <div class="fg"><label>Fornecedor (opcional)</label><select id="lancForn"><option value="">— Nenhum —</option></select></div>
+    <div class="f2">
+      <div class="fg" id="lancFornBox"><label>Fornecedor</label><select id="lancForn"><option value="">— Nenhum —</option></select></div>
+      <div class="fg" id="lancClienteBox" style="display:none"><label>Cliente</label><select id="lancCliente"><option value="">— Nenhum —</option></select></div>
+      <div class="fg"><label>Nº Nota / NF</label><input type="text" id="lancNotaNum" placeholder="Ex: NF-001, 00123…"/></div>
+    </div>
     <div class="f2">
       <div class="fg"><label>Valor (R$) *</label><input type="number" id="lancValor" placeholder="0,00" min="0" step="0.01"/></div>
       <div class="fg"><label>Data *</label><input type="date" id="lancData"/></div>
@@ -3453,6 +3457,9 @@ function fillProjSelects(){
   // forn select in lancamento
   const lfEl=document.getElementById('lancForn');
   if(lfEl) lfEl.innerHTML='<option value="">— Nenhum —</option>'+Object.values(fornecedores).sort((a,b)=>a.nome.localeCompare(b.nome)).map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+  // cliente select in lancamento
+  const lcEl=document.getElementById('lancCliente');
+  if(lcEl) lcEl.innerHTML='<option value="">— Nenhum —</option>'+Object.values(clientes).sort((a,b)=>a.nome.localeCompare(b.nome)).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
 }
 
 function openProjModal(pid){
@@ -4168,6 +4175,16 @@ function getRHAlerts(){
       const d=diffD(f.ferIni);
       if(d!==null&&d>=0&&d<=30) alerts.push({tipo:'pend',nome:`${f.nome} — Férias`,desc:`Início em ${d} dias (${fmtD(f.ferIni)}) — emitir aviso`,link:`#func-${f.id}`});
     }
+    // Retorno de férias
+    if(f.status==='ferias'&&f.ferFim){
+      const d=diffD(f.ferFim);
+      if(d!==null&&d<=0){
+        const dias=Math.abs(d);
+        alerts.push({tipo:'venc',nome:`${f.nome} — Retorno de Férias`,
+          desc:dias===0?`Retorno previsto para hoje (${fmtD(f.ferFim)})`:`Deveria ter retornado há ${dias} dia${dias>1?'s':''} (${fmtD(f.ferFim)})`,
+          link:`#func-${f.id}`,fid:f.id,alertType:'retorno-ferias',diasAtraso:dias});
+      }
+    }
     // ASO vencido / a vencer (60 dias)
     if(f.asoVenc){
       const d=diffD(f.asoVenc);
@@ -4296,7 +4313,9 @@ function renderLancItem(l, today){
 
   const parcTag=l.parcelaNum?`<span style="font-size:0.62rem;background:#e0e7ff;color:#3730a3;border-radius:4px;padding:1px 5px;font-weight:700">${l.parcelaNum}/${l.parcelaTotal}</span> `:'';
   const fornNome=l.fornId&&fornecedores[l.fornId]?'🏢 '+fornecedores[l.fornId].nome:'';
-  const metaParts=[l.cat||l.categoria, l.data?fmtD(l.data):'', l.venc?'Venc: '+fmtD(l.venc):'', l.projeto?'📋 '+l.projeto:'', fornNome].filter(Boolean);
+  const cliNome=l.clienteId&&clientes[l.clienteId]?'👤 '+clientes[l.clienteId].nome:'';
+  const notaTag=l.notaNum?'📄 '+l.notaNum:'';
+  const metaParts=[l.cat||l.categoria, l.data?fmtD(l.data):'', l.venc?'Venc: '+fmtD(l.venc):'', l.projeto?'📋 '+l.projeto:'', isRec?cliNome:fornNome, notaTag].filter(Boolean);
 
   const isPendAprov = l.aprovStatus==='pendente';
   const aprovBadge = isPendAprov
@@ -4330,12 +4349,18 @@ function setLancTipo(t){
   document.getElementById('lancTipo').value=t;
   const recBtn=document.getElementById('lancTipoRec');
   const desBtn=document.getElementById('lancTipoDes');
+  const fornBox=document.getElementById('lancFornBox');
+  const cliBox=document.getElementById('lancClienteBox');
   if(t==='receita'){
     recBtn.style.cssText='flex:1;padding:10px;border-radius:8px;border:2px solid var(--green);background:#dcfce7;color:#166534;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem';
     desBtn.style.cssText='flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:#fff;color:var(--sub);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem';
+    if(fornBox) fornBox.style.display='none';
+    if(cliBox)  cliBox.style.display='';
   } else {
     recBtn.style.cssText='flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:#fff;color:var(--sub);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem';
     desBtn.style.cssText='flex:1;padding:10px;border-radius:8px;border:2px solid var(--red);background:#fee2e2;color:#991b1b;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem';
+    if(fornBox) fornBox.style.display='';
+    if(cliBox)  cliBox.style.display='none';
   }
 }
 
@@ -4356,6 +4381,8 @@ function openLancModal(lid){
     document.getElementById('lancProjeto').value=l.projeto||'';
     document.getElementById('lancObs').value=l.obs||'';
     document.getElementById('lancForn').value=l.fornId||'';
+    document.getElementById('lancCliente').value=l.clienteId||'';
+    document.getElementById('lancNotaNum').value=l.notaNum||'';
     // Anexo existente
     const arqDiv=document.getElementById('lancArqAtual');
     const arqLnk=document.getElementById('lancArqLink');
@@ -4368,6 +4395,8 @@ function openLancModal(lid){
     document.getElementById('lancData').value=hoje;
     document.getElementById('lancStatus').value='pendente';
     document.getElementById('lancForn').value='';
+    document.getElementById('lancCliente').value='';
+    document.getElementById('lancNotaNum').value='';
     document.getElementById('lancArqAtual').style.display='none';
   }
   document.getElementById('lancArqFile').value='';
@@ -4415,6 +4444,8 @@ async function saveLanc(){
   const data=document.getElementById('lancData').value||new Date().toISOString().slice(0,10);
   const venc=document.getElementById('lancVenc').value||'';
   const fornId=document.getElementById('lancForn').value||'';
+  const clienteId=document.getElementById('lancCliente').value||'';
+  const notaNum=document.getElementById('lancNotaNum').value.trim();
 
   // Parcelamento
   const parcelado=document.getElementById('lancParcelado').checked;
@@ -4434,7 +4465,7 @@ async function saveLanc(){
         await db.ref('erp/lancamentos/'+pid).set({
           id:pid, tipo, desc:`${desc} (${i+1}/${n})`,
           valor:valParc, data, venc:vencParc,
-          cat, status:'pendente', projeto, obs, fornId,
+          cat, status:'pendente', projeto, obs, fornId, clienteId, notaNum,
           aprovStatus: curUser?.isSuper?'aprovado':'pendente',
           aprovSolicitadoPor: curUser?.uid||'',
           parcelaGrupo:grupoId, parcelaNum:i+1, parcelaTotal:n,
@@ -4451,7 +4482,8 @@ async function saveLanc(){
   const lancAprovStatus=lancIsSuper?'aprovado':'pendente';
   const lancExisting=lancamentos[lid];
   const obj={
-    id:lid, tipo, desc, valor, data, venc, cat, status, projeto, obs, fornId,
+    id:lid, tipo, desc, valor, data, venc, cat, status, projeto, obs,
+    fornId, clienteId, notaNum,
     arqUrl, arqNome,
     aprovStatus: lancExisting?.aprovStatus==='aprovado' ? 'aprovado' : lancAprovStatus,
     aprovSolicitadoPor: lancExisting?.aprovSolicitadoPor||curUser?.uid||'',
@@ -4680,13 +4712,18 @@ function renderRHAlerts(){
   if(venc.length) html+=`
     <div class="alert-panel">
       <div class="alert-panel-head alert-ph-red">🚨 Vencidos (${venc.length})</div>
-      ${venc.map(a=>`<div class="alert-item" ${a.link?`onclick="if('${a.link}'.startsWith('http'))window.open('${a.link}','_blank')"`:''}">
-        <div class="alert-item-ico" style="background:#fee2e2">🔴</div>
-        <div class="alert-item-txt">
+      ${venc.map(a=>`<div class="alert-item" ${a.alertType?'':a.link?`onclick="if('${a.link}'.startsWith('http'))window.open('${a.link}','_blank')"`:''}>
+        <div class="alert-item-ico" style="background:#fee2e2">${a.alertType==='retorno-ferias'?'🏖️':'🔴'}</div>
+        <div class="alert-item-txt" style="flex:1">
           <div class="alert-item-nome">${a.nome}</div>
           <div class="alert-item-desc">${a.desc}</div>
+          ${a.alertType==='retorno-ferias'?`
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 10px;background:#dcfce7;color:#166534;border-color:#86efac" onclick="event.stopPropagation();confirmarRetorno('${a.fid}')">✅ Retornou</button>
+            <button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 10px;background:#fee2e2;color:#991b1b;border-color:#fca5a5" onclick="event.stopPropagation();registrarNaoRetorno('${a.fid}')">⚠️ Não retornou</button>
+          </div>`:''}
         </div>
-        <span class="alert-tag at-venc">VENCIDO</span>
+        ${a.alertType==='retorno-ferias'?`<span class="alert-tag" style="background:#fee2e2;color:#991b1b">${a.diasAtraso>0?a.diasAtraso+'d':'HOJE'}</span>`:`<span class="alert-tag at-venc">VENCIDO</span>`}
       </div>`).join('')}
     </div>`;
   if(pend.length) html+=`
@@ -4702,6 +4739,28 @@ function renderRHAlerts(){
       </div>`).join('')}
     </div>`;
   el.innerHTML=html;
+}
+
+async function confirmarRetorno(fid){
+  const f=funcionarios[fid]; if(!f) return;
+  if(!confirm(`Confirmar retorno de ${f.nome}?\nStatus voltará para Ativo.`)) return;
+  await db.ref('erp/funcionarios/'+fid).update({
+    status:'ativo',
+    ferRetornoEm:new Date().toISOString().slice(0,10),
+    ferIni:'', ferFim:''
+  });
+}
+async function registrarNaoRetorno(fid){
+  const f=funcionarios[fid]; if(!f) return;
+  const obs=prompt(`${f.nome} não retornou das férias.\nObservação (opcional):`);
+  if(obs===null) return;
+  await db.ref('erp/funcionarios/'+fid).update({
+    status:'afastado',
+    ausenciaIni:new Date().toISOString().slice(0,10),
+    ausenciaMotivo:'nao-retorno-ferias',
+    ausenciaObs:obs||''
+  });
+  alert(`⚠️ ${f.nome} marcado como Afastado. Registre o ocorrido junto ao DP.`);
 }
 
 // ── Render employee list ──
@@ -4770,18 +4829,54 @@ function renderRH(){renderFuncionarios();}
 
 // ── Dynamic NRs in modal ──
 function renderNRList(){
-  const el=document.getElementById('nrList');
-  if(!el) return;
-  el.innerHTML=curNRs.map((nr,i)=>`
-    <div class="nr-row">
+  const el=document.getElementById('nrList'); if(!el) return;
+  el.innerHTML=curNRs.map((nr,i)=>{
+    const temArq=nr.arqUrl||nr.link;
+    const arqBtn=temArq
+      ? `<span style="display:flex;align-items:center;gap:4px">
+           <span style="font-size:0.72rem;color:var(--blue);cursor:pointer;text-decoration:underline;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" onclick="abrirNRArq(${i})" title="${nr.arqNome||nr.link||''}">📎 ${nr.arqNome||'Ver'}</span>
+           <button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:0.72rem;padding:0" onclick="removerNRArq(${i})" title="Remover arquivo">✕</button>
+         </span>`
+      : `<label style="cursor:pointer;font-size:0.72rem;color:var(--sub);display:flex;align-items:center;gap:3px">
+           <span style="background:#f3f4f6;border:1px dashed #d1d5db;border-radius:5px;padding:2px 8px">📎 Anexar</span>
+           <input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="uploadNRArq(${i},this)"/>
+         </label>`;
+    return`<div class="nr-row" style="grid-template-columns:110px 130px 1fr auto">
       <input type="text" placeholder="NR-10" value="${nr.nome||''}" oninput="curNRs[${i}].nome=this.value"/>
       <input type="date" value="${nr.vencimento||''}" oninput="curNRs[${i}].vencimento=this.value"/>
-      <input type="url" placeholder="Link Drive" value="${nr.link||''}" oninput="curNRs[${i}].link=this.value"/>
+      <div style="display:flex;align-items:center">${arqBtn}</div>
       <button class="nr-del" onclick="removeNR(${i})" title="Remover">✕</button>
-    </div>`).join('');
+    </div>`;}).join('');
 }
-function addNR(){curNRs.push({nome:'',vencimento:'',link:''});renderNRList();}
+function addNR(){curNRs.push({nome:'',vencimento:'',arqUrl:'',arqNome:''});renderNRList();}
 function removeNR(i){curNRs.splice(i,1);renderNRList();}
+
+async function uploadNRArq(i, input){
+  const file=input.files[0]; if(!file) return;
+  const fid=document.getElementById('editFuncId').value;
+  if(!fid){alert('Salve o funcionário antes de anexar arquivos.');return;}
+  try{
+    const b64=await uploadFile(file,'',()=>{});
+    const key=fid+'_nr'+Date.now().toString(36);
+    await db.ref('erp/nr_arqs/'+key).set({b64,nome:file.name,atualizadoEm:Date.now()});
+    curNRs[i].arqUrl='db:'+key;
+    curNRs[i].arqNome=file.name;
+    curNRs[i].link='';
+    renderNRList();
+  }catch(e){alert('Erro: '+e.message);}
+}
+async function abrirNRArq(i){
+  const nr=curNRs[i]; if(!nr) return;
+  if(nr.link&&!nr.arqUrl){window.open(nr.link,'_blank');return;}
+  if(!nr.arqUrl) return;
+  const key=nr.arqUrl.replace('db:','');
+  const snap=await db.ref('erp/nr_arqs/'+key).once('value');
+  const d=snap.val(); if(!d?.b64){alert('Arquivo não encontrado.');return;}
+  const win=window.open('','_blank');
+  win.document.write(`<html><body style="margin:0"><iframe src="${d.b64}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);
+  win.document.close();
+}
+function removerNRArq(i){curNRs[i].arqUrl='';curNRs[i].arqNome='';curNRs[i].link='';renderNRList();}
 
 // ── Open / Save Func modal ──
 function openFuncModal(fid){
@@ -4823,10 +4918,10 @@ function openFuncModal(fid){
     document.getElementById('fnAsoFile').value='';
     document.getElementById('fnAsoProgress').textContent='';
     // NRs: load dynamic NRs; also migrate legacy if present
-    curNRs=f.nrs?Object.values(f.nrs):[];
+    curNRs=f.nrs?Object.values(f.nrs).map(nr=>({arqUrl:'',arqNome:'',link:'',...nr})):[];
     if(!curNRs.length){
       [['nr10','NR-10'],['nr35','NR-35'],['nr12','NR-12'],['nr18','NR-18']].forEach(([k,nome])=>{
-        if(f[k]) curNRs.push({nome,vencimento:f[k],link:''});
+        if(f[k]) curNRs.push({nome,vencimento:f[k],link:'',arqUrl:'',arqNome:''});
       });
     }
   } else {
@@ -4856,7 +4951,7 @@ async function saveFunc(){
   const existing=funcionarios[fid]||{};
   // Convert curNRs array to object
   const nrsObj={};
-  curNRs.forEach((nr,i)=>{ if(nr.nome) nrsObj['nr'+i]={nome:nr.nome,vencimento:nr.vencimento||'',link:nr.link||''}; });
+  curNRs.forEach((nr,i)=>{ if(nr.nome) nrsObj['nr'+i]={nome:nr.nome,vencimento:nr.vencimento||'',link:nr.link||'',arqUrl:nr.arqUrl||'',arqNome:nr.arqNome||''}; });
   // ASO arquivo
   let asoArqUrl=existing.asoArqUrl||'';
   let asoArqNome=existing.asoArqNome||'';
