@@ -4299,7 +4299,7 @@ function renderFin(){
   // Group by month
   const groups={};
   items.forEach(l=>{
-    const ym=(l.data||'').slice(0,7)||'—';
+    const ym=(l.venc||l.data||'').slice(0,7)||'—';
     if(!groups[ym]) groups[ym]=[];
     groups[ym].push(l);
   });
