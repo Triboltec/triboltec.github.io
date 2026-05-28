@@ -1748,7 +1748,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div id="lancParcelaBox" style="background:#f0f7ff;border-radius:8px;padding:10px;margin-top:2px">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:0.82rem">
         <input type="checkbox" id="lancParcelado" onchange="toggleParcela()" style="width:16px;height:16px"/>
-        Lançamento parcelado
+        <span id="lancParceladoLabel">Lançamento parcelado</span>
       </label>
       <div id="parcOptions" style="display:none;margin-top:10px">
         <div class="f2" style="gap:8px">
@@ -4410,6 +4410,7 @@ function openLancModal(lid){
   document.getElementById('lancParcelado').checked=false;
   document.getElementById('parcOptions').style.display='none';
   document.getElementById('parcPreview').textContent='';
+  document.getElementById('lancParceladoLabel').textContent=lid?'Converter em parcelas mensais':'Lançamento parcelado';
   document.getElementById('ovlLanc').classList.add('v');
 }
 function lancRemoveArq(){
@@ -4455,16 +4456,23 @@ async function saveLanc(){
 
   // Parcelamento
   const parcelado=document.getElementById('lancParcelado').checked;
-  if(parcelado && !document.getElementById('editLancId').value){
+  if(parcelado){
     const n=parseInt(document.getElementById('parcN').value||3);
     const ini=document.getElementById('parcInicio').value;
     if(!ini){alert('Informe a data da 1ª parcela.');return;}
-    const parcVal=valor/n;
+    // Verifica se os inputs da tabela existem; se não, reconstrói
+    if(!document.getElementById('parcVenc0')) renderParcDates();
+    if(!document.getElementById('parcVenc0')){alert('Preencha o valor e a data da 1ª parcela.');return;}
+    // Se editando entrada existente, apaga ela antes
+    const lidExistente=document.getElementById('editLancId').value;
+    if(lidExistente){
+      if(!confirm(`Isso vai substituir este lançamento por ${n} parcelas mensais.\nConfirmar?`)) return;
+      await db.ref('erp/lancamentos/'+lidExistente).remove();
+    }
     const grupoId=genId();
     const base=Date.now();
     try{
       for(let i=0;i<n;i++){
-        // Use index in ID to guarantee uniqueness even in fast loops
         const pid=base.toString(36)+'_'+i+'_'+Math.random().toString(36).slice(2,5);
         const vencParc=document.getElementById('parcVenc'+i)?.value||ini;
         const valParc=parseFloat(document.getElementById('parcVal'+i)?.value||0);
