@@ -12,7 +12,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/pizzip@3.1.7/dist/pizzip.min.js"></script>
 <script src="https://unpkg.com/docxtemplater@3.47.0/build/docxtemplater.js"></script>
@@ -1666,7 +1665,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="fg" style="background:#f8f9fa;border-radius:8px;padding:10px;margin-top:4px">
       <label style="margin-bottom:6px;display:block">📎 Comprovante / Boleto</label>
       <div id="lancArqAtual" style="display:none;margin-bottom:8px;font-size:0.78rem">
-        <a id="lancArqLink" href="#" target="_blank" style="color:var(--blue);word-break:break-all"></a>
+        <span id="lancArqLink" style="color:var(--blue);cursor:pointer;text-decoration:underline" onclick="abrirAnexo(document.getElementById('editLancId').value)"></span>
         <button onclick="lancRemoveArq()" style="margin-left:8px;background:none;border:none;color:var(--red);cursor:pointer;font-size:0.78rem">✕ remover</button>
       </div>
       <input type="file" id="lancArqFile" accept=".pdf,.jpg,.jpeg,.png,.webp" style="font-size:0.78rem;width:100%"/>
@@ -1943,18 +1942,51 @@ function diffD(s){ if(!s) return null; const t=new Date(s+'T00:00:00'); const n=
 function stInfo(id){ return STAGES.find(s=>s.id===id)||{label:id,cls:'s-prospect'}; }
 
 // ══════════════════════════════════════════════
-// UPLOAD (Firebase Storage)
+// ABRIR ANEXO (base64 do Database)
 // ══════════════════════════════════════════════
-async function uploadFile(file, storagePath, onProgress){
-  if(!window._storage) throw new Error('Storage não inicializado');
-  const ref = window._storage.ref(storagePath + '/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_'));
-  const task = ref.put(file);
+async function abrirAnexo(lid){
+  try{
+    const snap=await db.ref('erp/lancamentos_arqs/'+lid).once('value');
+    const d=snap.val();
+    if(!d||!d.b64){ alert('Anexo não encontrado.'); return; }
+    const win=window.open();
+    if(d.b64.startsWith('data:application/pdf')||d.nome?.endsWith('.pdf')){
+      win.document.write(`<iframe src="${d.b64}" style="width:100%;height:100vh;border:none"></iframe>`);
+    } else {
+      win.document.write(`<img src="${d.b64}" style="max-width:100%"/>`);
+    }
+  }catch(e){ alert('Erro ao abrir anexo: '+e.message); }
+}
+async function abrirAnexoRH_id(fid, aid){
+  const f=funcionarios[fid]; if(!f) return;
+  const a=f.arquivos?.[aid]; if(!a) return;
+  const url=a.link; const nome=a.nome||'';
+  if(!url){ alert('Sem arquivo vinculado.'); return; }
+  if(url.startsWith('data:')){
+    const win=window.open();
+    if(nome.toLowerCase().endsWith('.pdf')||url.includes('pdf')){
+      win.document.write(`<iframe src="${url}" style="width:100%;height:100vh;border:none"></iframe>`);
+    } else {
+      win.document.write(`<img src="${url}" style="max-width:100%"/>`);
+    }
+  } else {
+    window.open(url,'_blank');
+  }
+}
+
+// ══════════════════════════════════════════════
+// UPLOAD — base64 no Firebase Database (sem Storage)
+// ══════════════════════════════════════════════
+const MAX_FILE_MB = 2;
+async function uploadFile(file, _path, onProgress){
+  if(file.size > MAX_FILE_MB * 1024 * 1024)
+    throw new Error(`Arquivo muito grande. Máximo ${MAX_FILE_MB}MB.`);
+  if(onProgress) onProgress(10);
   return new Promise((resolve, reject)=>{
-    task.on('state_changed',
-      snap=>{ if(onProgress) onProgress(Math.round(snap.bytesTransferred/snap.totalBytes*100)); },
-      err=>reject(err),
-      async()=>{ resolve(await task.snapshot.ref.getDownloadURL()); }
-    );
+    const reader = new FileReader();
+    reader.onload = e=>{ if(onProgress) onProgress(100); resolve(e.target.result); };
+    reader.onerror = ()=>reject(new Error('Erro ao ler arquivo'));
+    reader.readAsDataURL(file);
   });
 }
 
@@ -1965,7 +1997,6 @@ function initFirebase(cfg){
   try {
     const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(cfg);
     db = firebase.database(app);
-    window._storage = firebase.storage(app);
     db.ref('.info/connected').on('value', snap=>{
       document.getElementById('syncDot').className = 'sync-dot ' + (snap.val() ? '' : 'off');
       document.getElementById('offWarn').className = 'offline-warn' + (snap.val() ? '' : ' show');
@@ -3794,7 +3825,7 @@ function renderLancItem(l, today){
       ${stBadge}
       <div class="lan-acts">
         ${!isPago?`<button class="lan-btn pay" onclick="markLancPago('${l.id}')" title="${isRec?'Marcar recebido':'Marcar pago'}">✓</button>`:''}
-        ${l.arqUrl?`<a class="lan-btn" href="${l.arqUrl}" target="_blank" title="Ver comprovante">📎</a>`:''}
+        ${l.arqUrl?`<button class="lan-btn" onclick="abrirAnexo('${l.id}')" title="Ver comprovante">📎</button>`:''}
         <button class="lan-btn" onclick="openLancModal('${l.id}')" title="Editar">✏️</button>
         <button class="lan-btn" onclick="delLanc('${l.id}')" title="Excluir">🗑️</button>
       </div>
@@ -3833,7 +3864,7 @@ function openLancModal(lid){
     // Anexo existente
     const arqDiv=document.getElementById('lancArqAtual');
     const arqLnk=document.getElementById('lancArqLink');
-    if(l.arqUrl){ arqDiv.style.display=''; arqLnk.href=l.arqUrl; arqLnk.textContent=l.arqNome||'📎 Anexo'; }
+    if(l.arqUrl){ arqDiv.style.display=''; arqLnk.textContent='📎 '+(l.arqNome||'Ver anexo'); }
     else { arqDiv.style.display='none'; }
   } else {
     setLancTipo('receita');
@@ -3849,9 +3880,7 @@ function openLancModal(lid){
 }
 function lancRemoveArq(){
   document.getElementById('lancArqAtual').style.display='none';
-  document.getElementById('lancArqLink').href='';
   document.getElementById('lancArqLink').textContent='';
-  // mark for removal on save
   document.getElementById('lancArqLink').dataset.removed='1';
 }
 
@@ -3869,12 +3898,15 @@ async function saveLanc(){
   const fileInput=document.getElementById('lancArqFile');
   const prog=document.getElementById('lancArqProgress');
   if(fileInput.files[0]){
-    prog.textContent='⏳ Enviando arquivo...';
+    prog.textContent='⏳ Convertendo arquivo...';
     try{
-      arqUrl=await uploadFile(fileInput.files[0],'erp/lancamentos/'+lid, pct=>{ prog.textContent=`⏳ ${pct}%`; });
+      const b64=await uploadFile(fileInput.files[0],'', pct=>{ prog.textContent=`⏳ ${pct}%`; });
       arqNome=fileInput.files[0].name;
-      prog.textContent='✅ Arquivo enviado!';
-    }catch(e){ prog.textContent='⚠️ Erro no upload: '+e.message; return; }
+      // Salvar base64 separado para não pesar no objeto do lançamento
+      await db.ref('erp/lancamentos_arqs/'+lid).set({b64, nome:arqNome, atualizadoEm:Date.now()});
+      arqUrl='db:'+lid; // referência interna
+      prog.textContent='✅ Arquivo salvo!';
+    }catch(e){ prog.textContent='⚠️ Erro: '+e.message; return; }
   }
   const obj={
     id:lid,
@@ -4845,10 +4877,10 @@ async function saveArquivo(){
   // Upload file if selected
   if(fileInput.files[0]){
     if(!nome) nome=fileInput.files[0].name.replace(/\.[^.]+$/,'');
-    prog.textContent='⏳ Enviando...';
+    prog.textContent='⏳ Convertendo...';
     try{
-      link=await uploadFile(fileInput.files[0],`erp/funcionarios/${fid}/docs`, pct=>{ prog.textContent=`⏳ ${pct}%`; });
-      prog.textContent='✅ Enviado!';
+      link=await uploadFile(fileInput.files[0],'', pct=>{ prog.textContent=`⏳ ${pct}%`; });
+      prog.textContent='✅ Salvo!';
     }catch(e){ prog.textContent='⚠️ Erro: '+e.message; return; }
   }
   if(!nome){alert('Informe o nome do arquivo.');return;}
@@ -4875,7 +4907,7 @@ function renderArquivos(fid){
           <div style="font-size:0.81rem;font-weight:600;color:var(--dark)">${a.nome}</div>
           <div style="font-size:0.66rem;color:var(--sub)">${a.criadoPor||''} ${a.criadoEm?'· '+fmtD(new Date(a.criadoEm).toISOString().slice(0,10)):''}</div>
         </div>
-        ${a.link?`<a href="${a.link}" target="_blank" style="font-size:0.75rem;color:var(--blue);text-decoration:none;white-space:nowrap">🔗 Abrir</a>`:'<span style="font-size:0.7rem;color:#ccc">sem link</span>'}
+        ${a.link?`<button data-aid="${a.id}" onclick="abrirAnexoRH_id('${fid}','${a.id}')" style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:0.75rem;padding:2px 4px;text-decoration:underline">🔗 Abrir</button>`:'<span style="font-size:0.7rem;color:#ccc">sem link</span>'}
         <button onclick="delArquivo('${fid}','${a.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:0.8rem;padding:2px 4px" title="Remover">✕</button>
       </div>`).join('')}
     </div>`).join('');
