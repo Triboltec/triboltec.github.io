@@ -543,6 +543,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <div class="pgh">
           <div class="pg-title">💰 Financeiro</div>
           <button class="btn btn-red" onclick="openLancModal()">+ Lançamento</button>
+          <button id="btnCorrigirParcelas" class="btn btn-ghost" style="font-size:0.72rem;display:none" onclick="corrigirParcelasFirebase()">🔧 Corrigir datas parcelas</button>
         </div>
 
         <!-- KPI cards -->
@@ -2378,7 +2379,7 @@ function startListeners(){
   db.ref('erp/estoque').on('value', snap=>{ estoque=snap.val()||{}; renderEst(); });
   db.ref('erp/movimentos').on('value', snap=>{ movimentos=snap.val()||{}; });
   db.ref('erp/funcionarios').on('value', snap=>{ funcionarios=snap.val()||{}; renderFuncionarios(); renderRHAlerts(); updateRHBadge(); renderDash(); });
-  db.ref('erp/lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); renderFin(); updateAprovBadge(Object.values(lancamentos).filter(l=>l.aprovStatus==='pendente').length+Object.values(pedidos).filter(p=>p.aprovStatus==='pendente').length); });
+  db.ref('erp/lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); renderFin(); updateAprovBadge(Object.values(lancamentos).filter(l=>l.aprovStatus==='pendente').length+Object.values(pedidos).filter(p=>p.aprovStatus==='pendente').length); verificarParcelasComDataErrada(); });
   db.ref('erp/notas').on('value', snap=>{ notas=snap.val()||{}; renderNF(); });
   db.ref('erp/nfconfig').on('value', snap=>{ nfConfig=snap.val()||{}; renderNF(); });
   db.ref('erp/candidatos').on('value', snap=>{ candidatos=snap.val()||{}; renderKanban(); });
@@ -4567,6 +4568,58 @@ async function markLancPago(lid){
 async function delLanc(lid){
   if(!confirm('Excluir este lançamento?')) return;
   await db.ref('erp/lancamentos/'+lid).remove();
+}
+
+// ── Correção de datas de parcelas antigas (admin) ──
+function verificarParcelasComDataErrada(){
+  const btn=document.getElementById('btnCorrigirParcelas');
+  if(!btn||!curUser?.isSuper) return;
+  const todos=Object.values(lancamentos);
+  // Grupos com todas as parcelas tendo mesma data de venc (sinal de erro)
+  const grupos={};
+  todos.filter(l=>l.parcelaGrupo).forEach(l=>{
+    if(!grupos[l.parcelaGrupo]) grupos[l.parcelaGrupo]=[];
+    grupos[l.parcelaGrupo].push(l);
+  });
+  const problemáticos=Object.values(grupos).filter(g=>{
+    const vencs=new Set(g.map(l=>l.venc||l.data||''));
+    return vencs.size===1; // todas as parcelas do grupo com mesma data
+  });
+  btn.style.display=problemáticos.length>0?'':'none';
+  if(problemáticos.length>0) btn.textContent=`🔧 Corrigir datas (${problemáticos.reduce((s,g)=>s+g.length,0)} parcelas)`;
+}
+
+async function corrigirParcelasFirebase(){
+  const todos=Object.values(lancamentos);
+  const grupos={};
+  todos.filter(l=>l.parcelaGrupo).forEach(l=>{
+    if(!grupos[l.parcelaGrupo]) grupos[l.parcelaGrupo]=[];
+    grupos[l.parcelaGrupo].push(l);
+  });
+  let total=0;
+  const updates={};
+  Object.values(grupos).forEach(g=>{
+    const vencs=new Set(g.map(l=>l.venc||l.data||''));
+    if(vencs.size>1) return; // já estão diferentes, não mexer
+    g.sort((a,b)=>a.parcelaNum-b.parcelaNum);
+    const base=g[0].venc||g[0].data||'';
+    if(!base) return;
+    const [yy,mm,dd]=base.split('-').map(Number);
+    g.forEach((l,i)=>{
+      const novaData=new Date(yy, mm-1+i, dd);
+      const novaStr=novaData.toISOString().slice(0,10);
+      if(l.venc!==novaStr||l.data!==novaStr){
+        updates[`erp/lancamentos/${l.id}/venc`]=novaStr;
+        updates[`erp/lancamentos/${l.id}/data`]=novaStr;
+        total++;
+      }
+    });
+  });
+  if(!total){alert('Nenhuma parcela precisa de correção.');return;}
+  if(!confirm(`Corrigir ${total} parcelas no Firebase?\n\nAs datas serão redistribuídas mensalmente a partir da data da 1ª parcela de cada grupo.`)) return;
+  await db.ref().update(updates);
+  alert(`✅ ${total} parcelas corrigidas!`);
+  document.getElementById('btnCorrigirParcelas').style.display='none';
 }
 
 // ── CEP lookup (ViaCEP) ──
