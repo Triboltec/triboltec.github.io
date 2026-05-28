@@ -1720,7 +1720,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="fg"><label>Nº Nota / NF</label><input type="text" id="lancNotaNum" placeholder="Ex: NF-001, 00123…"/></div>
     </div>
     <div class="f2">
-      <div class="fg"><label>Valor (R$) *</label><input type="number" id="lancValor" placeholder="0,00" min="0" step="0.01"/></div>
+      <div class="fg"><label>Valor (R$) *</label><input type="number" id="lancValor" placeholder="0,00" min="0" step="0.01" oninput="if(document.getElementById('lancParcelado')?.checked) renderParcDates()"/></div>
       <div class="fg"><label>Data *</label><input type="date" id="lancData"/></div>
     </div>
     <div class="f2">
@@ -4467,7 +4467,7 @@ async function saveLanc(){
         const valParc=parseFloat(document.getElementById('parcVal'+i)?.value||0);
         await db.ref('erp/lancamentos/'+pid).set({
           id:pid, tipo, desc:`${desc} (${i+1}/${n})`,
-          valor:valParc, data, venc:vencParc,
+          valor:valParc, data:vencParc, venc:vencParc,
           cat, status:'pendente', projeto, obs, fornId, clienteId, notaNum,
           aprovStatus: curUser?.isSuper?'aprovado':'pendente',
           aprovSolicitadoPor: curUser?.uid||'',
