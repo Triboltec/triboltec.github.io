@@ -1661,6 +1661,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="fg"><label>Projeto (opcional)</label><input type="text" id="lancProjeto" placeholder="Nome ou OS"/></div>
     </div>
     <div class="fg"><label>Observações</label><textarea id="lancObs" rows="2" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit;resize:vertical" placeholder="Detalhes adicionais…"></textarea></div>
+    <!-- Parcelamento -->
+    <div id="lancParcelaBox" style="background:#f0f7ff;border-radius:8px;padding:10px;margin-top:2px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:0.82rem">
+        <input type="checkbox" id="lancParcelado" onchange="toggleParcela()" style="width:16px;height:16px"/>
+        Lançamento parcelado
+      </label>
+      <div id="parcOptions" style="display:none;margin-top:10px">
+        <div class="f2" style="gap:8px">
+          <div class="fg">
+            <label style="font-size:0.72rem">Nº de parcelas</label>
+            <select id="parcN" onchange="renderParcDates()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit">
+              <option value="2">2x</option><option value="3" selected>3x</option>
+              <option value="4">4x</option><option value="5">5x</option>
+              <option value="6">6x</option><option value="10">10x</option><option value="12">12x</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label style="font-size:0.72rem">1ª parcela em</label>
+            <input type="date" id="parcInicio" onchange="renderParcDates()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit"/>
+          </div>
+        </div>
+        <div id="parcPreview" style="margin-top:8px;font-size:0.76rem;color:var(--sub)"></div>
+      </div>
+    </div>
     <!-- Comprovante / Boleto -->
     <div class="fg" style="background:#f8f9fa;border-radius:8px;padding:10px;margin-top:4px">
       <label style="margin-bottom:6px;display:block">📎 Comprovante / Boleto</label>
@@ -3876,6 +3900,9 @@ function openLancModal(lid){
   }
   document.getElementById('lancArqFile').value='';
   document.getElementById('lancArqProgress').textContent='';
+  document.getElementById('lancParcelado').checked=false;
+  document.getElementById('parcOptions').style.display='none';
+  document.getElementById('parcPreview').textContent='';
   document.getElementById('ovlLanc').classList.add('v');
 }
 function lancRemoveArq(){
@@ -3908,16 +3935,43 @@ async function saveLanc(){
       prog.textContent='✅ Arquivo salvo!';
     }catch(e){ prog.textContent='⚠️ Erro: '+e.message; return; }
   }
+  const tipo=document.getElementById('lancTipo').value;
+  const cat=document.getElementById('lancCat').value.trim();
+  const status=document.getElementById('lancStatus').value;
+  const projeto=document.getElementById('lancProjeto').value.trim();
+  const obs=document.getElementById('lancObs').value.trim();
+  const data=document.getElementById('lancData').value||new Date().toISOString().slice(0,10);
+  const venc=document.getElementById('lancVenc').value||'';
+
+  // Parcelamento
+  const parcelado=document.getElementById('lancParcelado').checked;
+  if(parcelado && !document.getElementById('editLancId').value){
+    const n=parseInt(document.getElementById('parcN').value||3);
+    const ini=document.getElementById('parcInicio').value;
+    if(!ini){alert('Informe a data da 1ª parcela.');return;}
+    const parcVal=valor/n;
+    const grupoId=genId();
+    try{
+      for(let i=0;i<n;i++){
+        const d=new Date(ini+'T12:00:00');
+        d.setMonth(d.getMonth()+i);
+        const vencParc=d.toISOString().slice(0,10);
+        const pid=genId();
+        await db.ref('erp/lancamentos/'+pid).set({
+          id:pid, tipo, desc:`${desc} (${i+1}/${n})`,
+          valor:Math.round(parcVal*100)/100, data, venc:vencParc,
+          cat, status:'pendente', projeto, obs,
+          parcelaGrupo:grupoId, parcelaNum:i+1, parcelaTotal:n,
+          criadoEm:Date.now(), uid:curUser?.uid||''
+        });
+      }
+      closeOvl('ovlLanc');
+    }catch(e){ alert('Erro ao salvar parcelas: '+e.message); }
+    return;
+  }
+
   const obj={
-    id:lid,
-    tipo:document.getElementById('lancTipo').value,
-    desc, valor,
-    data:document.getElementById('lancData').value||new Date().toISOString().slice(0,10),
-    venc:document.getElementById('lancVenc').value||'',
-    cat:document.getElementById('lancCat').value.trim(),
-    status:document.getElementById('lancStatus').value,
-    projeto:document.getElementById('lancProjeto').value.trim(),
-    obs:document.getElementById('lancObs').value.trim(),
+    id:lid, tipo, desc, valor, data, venc, cat, status, projeto, obs,
     arqUrl, arqNome,
     criadoEm:lancamentos[lid]?.criadoEm||Date.now(),
     uid:curUser?.uid||''
@@ -3926,6 +3980,30 @@ async function saveLanc(){
     await db.ref('erp/lancamentos/'+lid).set(obj);
     closeOvl('ovlLanc');
   }catch(e){ alert('Erro ao salvar: '+e.message); }
+}
+
+function toggleParcela(){
+  const on=document.getElementById('lancParcelado').checked;
+  document.getElementById('parcOptions').style.display=on?'':'none';
+  if(on){
+    if(!document.getElementById('parcInicio').value)
+      document.getElementById('parcInicio').value=document.getElementById('lancVenc').value||new Date().toISOString().slice(0,10);
+    renderParcDates();
+  }
+}
+function renderParcDates(){
+  const n=parseInt(document.getElementById('parcN').value||3);
+  const ini=document.getElementById('parcInicio').value;
+  const valor=parseFloat(document.getElementById('lancValor').value||0);
+  if(!ini||!valor){ document.getElementById('parcPreview').textContent='Informe o valor e a data da 1ª parcela.'; return; }
+  const parc=valor/n;
+  const lines=[];
+  for(let i=0;i<n;i++){
+    const d=new Date(ini+'T12:00:00');
+    d.setMonth(d.getMonth()+i);
+    lines.push(`${i+1}/${n} → ${fmtD(d.toISOString().slice(0,10))} — ${fmtBRL(parc)}`);
+  }
+  document.getElementById('parcPreview').innerHTML=lines.join('<br>');
 }
 
 async function markLancPago(lid){
