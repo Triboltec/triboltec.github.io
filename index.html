@@ -2421,24 +2421,27 @@ function renderDash(){
   const funcAtivos = Object.values(funcionarios).filter(f=>f.status==='ativo').length;
 
   // — Financeiro (lancamentos/)
-  const lanArr = Object.values(lancamentos);
+  const lanArr = Object.values(lancamentos).filter(l=>l.aprovStatus!=='pendente');
   const lanMes=l=>(l.venc||l.data||'').slice(0,7)===ym;
   const mesRec = lanArr.filter(l=>l.tipo==='receita' && lanMes(l));
   const mesDes = lanArr.filter(l=>l.tipo==='despesa' && lanMes(l));
-  const recTotal  = mesRec.reduce((s,l)=>s+(l.valor||0),0);
-  const recPago   = mesRec.filter(l=>l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
-  const desTotal  = mesDes.reduce((s,l)=>s+(l.valor||0),0);
-  const desPago   = mesDes.filter(l=>l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
-  const saldo     = recPago - desPago;
-  const aReceber  = mesRec.filter(l=>l.status!=='pago').reduce((s,l)=>s+(l.valor||0),0);
-  const aPagar    = mesDes.filter(l=>l.status!=='pago').reduce((s,l)=>s+(l.valor||0),0);
+  const recMesPago = mesRec.filter(l=>l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
+  const desMesPago = mesDes.filter(l=>l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
+  const saldo      = recMesPago - desMesPago;
+  // Totais globais pendentes (todos os meses)
+  const todosRec  = lanArr.filter(l=>l.tipo==='receita');
+  const todosDes  = lanArr.filter(l=>l.tipo==='despesa');
+  const aReceber  = todosRec.filter(l=>l.status!=='pago').reduce((s,l)=>s+(l.valor||0),0);
+  const aPagar    = todosDes.filter(l=>l.status!=='pago').reduce((s,l)=>s+(l.valor||0),0);
+  const recVenc   = todosRec.filter(l=>l.status!=='pago'&&l.venc&&l.venc<new Date().toISOString().slice(0,10)).reduce((s,l)=>s+(l.valor||0),0);
+  const desVenc   = todosDes.filter(l=>l.status!=='pago'&&l.venc&&l.venc<new Date().toISOString().slice(0,10)).reduce((s,l)=>s+(l.valor||0),0);
 
   // ── KPIs (8 cards, 2 rows)
   document.getElementById('dashKpis').innerHTML=`
-    <div class="kpi" style="cursor:pointer" onclick="navTo('fin')"><div class="kpi-lbl">A Receber — ${new Date().toLocaleString('pt-BR',{month:'short'})}</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(aReceber)}</div><div class="kpi-sub">${recPago>0?'recebido: '+fmtBRL(recPago):'nenhum recebido ainda'}</div></div>
-    <div class="kpi" style="cursor:pointer" onclick="navTo('fin')"><div class="kpi-lbl">A Pagar — ${new Date().toLocaleString('pt-BR',{month:'short'})}</div><div class="kpi-val" style="color:var(--red)">${fmtBRL(aPagar)}</div><div class="kpi-sub">${desPago>0?'pago: '+fmtBRL(desPago):'nenhum pago ainda'}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Saldo Realizado</div><div class="kpi-val" style="color:${saldo>=0?'var(--green)':'var(--red)'}">${fmtBRL(saldo)}</div><div class="kpi-sub">recebido − pago no mês</div></div>
-    <div class="kpi"><div class="kpi-lbl">Saldo Projetado</div><div class="kpi-val" style="color:${(recTotal-desTotal)>=0?'var(--green)':'var(--amber)'}">${fmtBRL(recTotal-desTotal)}</div><div class="kpi-sub">total receitas − despesas</div></div>
+    <div class="kpi" style="cursor:pointer" onclick="navTo('fin')" title="Clique para ver Financeiro"><div class="kpi-lbl">Total a Receber</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(aReceber)}</div><div class="kpi-sub">${recVenc>0?'⚠️ vencido: '+fmtBRL(recVenc):'em dia ✓'}</div></div>
+    <div class="kpi" style="cursor:pointer" onclick="navTo('fin')" title="Clique para ver Financeiro"><div class="kpi-lbl">Total a Pagar</div><div class="kpi-val" style="color:${aPagar>0?'var(--red)':'var(--dark)'}">${fmtBRL(aPagar)}</div><div class="kpi-sub">${desVenc>0?'⚠️ vencido: '+fmtBRL(desVenc):'em dia ✓'}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Realizado — ${new Date().toLocaleString('pt-BR',{month:'short'})}</div><div class="kpi-val" style="color:${saldo>=0?'var(--green)':'var(--red)'}">${fmtBRL(saldo)}</div><div class="kpi-sub">recebido − pago no mês</div></div>
+    <div class="kpi"><div class="kpi-lbl">Saldo Líquido</div><div class="kpi-val" style="color:${(aReceber-aPagar)>=0?'var(--green)':'var(--red)'}">${fmtBRL(aReceber-aPagar)}</div><div class="kpi-sub">a receber − a pagar</div></div>
     <div class="kpi"><div class="kpi-lbl">Empresas CRM</div><div class="kpi-val">${arr.length}</div><div class="kpi-sub">${byS.cliente||0} clientes ativos</div></div>
     <div class="kpi"><div class="kpi-lbl">Em Negociação</div><div class="kpi-val" style="color:var(--amber)">${(byS.negociacao||0)+(byS.proposta||0)}</div><div class="kpi-sub">${overdue} follow-ups venc.</div></div>
     <div class="kpi"><div class="kpi-lbl">Propostas Abertas</div><div class="kpi-val" style="color:var(--blue)">${propAberto}</div><div class="kpi-sub">aprovadas: ${fmtBRL(propValor)}</div></div>
