@@ -3447,6 +3447,7 @@ function compTab(tab){
     document.getElementById('btnForn').className='btn btn-ghost';
     document.getElementById('compContent').innerHTML=`
       <div class="filters"><input class="search" id="pedSearch" placeholder="Buscar pedido..." oninput="renderPedidos()"/></div>
+      <button class="btn btn-red" onclick="openPedidoModal()" style="margin-bottom:10px">+ Novo Pedido de Compra</button>
       <div id="pedList"></div>`;
     renderPedidos();
   }
