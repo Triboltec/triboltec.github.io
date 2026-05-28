@@ -1258,6 +1258,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <option>Pix à vista</option>
       </datalist>
     </div>
+    <!-- Parcelamento do pedido -->
+    <div id="pedParcelaBox" style="background:#f0f7ff;border-radius:8px;padding:10px;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:0.82rem">
+        <input type="checkbox" id="pedParcelado" onchange="togglePedParcela()" style="width:16px;height:16px"/>
+        Pagamento parcelado (valores diferentes por parcela)
+      </label>
+      <div id="pedParcOptions" style="display:none;margin-top:10px">
+        <div class="f2" style="gap:8px;margin-bottom:8px">
+          <div class="fg">
+            <label style="font-size:0.72rem">Nº de parcelas</label>
+            <select id="pedParcN" onchange="renderPedParcDates()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit">
+              <option value="2">2x</option><option value="3" selected>3x</option>
+              <option value="4">4x</option><option value="5">5x</option><option value="6">6x</option><option value="12">12x</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label style="font-size:0.72rem">1ª parcela em</label>
+            <input type="date" id="pedParcInicio" onchange="renderPedParcDates()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit"/>
+          </div>
+        </div>
+        <div id="pedParcPreview"></div>
+        <div id="pedParcTotal" style="font-size:0.75rem;color:var(--sub);margin-top:4px"></div>
+      </div>
+    </div>
     <div class="orc-section">
       <h3>Itens do Pedido</h3>
       <table class="orc-table">
@@ -3588,17 +3612,43 @@ function openPedidoModal(pid){
   document.getElementById('btnSalvarPedido').textContent=isSuper?'Aprovar →':'Enviar para Aprovação →';
   const msg=document.getElementById('pedAprovMsg');
   if(msg) msg.style.display=(!isSuper&&p?.aprovStatus==='pendente')?'':'none';
+  // Reset parcelamento
+  document.getElementById('pedParcelado').checked=false;
+  document.getElementById('pedParcOptions').style.display='none';
+  document.getElementById('pedParcPreview').innerHTML='';
+  document.getElementById('pedParcTotal').textContent='';
   if(p){
     document.getElementById('pedForn').value=p.fornId||'';
     document.getElementById('pedProj').value=p.projId||'';
-    document.getElementById('pedPgto').value=p.pgto||'30 DDL';
+    document.getElementById('pedPgto').value=p.pgto||'';
     document.getElementById('pedObs').value=p.obs||'';
     document.getElementById('pedItens').innerHTML='';
     (p.itens||[]).forEach(it=>addPedItem(it));
+    // Restaurar parcelas se existirem
+    if(p.pgtoParc && p.pgtoParc.length){
+      document.getElementById('pedParcelado').checked=true;
+      document.getElementById('pedParcOptions').style.display='';
+      document.getElementById('pedParcN').value=p.pgtoParc.length;
+      document.getElementById('pedParcInicio').value=p.pgtoParc[0]?.venc||'';
+      // Renderizar e sobrescrever valores salvos
+      setTimeout(()=>{
+        renderPedParcDates();
+        // Preencher valores reais salvos
+        setTimeout(()=>{
+          const vencs=document.querySelectorAll('.ped-parc-venc');
+          const vals=document.querySelectorAll('.ped-parc-val');
+          p.pgtoParc.forEach((pc,i)=>{
+            if(vencs[i]) vencs[i].value=pc.venc||'';
+            if(vals[i])  vals[i].value=pc.valor||0;
+          });
+          calcPedParcTotal();
+        },50);
+      },50);
+    }
   } else {
     document.getElementById('pedForn').value='';
     document.getElementById('pedProj').value='';
-    document.getElementById('pedPgto').value='30 DDL';
+    document.getElementById('pedPgto').value='';
     document.getElementById('pedObs').value='';
     document.getElementById('pedItens').innerHTML='';
     addPedItem();
@@ -3631,6 +3681,77 @@ function calcPedido(){
     tr.querySelector('.ped-tot').textContent=fmtBRL(rt);
   });
   document.getElementById('pedTotal').textContent=fmtBRL(tot);
+  // Recalcular preview de parcelas se ativo
+  if(document.getElementById('pedParcelado')?.checked) renderPedParcDates();
+}
+
+function togglePedParcela(){
+  const on=document.getElementById('pedParcelado').checked;
+  document.getElementById('pedParcOptions').style.display=on?'':'none';
+  if(on){
+    if(!document.getElementById('pedParcInicio').value)
+      document.getElementById('pedParcInicio').value=new Date().toISOString().slice(0,10);
+    renderPedParcDates();
+  }
+}
+
+function renderPedParcDates(){
+  const n=parseInt(document.getElementById('pedParcN').value||3);
+  const ini=document.getElementById('pedParcInicio').value;
+  if(!ini) return;
+  // Calcular total dos itens
+  let tot=0;
+  document.querySelectorAll('#pedItens tr').forEach(tr=>{
+    tot+=(parseFloat(tr.querySelector('.ped-qtd')?.value||0))*(parseFloat(tr.querySelector('.ped-vu')?.value||0));
+  });
+  const baseDiv=document.getElementById('pedParcPreview'); if(!baseDiv) return;
+  // Gerar datas mensais
+  const dates=[];
+  for(let i=0;i<n;i++){
+    const d=new Date(ini+'T12:00:00');
+    d.setMonth(d.getMonth()+i);
+    dates.push(d.toISOString().slice(0,10));
+  }
+  // Valor padrão: divisão igualitária, última parcela absorve resto
+  const parcBase=tot>0?Math.floor((tot/n)*100)/100:0;
+  const rows=dates.map((dt,i)=>{
+    const isLast=i===n-1;
+    const existing=baseDiv.querySelectorAll('.ped-parc-val')[i];
+    let val=existing?parseFloat(existing.value||0):0;
+    if(!existing||val===0) val=isLast?Math.round((tot-(parcBase*(n-1)))*100)/100:parcBase;
+    return`<tr>
+      <td style="font-size:0.75rem;color:var(--sub);width:28px;text-align:center">${i+1}</td>
+      <td><input type="date" class="ped-parc-venc" value="${dt}" oninput="calcPedParcTotal()" style="width:100%;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:0.8rem;font-family:inherit"/></td>
+      <td><input type="number" class="ped-parc-val" value="${val.toFixed(2)}" min="0" step="0.01" oninput="calcPedParcTotal()" style="width:100%;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:0.8rem;font-family:inherit"/></td>
+    </tr>`;
+  }).join('');
+  baseDiv.innerHTML=`<table style="width:100%;border-collapse:collapse">
+    <thead><tr>
+      <th style="font-size:0.7rem;color:var(--sub);padding:4px;text-align:center">#</th>
+      <th style="font-size:0.7rem;color:var(--sub);padding:4px;text-align:left">Vencimento</th>
+      <th style="font-size:0.7rem;color:var(--sub);padding:4px;text-align:left">Valor (R$)</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+  calcPedParcTotal();
+}
+
+function calcPedParcTotal(){
+  let tot=0;
+  document.querySelectorAll('#pedItens tr').forEach(tr=>{
+    tot+=(parseFloat(tr.querySelector('.ped-qtd')?.value||0))*(parseFloat(tr.querySelector('.ped-vu')?.value||0));
+  });
+  let soma=0;
+  document.querySelectorAll('.ped-parc-val').forEach(i=>soma+=parseFloat(i.value||0));
+  soma=Math.round(soma*100)/100; tot=Math.round(tot*100)/100;
+  const diff=Math.round((tot-soma)*100)/100;
+  const el=document.getElementById('pedParcTotal');
+  if(!el) return;
+  if(Math.abs(diff)<0.01){
+    el.innerHTML=`<span style="color:var(--green)">✅ Parcelas somam ${fmtBRL(soma)} — OK</span>`;
+  } else {
+    el.innerHTML=`<span style="color:var(--red)">⚠️ Parcelas somam ${fmtBRL(soma)} · faltam ${fmtBRL(Math.abs(diff))} ${diff>0?'(a distribuir)':'(excede o total)'}</span>`;
+  }
 }
 async function savePedido(status){
   const fornId=document.getElementById('pedForn').value;
@@ -3658,10 +3779,23 @@ async function savePedido(status){
     aprovStatus='pendente';
     aprovMsg='✅ Pedido enviado para aprovação!';
   }
+  // Coletar parcelas se parcelado
+  const parcelado=document.getElementById('pedParcelado').checked;
+  let pgtoParc=null;
+  if(parcelado){
+    const vencs=document.querySelectorAll('.ped-parc-venc');
+    const vals=document.querySelectorAll('.ped-parc-val');
+    if(vencs.length){
+      const soma=Array.from(vals).reduce((s,i)=>s+parseFloat(i.value||0),0);
+      if(Math.abs(soma-total)>0.05){alert('A soma das parcelas não fecha com o total do pedido.');return;}
+      pgtoParc=Array.from(vencs).map((v,i)=>({venc:v.value,valor:parseFloat(vals[i].value||0)}));
+    }
+  }
   await db.ref('erp/pedidos/'+pid).set({
     id:pid, numero, fornId,
     projId:document.getElementById('pedProj').value,
     pgto:document.getElementById('pedPgto').value,
+    pgtoParc: pgtoParc||null,
     obs:document.getElementById('pedObs').value.trim(),
     itens, total, status: status==='rascunho'?'rascunho':'aprovado',
     aprovStatus,
@@ -3780,6 +3914,24 @@ function gerarPedidoHTML(pid){
       <tr class="total-row"><td colspan="5" style="text-align:right">TOTAL</td><td style="text-align:right">${fmtBRL(p.total||0)}</td></tr>
     </tbody>
   </table>
+  ${p.pgtoParc&&p.pgtoParc.length?`
+  <div style="background:#f0f7ff;border:1px solid #bfdbfe;border-radius:6px;padding:10px;margin-bottom:14px">
+    <h3 style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#1e40af;margin-bottom:8px">Condições de Pagamento — ${p.pgtoParc.length}x</h3>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr>
+        <th style="font-size:9px;padding:4px 6px;background:#dbeafe;text-align:center;width:30px">#</th>
+        <th style="font-size:9px;padding:4px 6px;background:#dbeafe;text-align:left">Vencimento</th>
+        <th style="font-size:9px;padding:4px 6px;background:#dbeafe;text-align:right">Valor</th>
+        <th style="font-size:9px;padding:4px 6px;background:#dbeafe;text-align:right">%</th>
+      </tr></thead>
+      <tbody>${p.pgtoParc.map((pc,i)=>`<tr>
+        <td style="padding:4px 6px;text-align:center;font-size:10px;border-bottom:1px solid #e5e7eb">${i+1}</td>
+        <td style="padding:4px 6px;font-size:10px;border-bottom:1px solid #e5e7eb">${fmtD(pc.venc)||'—'}</td>
+        <td style="padding:4px 6px;font-size:10px;font-weight:700;text-align:right;border-bottom:1px solid #e5e7eb">${fmtBRL(pc.valor||0)}</td>
+        <td style="padding:4px 6px;font-size:10px;text-align:right;color:#6b7280;border-bottom:1px solid #e5e7eb">${p.total?Math.round(pc.valor/p.total*100)+'%':'—'}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>`:''}
   ${p.obs?`<div class="obs-box"><h3>Observações / Prazo de Entrega</h3><p>${p.obs}</p></div>`:''}
   <div class="assin">
     <div class="assin-line">Emitido por / Triboltec</div>
