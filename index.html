@@ -1725,40 +1725,46 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       </div>
       <!-- Tabela de itens -->
       <div style="background:#f8f9fa;border-radius:10px;padding:10px;margin-bottom:12px">
-        <div style="display:grid;grid-template-columns:1fr 130px 120px;gap:6px;margin-bottom:6px">
-          <div style="font-size:0.68rem;font-weight:700;color:var(--sub);padding:0 4px">Item</div>
-          <div style="font-size:0.68rem;font-weight:700;color:var(--sub);padding:0 4px">Valor (R$)</div>
-          <div style="font-size:0.68rem;font-weight:700;color:var(--sub);padding:0 4px">Vencimento</div>
+        <div style="display:grid;grid-template-columns:1fr 110px 105px 34px;gap:5px;margin-bottom:6px;padding:0 2px">
+          <div style="font-size:0.65rem;font-weight:700;color:var(--sub)">Item</div>
+          <div style="font-size:0.65rem;font-weight:700;color:var(--sub)">Valor (R$)</div>
+          <div style="font-size:0.65rem;font-weight:700;color:var(--sub)">Vencimento</div>
+          <div style="font-size:0.65rem;font-weight:700;color:var(--sub)">Arq</div>
         </div>
         <!-- Adiantamento -->
-        <div style="display:grid;grid-template-columns:1fr 130px 120px;gap:6px;align-items:center;margin-bottom:6px">
-          <div style="font-size:0.82rem;padding:0 4px;font-weight:600">Adiantamento <span style="font-size:0.68rem;color:var(--sub)">dia 15</span></div>
-          <input type="number" id="folhaAdtVal" placeholder="0,00" min="0" step="0.01" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
-          <input type="date" id="folhaAdtVenc" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+        <div style="display:grid;grid-template-columns:1fr 110px 105px 34px;gap:5px;align-items:center;margin-bottom:5px">
+          <div style="font-size:0.8rem;font-weight:600">Adiantamento <span style="font-size:0.65rem;color:var(--sub)">dia 15</span></div>
+          <input type="number" id="folhaAdtVal" placeholder="0,00" min="0" step="0.01" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.8rem;font-family:inherit;width:100%"/>
+          <input type="date" id="folhaAdtVenc" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.78rem;font-family:inherit;width:100%"/>
+          <div id="folhaArqBtn_Adt"></div>
         </div>
         <!-- Saldo -->
-        <div style="display:grid;grid-template-columns:1fr 130px 120px;gap:6px;align-items:center;margin-bottom:6px">
-          <div style="font-size:0.82rem;padding:0 4px;font-weight:600">Saldo <span style="font-size:0.68rem;color:var(--sub)">último dia</span></div>
-          <input type="number" id="folhaSalVal" placeholder="0,00" min="0" step="0.01" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
-          <input type="date" id="folhaSalVenc" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+        <div style="display:grid;grid-template-columns:1fr 110px 105px 34px;gap:5px;align-items:center;margin-bottom:5px">
+          <div style="font-size:0.8rem;font-weight:600">Saldo <span style="font-size:0.65rem;color:var(--sub)">último dia</span></div>
+          <input type="number" id="folhaSalVal" placeholder="0,00" min="0" step="0.01" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.8rem;font-family:inherit;width:100%"/>
+          <input type="date" id="folhaSalVenc" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.78rem;font-family:inherit;width:100%"/>
+          <div id="folhaArqBtn_Sal"></div>
         </div>
         <!-- Caju VA -->
-        <div style="display:grid;grid-template-columns:1fr 130px 120px;gap:6px;align-items:center;margin-bottom:6px">
-          <div style="font-size:0.82rem;padding:0 4px;font-weight:600">Caju <span style="font-size:0.68rem;color:var(--sub)">VA</span></div>
-          <input type="number" id="folhaCajuVAVal" placeholder="0,00" min="0" step="0.01" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
-          <input type="date" id="folhaCajuVAVenc" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+        <div style="display:grid;grid-template-columns:1fr 110px 105px 34px;gap:5px;align-items:center;margin-bottom:5px">
+          <div style="font-size:0.8rem;font-weight:600">Caju <span style="font-size:0.65rem;color:var(--sub)">VA</span></div>
+          <input type="number" id="folhaCajuVAVal" placeholder="0,00" min="0" step="0.01" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.8rem;font-family:inherit;width:100%"/>
+          <input type="date" id="folhaCajuVAVenc" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.78rem;font-family:inherit;width:100%"/>
+          <div id="folhaArqBtn_CVA"></div>
         </div>
         <!-- Caju Mobilidade -->
-        <div style="display:grid;grid-template-columns:1fr 130px 120px;gap:6px;align-items:center;margin-bottom:6px">
-          <div style="font-size:0.82rem;padding:0 4px;font-weight:600">Caju <span style="font-size:0.68rem;color:var(--sub)">Mobilidade</span></div>
-          <input type="number" id="folhaCajuMobVal" placeholder="0,00" min="0" step="0.01" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
-          <input type="date" id="folhaCajuMobVenc" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+        <div style="display:grid;grid-template-columns:1fr 110px 105px 34px;gap:5px;align-items:center;margin-bottom:5px">
+          <div style="font-size:0.8rem;font-weight:600">Caju <span style="font-size:0.65rem;color:var(--sub)">Mobilidade</span></div>
+          <input type="number" id="folhaCajuMobVal" placeholder="0,00" min="0" step="0.01" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.8rem;font-family:inherit;width:100%"/>
+          <input type="date" id="folhaCajuMobVenc" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.78rem;font-family:inherit;width:100%"/>
+          <div id="folhaArqBtn_CMb"></div>
         </div>
-        <!-- Swile VT -->
-        <div style="display:grid;grid-template-columns:1fr 130px 120px;gap:6px;align-items:center">
-          <div style="font-size:0.82rem;padding:0 4px;font-weight:600">Swile <span style="font-size:0.68rem;color:var(--sub)">VT</span></div>
-          <input type="number" id="folhaSwileVal" placeholder="0,00" min="0" step="0.01" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
-          <input type="date" id="folhaSwileVenc" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;font-family:inherit;width:100%"/>
+        <!-- Caju Indaiatuba -->
+        <div style="display:grid;grid-template-columns:1fr 110px 105px 34px;gap:5px;align-items:center">
+          <div style="font-size:0.8rem;font-weight:600">Caju <span style="font-size:0.65rem;color:var(--sub)">Indaiatuba</span></div>
+          <input type="number" id="folhaSwileVal" placeholder="0,00" min="0" step="0.01" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.8rem;font-family:inherit;width:100%"/>
+          <input type="date" id="folhaSwileVenc" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.78rem;font-family:inherit;width:100%"/>
+          <div id="folhaArqBtn_Swi"></div>
         </div>
         <!-- Total -->
         <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px;display:flex;justify-content:space-between;align-items:center">
@@ -1766,13 +1772,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <span id="folhaTotal" style="font-size:1rem;font-weight:800;color:var(--red)">R$ 0,00</span>
         </div>
       </div>
-      <!-- Boletos -->
-      <div style="background:#f8f9fa;border-radius:10px;padding:10px">
-        <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:8px">📎 Boletos / Comprovantes</label>
-        <div id="folhaArqsAtual" style="margin-bottom:6px"></div>
-        <input type="file" id="folhaArqFile" accept=".pdf,.jpg,.jpeg,.png" multiple style="font-size:0.78rem;width:100%"/>
-        <div id="folhaArqProgress" style="font-size:0.72rem;color:var(--sub);margin-top:4px;min-height:14px"></div>
-      </div>
+      <div id="folhaArqProgress" style="font-size:0.72rem;color:var(--sub);min-height:14px;margin-bottom:4px"></div>
     </div>
     <div class="mact">
       <button class="btn btn-ghost" onclick="closeOvl('ovlFolha')">Cancelar</button>
@@ -4693,12 +4693,41 @@ async function delLanc(lid){
 // FOLHA DE PAGAMENTO
 // ══════════════════════════════════════════════
 const FOLHA_ITENS=[
-  {id:'Adt', label:'Adiantamento', valId:'folhaAdtVal',    vencId:'folhaAdtVenc'},
-  {id:'Sal', label:'Saldo',        valId:'folhaSalVal',    vencId:'folhaSalVenc'},
-  {id:'CVA', label:'Caju VA',      valId:'folhaCajuVAVal', vencId:'folhaCajuVAVenc'},
-  {id:'CMb', label:'Caju Mobilidade', valId:'folhaCajuMobVal', vencId:'folhaCajuMobVenc'},
-  {id:'Swi', label:'Swile VT',     valId:'folhaSwileVal',  vencId:'folhaSwileVenc'},
+  {id:'Adt', label:'Adiantamento',    valId:'folhaAdtVal',    vencId:'folhaAdtVenc'},
+  {id:'Sal', label:'Saldo',           valId:'folhaSalVal',    vencId:'folhaSalVenc'},
+  {id:'CVA', label:'Caju VA',         valId:'folhaCajuVAVal', vencId:'folhaCajuVAVenc'},
+  {id:'CMb', label:'Caju Mobilidade', valId:'folhaCajuMobVal',vencId:'folhaCajuMobVenc'},
+  {id:'Swi', label:'Caju Indaiatuba', valId:'folhaSwileVal',  vencId:'folhaSwileVenc'},
 ];
+
+// Estado temporário dos arquivos por item no modal
+let folhaArqsTemp={};
+
+function renderFolhaArqBtn(itemId, arq){
+  const el=document.getElementById('folhaArqBtn_'+itemId); if(!el) return;
+  if(arq){
+    el.innerHTML=`<span title="${arq.nome}" style="cursor:pointer;font-size:1.1rem" onclick="abrirFolhaArq('${arq.key}')">📎</span>`;
+  } else {
+    el.innerHTML=`<label style="cursor:pointer;font-size:1.1rem;display:block;text-align:center" title="Anexar boleto/comprovante">
+      📂<input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="uploadFolhaItemArq('${itemId}',this)"/>
+    </label>`;
+  }
+}
+
+async function uploadFolhaItemArq(itemId, input){
+  const file=input.files[0]; if(!file) return;
+  const mes=document.getElementById('editFolhaId').value||document.getElementById('folhaMes').value;
+  const prog=document.getElementById('folhaArqProgress');
+  prog.textContent='⏳ Enviando '+file.name+'...';
+  try{
+    const b64=await uploadFile(file,'',pct=>{prog.textContent=`⏳ ${pct}%`;});
+    const key='folha_'+mes+'_'+itemId;
+    await db.ref('erp/folha_arqs/'+key).set({b64,nome:file.name,atualizadoEm:Date.now()});
+    folhaArqsTemp[itemId]={key,nome:file.name};
+    prog.textContent='✅ '+file.name+' salvo!';
+    renderFolhaArqBtn(itemId,folhaArqsTemp[itemId]);
+  }catch(e){prog.textContent='⚠️ Erro: '+e.message;}
+}
 
 function atualizaTotalFolha(){
   const total=FOLHA_ITENS.reduce((s,it)=>s+parseFloat(document.getElementById(it.valId)?.value||0),0);
@@ -4731,12 +4760,9 @@ function openFolhaModal(mesRef){
     document.getElementById(it.vencId).value=saved?.itens?.[it.id]?.venc||(it.id==='Adt'?dia15:it.id==='Sal'?ultimoDia:'');
   });
 
-  // Exibe anexos salvos
-  const arqDiv=document.getElementById('folhaArqsAtual');
-  const arqs=saved?.arqsRefs||[];
-  arqDiv.innerHTML=arqs.map(a=>`<div style="font-size:0.75rem;color:var(--blue);cursor:pointer;margin-bottom:2px" onclick="abrirFolhaArq('${a.key}')">📎 ${a.nome}</div>`).join('');
-
-  document.getElementById('folhaArqFile').value='';
+  // Inicializa arquivos por item com o que já está salvo
+  folhaArqsTemp=Object.assign({},saved?.arqsPorItem||{});
+  FOLHA_ITENS.forEach(it=>renderFolhaArqBtn(it.id, folhaArqsTemp[it.id]||null));
   document.getElementById('folhaArqProgress').textContent='';
   atualizaTotalFolha();
   bindFolhaInputs();
@@ -4763,23 +4789,8 @@ async function saveFolha(){
     await Promise.all(jaExiste.map(l=>db.ref('erp/lancamentos/'+l.id).remove()));
   }
 
-  // Upload de boletos (múltiplos arquivos)
-  const fileInput=document.getElementById('folhaArqFile');
-  const prog=document.getElementById('folhaArqProgress');
-  const arqsRefs=[];
-  if(fileInput.files.length){
-    prog.textContent='⏳ Enviando boletos...';
-    for(let i=0;i<fileInput.files.length;i++){
-      const file=fileInput.files[i];
-      try{
-        const b64=await uploadFile(file,'',pct=>{prog.textContent=`⏳ Arquivo ${i+1}/${fileInput.files.length} — ${pct}%`;});
-        const key='folha_'+mes+'_'+i+'_'+Math.random().toString(36).slice(2,5);
-        await db.ref('erp/folha_arqs/'+key).set({b64,nome:file.name,atualizadoEm:Date.now()});
-        arqsRefs.push({key,nome:file.name});
-      }catch(e){prog.textContent='⚠️ Erro: '+e.message;return;}
-    }
-    prog.textContent='✅ '+arqsRefs.length+' arquivo(s) salvo(s)';
-  }
+  // Arquivos já foram enviados em tempo real via uploadFolhaItemArq
+  const arqsPorItem=Object.assign({},folhaArqsTemp);
 
   // Cria lançamentos no Financeiro
   const base=Date.now();
@@ -4797,7 +4808,7 @@ async function saveFolha(){
       cat:'Folha de Pagamento', status:'pendente', projeto:'',
       obs:`Folha de pagamento ${mesLabel}`,
       folhaMes:mes, folhaItem:it.id,
-      arqsRefs: arqsRefs.length ? arqsRefs : [],
+      arqRef: arqsPorItem[it.id]||null,
       aprovStatus:'aprovado', aprovadoPor:curUser?.uid||'',
       criadoEm:base+i, uid:curUser?.uid||''
     });
@@ -4813,7 +4824,7 @@ async function saveFolha(){
   });
   await db.ref('erp/folhas/'+mes).set({
     mes, mesLabel, itens:itensObj,
-    arqsRefs, total:Object.values(itensObj).reduce((s,i)=>s+(i.val||0),0),
+    arqsPorItem, total:Object.values(itensObj).reduce((s,i)=>s+(i.val||0),0),
     criadoEm:base, uid:curUser?.uid||''
   });
 
@@ -4845,12 +4856,17 @@ function renderFolhas(){
       :totalPago>0
         ?`<span style="font-size:0.68rem;background:#fef3c7;color:#92400e;border-radius:4px;padding:2px 7px;font-weight:700">⏳ Parcial</span>`
         :`<span style="font-size:0.68rem;background:#fee2e2;color:#991b1b;border-radius:4px;padding:2px 7px;font-weight:700">⏳ Pendente</span>`;
-    const itensHtml=Object.values(f.itens||{}).map(it=>`
-      <div style="display:flex;justify-content:space-between;font-size:0.75rem;padding:3px 0;border-bottom:1px solid #f0f0f0">
-        <span style="color:var(--sub)">${it.label}${it.venc?' · '+fmtD(it.venc):''}</span>
+    const arqsPorItem=f.arqsPorItem||{};
+    const itensHtml=Object.entries(f.itens||{}).map(([itemId,it])=>{
+      const arq=arqsPorItem[itemId];
+      const arqBtn=arq
+        ?`<span style="font-size:1rem;cursor:pointer;margin-left:6px" onclick="abrirFolhaArq('${arq.key}')" title="${arq.nome}">📎</span>`
+        :'';
+      return`<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;padding:3px 0;border-bottom:1px solid #f0f0f0">
+        <span style="color:var(--sub)">${it.label}${it.venc?' · '+fmtD(it.venc):''}${arqBtn}</span>
         <span style="font-weight:600">${fmtBRL(it.val)}</span>
-      </div>`).join('');
-    const arqsHtml=(f.arqsRefs||[]).map(a=>`<span style="font-size:0.72rem;color:var(--blue);cursor:pointer;margin-right:8px" onclick="abrirFolhaArq('${a.key}')">📎 ${a.nome}</span>`).join('');
+      </div>`;
+    }).join('');
     return`<div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="font-weight:700;font-size:0.95rem">💰 Folha ${mn}/${y} ${badge}</div>
@@ -4860,7 +4876,6 @@ function renderFolhas(){
         </div>
       </div>
       ${itensHtml}
-      ${arqsHtml?`<div style="margin-top:8px">${arqsHtml}</div>`:''}
       ${totalPago>0?`<div style="margin-top:6px;font-size:0.72rem;color:var(--green)">✅ Pago: ${fmtBRL(totalPago)}${totalPend>0?' &nbsp;|&nbsp; ⏳ Pendente: '+fmtBRL(totalPend):''}</div>`:''}
     </div>`;
   }).join('');
