@@ -630,6 +630,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         </div>
         <div class="rh-tabs">
           <button class="rh-tab active" id="rhTab-alertas" onclick="rhTab('alertas')">🔔 Alertas</button>
+          <button class="rh-tab" id="rhTab-folhas" onclick="rhTab('folhas')">💰 Folhas</button>
           <button class="rh-tab" id="rhTab-equipe" onclick="rhTab('equipe')">👷 Equipe</button>
           <button class="rh-tab" id="rhTab-recrutamento" onclick="rhTab('recrutamento')">🎯 Recrutamento</button>
           <button class="rh-tab" id="rhTab-ausencias" onclick="rhTab('ausencias')">📅 Ausências</button>
@@ -638,6 +639,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <!-- ALERTAS -->
         <div id="rhPane-alertas">
           <div id="rhAlertList"></div>
+        </div>
+        <!-- FOLHAS -->
+        <div id="rhPane-folhas" style="display:none">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+            <button class="btn btn-red" onclick="openFolhaModal()">+ Nova Folha</button>
+          </div>
+          <div id="folhaList"></div>
         </div>
         <!-- EQUIPE -->
         <div id="rhPane-equipe" style="display:none">
@@ -2096,6 +2104,7 @@ let usuarios = {}, clientes = {}, interacoes = {};
 let curContatos = []; // contacts being edited in client modal
 let propostas = {}, projetos = {}, fornecedores = {}, pedidos = {}, estoque = {}, movimentos = {}, funcionarios = {};
 let lancamentos = {};
+let folhas = {};
 let notas = {}, nfConfig = {};
 let candidatos = {}, ausencias = {}, fechamentos = {}, empresaDocs = {}, pontoReg = {};
 let sysConfig = {};
@@ -2378,7 +2387,7 @@ function logout(){
   firebase.auth().signOut().catch(()=>{});
   sessionStorage.removeItem('a2erp_uid');
   curUser=null; clientes={}; interacoes={};
-  propostas={}; projetos={}; fornecedores={}; pedidos={}; estoque={}; movimentos={}; funcionarios={}; lancamentos={}; notas={}; nfConfig={};
+  propostas={}; projetos={}; fornecedores={}; pedidos={}; estoque={}; movimentos={}; funcionarios={}; lancamentos={}; folhas={}; notas={}; nfConfig={};
   if(db){ ['erp/clientes','erp/interacoes','erp/usuarios','erp/propostas','erp/projetos','erp/fornecedores','erp/pedidos','erp/estoque','erp/movimentos','erp/funcionarios','erp/lancamentos','erp/notas','erp/nfconfig'].forEach(p=>db.ref(p).off()); }
   document.getElementById('app').classList.remove('v');
   document.getElementById('loginScreen').classList.remove('h');
@@ -2452,7 +2461,8 @@ function startListeners(){
   db.ref('erp/estoque').on('value', snap=>{ estoque=snap.val()||{}; renderEst(); });
   db.ref('erp/movimentos').on('value', snap=>{ movimentos=snap.val()||{}; });
   db.ref('erp/funcionarios').on('value', snap=>{ funcionarios=snap.val()||{}; renderFuncionarios(); renderRHAlerts(); updateRHBadge(); renderDash(); });
-  db.ref('erp/lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); renderFin(); updateAprovBadge(Object.values(lancamentos).filter(l=>l.aprovStatus==='pendente').length+Object.values(pedidos).filter(p=>p.aprovStatus==='pendente').length); verificarParcelasComDataErrada(); });
+  db.ref('erp/lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); renderFin(); renderFolhas(); updateAprovBadge(Object.values(lancamentos).filter(l=>l.aprovStatus==='pendente').length+Object.values(pedidos).filter(p=>p.aprovStatus==='pendente').length); verificarParcelasComDataErrada(); });
+  db.ref('erp/folhas').on('value', snap=>{ folhas=snap.val()||{}; renderFolhas(); });
   db.ref('erp/notas').on('value', snap=>{ notas=snap.val()||{}; renderNF(); });
   db.ref('erp/nfconfig').on('value', snap=>{ nfConfig=snap.val()||{}; renderNF(); });
   db.ref('erp/candidatos').on('value', snap=>{ candidatos=snap.val()||{}; renderKanban(); });
@@ -4221,11 +4231,12 @@ async function saveMov(){
 // ── Sub-tabs navigation ──
 function rhTab(t){
   rhCurTab=t;
-  ['alertas','equipe','recrutamento','ausencias','fechamento'].forEach(id=>{
+  ['alertas','folhas','equipe','recrutamento','ausencias','fechamento'].forEach(id=>{
     document.getElementById('rhTab-'+id).classList.toggle('active',id===t);
     document.getElementById('rhPane-'+id).style.display=id===t?'':'none';
   });
   if(t==='alertas') renderRHAlerts();
+  if(t==='folhas') renderFolhas();
   if(t==='equipe') renderFuncionarios();
   if(t==='recrutamento') renderKanban();
   if(t==='ausencias') renderAusencias();
@@ -4705,28 +4716,33 @@ function bindFolhaInputs(){
 function openFolhaModal(mesRef){
   const hoje=new Date().toISOString().slice(0,10);
   const mesAtual=hoje.slice(0,7);
-  document.getElementById('editFolhaId').value='';
-  document.getElementById('folhaMes').value=mesRef||mesAtual;
-  // Auto-preenche vencimentos: dia 15 e último dia do mês
-  const [y,m]=((mesRef||mesAtual)+'-01').split('-').map(Number);
-  const dia15=`${mesRef||mesAtual}-15`;
-  const ultimoDia=new Date(y,m,0).toISOString().slice(0,10); // último dia do mês
-  document.getElementById('folhaAdtVenc').value=dia15;
-  document.getElementById('folhaSalVenc').value=ultimoDia;
-  // Limpa outros campos
+  const mes=mesRef||mesAtual;
+  document.getElementById('editFolhaId').value=mes;
+  document.getElementById('folhaMes').value=mes;
+
+  const [y,m]=mes.split('-').map(Number);
+  const dia15=mes+'-15';
+  const ultimoDia=new Date(y,m,0).toISOString().slice(0,10);
+
+  // Tenta carregar folha salva; senão usa defaults
+  const saved=folhas?.[mes];
   FOLHA_ITENS.forEach(it=>{
-    document.getElementById(it.valId).value='';
-    if(it.id!=='Adt'&&it.id!=='Sal') document.getElementById(it.vencId).value='';
+    document.getElementById(it.valId).value=saved?.itens?.[it.id]?.val||'';
+    document.getElementById(it.vencId).value=saved?.itens?.[it.id]?.venc||(it.id==='Adt'?dia15:it.id==='Sal'?ultimoDia:'');
   });
-  document.getElementById('folhaArqsAtual').innerHTML='';
+
+  // Exibe anexos salvos
+  const arqDiv=document.getElementById('folhaArqsAtual');
+  const arqs=saved?.arqsRefs||[];
+  arqDiv.innerHTML=arqs.map(a=>`<div style="font-size:0.75rem;color:var(--blue);cursor:pointer;margin-bottom:2px" onclick="abrirFolhaArq('${a.key}')">📎 ${a.nome}</div>`).join('');
+
   document.getElementById('folhaArqFile').value='';
   document.getElementById('folhaArqProgress').textContent='';
   atualizaTotalFolha();
   bindFolhaInputs();
-  // Atualiza venc ao mudar mês
   document.getElementById('folhaMes').onchange=()=>{
-    const mv=document.getElementById('folhaMes').value;
-    if(!mv) return;
+    const mv=document.getElementById('folhaMes').value; if(!mv) return;
+    document.getElementById('editFolhaId').value=mv;
     const [yy,mm]=mv.split('-').map(Number);
     document.getElementById('folhaAdtVenc').value=mv+'-15';
     document.getElementById('folhaSalVenc').value=new Date(yy,mm,0).toISOString().slice(0,10);
@@ -4788,8 +4804,66 @@ async function saveFolha(){
     criados++;
   }
 
+  // Salva registro da folha no Firebase para histórico
+  const itensObj={};
+  FOLHA_ITENS.forEach(it=>{
+    const val=parseFloat(document.getElementById(it.valId).value||0);
+    const venc=document.getElementById(it.vencId).value||'';
+    if(val) itensObj[it.id]={val,venc,label:it.label};
+  });
+  await db.ref('erp/folhas/'+mes).set({
+    mes, mesLabel, itens:itensObj,
+    arqsRefs, total:Object.values(itensObj).reduce((s,i)=>s+(i.val||0),0),
+    criadoEm:base, uid:curUser?.uid||''
+  });
+
   closeOvl('ovlFolha');
   alert(`✅ Folha de ${mesLabel} registrada — ${criados} lançamento(s) criado(s) no Financeiro!`);
+}
+
+async function abrirFolhaArq(key){
+  const snap=await db.ref('erp/folha_arqs/'+key).once('value');
+  const d=snap.val(); if(!d?.b64) return alert('Arquivo não encontrado.');
+  const a=document.createElement('a'); a.href=d.b64; a.download=d.nome||'boleto'; a.click();
+}
+
+function renderFolhas(){
+  const el=document.getElementById('folhaList'); if(!el) return;
+  const arr=Object.values(folhas||{}).sort((a,b)=>b.mes.localeCompare(a.mes));
+  if(!arr.length){ el.innerHTML='<div class="empty">Nenhuma folha registrada ainda.</div>'; return; }
+  const monthNames=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  el.innerHTML=arr.map(f=>{
+    const [y,m]=f.mes.split('-');
+    const mn=monthNames[parseInt(m)-1];
+    // Status de cada item baseado nos lançamentos
+    const lancsFolha=Object.values(lancamentos).filter(l=>l.folhaMes===f.mes);
+    const totalPago=lancsFolha.filter(l=>l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
+    const totalPend=lancsFolha.filter(l=>l.status!=='pago').reduce((s,l)=>s+(l.valor||0),0);
+    const tudo=lancsFolha.length>0&&totalPend===0;
+    const badge=tudo
+      ?`<span style="font-size:0.68rem;background:#dcfce7;color:#166534;border-radius:4px;padding:2px 7px;font-weight:700">✅ Pago</span>`
+      :totalPago>0
+        ?`<span style="font-size:0.68rem;background:#fef3c7;color:#92400e;border-radius:4px;padding:2px 7px;font-weight:700">⏳ Parcial</span>`
+        :`<span style="font-size:0.68rem;background:#fee2e2;color:#991b1b;border-radius:4px;padding:2px 7px;font-weight:700">⏳ Pendente</span>`;
+    const itensHtml=Object.values(f.itens||{}).map(it=>`
+      <div style="display:flex;justify-content:space-between;font-size:0.75rem;padding:3px 0;border-bottom:1px solid #f0f0f0">
+        <span style="color:var(--sub)">${it.label}${it.venc?' · '+fmtD(it.venc):''}</span>
+        <span style="font-weight:600">${fmtBRL(it.val)}</span>
+      </div>`).join('');
+    const arqsHtml=(f.arqsRefs||[]).map(a=>`<span style="font-size:0.72rem;color:var(--blue);cursor:pointer;margin-right:8px" onclick="abrirFolhaArq('${a.key}')">📎 ${a.nome}</span>`).join('');
+    return`<div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:700;font-size:0.95rem">💰 Folha ${mn}/${y} ${badge}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-weight:800;color:var(--red)">${fmtBRL(f.total||0)}</span>
+          <button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 8px" onclick="openFolhaModal('${f.mes}')">✏️ Editar</button>
+        </div>
+      </div>
+      ${itensHtml}
+      ${arqsHtml?`<div style="margin-top:8px">${arqsHtml}</div>`:''}
+      ${totalPago>0?`<div style="margin-top:6px;font-size:0.72rem;color:var(--green)">✅ Pago: ${fmtBRL(totalPago)}${totalPend>0?' &nbsp;|&nbsp; ⏳ Pendente: '+fmtBRL(totalPend):''}</div>`:''}
+    </div>`;
+  }).join('');
 }
 
 // ── Correção de datas de parcelas antigas (admin) ──
