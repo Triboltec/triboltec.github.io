@@ -4270,11 +4270,14 @@ function getRHAlerts(){
     });
     // Dynamic NRs
     if(f.nrs) Object.values(f.nrs).forEach(nr=>{
-      if(!nr.vencimento) return;
-      const d=diffD(nr.vencimento);
+      const venc=nr.versoes
+        ? Object.values(nr.versoes).sort((a,b)=>(b.criadoEm||0)-(a.criadoEm||0))[0]?.vencimento
+        : nr.vencimento;
+      if(!venc) return;
+      const d=diffD(venc);
       if(d===null) return;
       if(d<0) alerts.push({tipo:'venc',nome:`${f.nome} — ${nr.nome||'NR'}`,desc:`Vencida há ${Math.abs(d)} dias`,link:`#func-${f.id}`});
-      else if(d<=30) alerts.push({tipo:'pend',nome:`${f.nome} — ${nr.nome||'NR'}`,desc:`Vence em ${d} dias (${fmtD(nr.vencimento)})`,link:`#func-${f.id}`});
+      else if(d<=30) alerts.push({tipo:'pend',nome:`${f.nome} — ${nr.nome||'NR'}`,desc:`Vence em ${d} dias (${fmtD(venc)})`,link:`#func-${f.id}`});
     });
     // Férias (30 dias de antecedência)
     if(f.ferIni){
@@ -5160,7 +5163,10 @@ function renderFuncionarios(){
     });
     if(f.nrs) Object.values(f.nrs).forEach(nr=>{
       if(!nr.nome) return;
-      const d=nr.vencimento?diffD(nr.vencimento):null;
+      const venc=nr.versoes
+        ? Object.values(nr.versoes).sort((a,b)=>(b.criadoEm||0)-(a.criadoEm||0))[0]?.vencimento
+        : nr.vencimento;
+      const d=venc?diffD(venc):null;
       const cls=d===null?'nr-ok':d<0?'nr-venc':d<30?'nr-pend':'nr-ok';
       nrBadges+=`<span class="nr-badge ${cls}">${nr.nome}${d!==null&&d<0?' VENC':''}</span>`;
     });
@@ -5196,29 +5202,64 @@ function setRHFilter(f){rhFilter=f;renderFuncionarios();}
 // Keep backward compat
 function renderRH(){renderFuncionarios();}
 
-// ── Dynamic NRs in modal ──
+// ── Dynamic NRs in modal (com histórico de versões) ──
+function _nrVencBadge(vencimento){
+  if(!vencimento) return '';
+  const d=diffD(vencimento);
+  if(d===null) return '';
+  if(d<0) return `<span style="font-size:0.6rem;background:#fee2e2;color:#991b1b;border-radius:4px;padding:1px 6px;font-weight:700">VENCIDO</span>`;
+  if(d<=30) return `<span style="font-size:0.6rem;background:#fef3c7;color:#92400e;border-radius:4px;padding:1px 6px;font-weight:700">${d}d</span>`;
+  return `<span style="font-size:0.6rem;background:#dcfce7;color:#166534;border-radius:4px;padding:1px 6px;font-weight:700">✓ OK</span>`;
+}
+
 function renderNRList(){
   const el=document.getElementById('nrList'); if(!el) return;
   el.innerHTML=curNRs.map((nr,i)=>{
-    const temArq=nr.arqUrl||nr.link;
+    const vers=nr.versoes||[];
+    const atual=vers[0]||{};
+    const hist=vers.slice(1);
+    const badge=_nrVencBadge(atual.vencimento);
+    const temArq=atual.arqUrl||atual.link;
     const arqBtn=temArq
-      ? `<span style="display:flex;align-items:center;gap:4px">
-           <span style="font-size:0.72rem;color:var(--blue);cursor:pointer;text-decoration:underline;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" onclick="abrirNRArq(${i})" title="${nr.arqNome||nr.link||''}">📎 ${nr.arqNome||'Ver'}</span>
-           <button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:0.72rem;padding:0" onclick="removerNRArq(${i})" title="Remover arquivo">✕</button>
-         </span>`
-      : `<label style="cursor:pointer;font-size:0.72rem;color:var(--sub);display:flex;align-items:center;gap:3px">
-           <span style="background:#f3f4f6;border:1px dashed #d1d5db;border-radius:5px;padding:2px 8px">📎 Anexar</span>
-           <input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="uploadNRArq(${i},this)"/>
-         </label>`;
-    return`<div class="nr-row" style="grid-template-columns:110px 130px 1fr auto">
-      <input type="text" placeholder="NR-10" value="${nr.nome||''}" oninput="curNRs[${i}].nome=this.value"/>
-      <input type="date" value="${nr.vencimento||''}" oninput="curNRs[${i}].vencimento=this.value"/>
-      <div style="display:flex;align-items:center">${arqBtn}</div>
-      <button class="nr-del" onclick="removeNR(${i})" title="Remover">✕</button>
-    </div>`;}).join('');
+      ?`<span style="font-size:0.72rem;color:var(--blue);cursor:pointer;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block" onclick="abrirNRArqVers(${i},0)" title="${atual.arqNome||atual.link||''}">📎 ${atual.arqNome||'Ver'}</span>`
+      :`<label style="cursor:pointer;font-size:0.72rem;color:var(--sub)">
+          <span style="background:#f3f4f6;border:1px dashed #d1d5db;border-radius:5px;padding:2px 7px">📎 Anexar</span>
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="uploadNRArq(${i},this)"/>
+        </label>`;
+    const histHtml=hist.length
+      ?`<div style="margin-top:5px;padding:5px 8px;background:#f8f9fa;border-radius:6px;border-left:3px solid #d1d5db">
+          <div style="font-size:0.62rem;font-weight:700;color:var(--sub);margin-bottom:3px">Histórico</div>
+          ${hist.map((v,j)=>`<div style="display:flex;gap:10px;align-items:center;font-size:0.7rem;color:var(--sub);padding:2px 0">
+            <span>${fmtD(v.vencimento)||'sem data'}</span>
+            ${_nrVencBadge(v.vencimento)}
+            ${v.arqUrl||v.link?`<span style="color:var(--blue);cursor:pointer" onclick="abrirNRArqVers(${i},${j+1})">📎 ${v.arqNome?.slice(0,20)||'Ver'}</span>`:'<span style="color:#ccc">sem arquivo</span>'}
+          </div>`).join('')}
+        </div>`
+      :'';
+    return`<div style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:7px">
+      <div style="display:grid;grid-template-columns:95px 115px auto 1fr auto auto;gap:6px;align-items:center">
+        <input type="text" placeholder="NR-10" value="${nr.nome||''}" oninput="curNRs[${i}].nome=this.value" style="padding:5px 7px;border:1.5px solid var(--border);border-radius:6px;font-size:0.8rem;font-family:inherit"/>
+        <input type="date" value="${atual.vencimento||''}" oninput="curNRs[${i}].versoes[0].vencimento=this.value;renderNRList()" style="padding:5px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:0.75rem;font-family:inherit"/>
+        <div>${badge}</div>
+        <div>${arqBtn}</div>
+        <button onclick="renovarNR(${i})" style="background:#f0fdf4;border:1px solid #86efac;color:#166534;border-radius:6px;padding:3px 8px;font-size:0.7rem;cursor:pointer;white-space:nowrap">🔄 Renovar</button>
+        <button class="nr-del" onclick="removeNR(${i})" title="Remover NR">✕</button>
+      </div>
+      ${histHtml}
+    </div>`;
+  }).join('');
 }
-function addNR(){curNRs.push({nome:'',vencimento:'',arqUrl:'',arqNome:''});renderNRList();}
+
+function addNR(){
+  curNRs.push({nome:'',versoes:[{vencimento:'',arqUrl:'',arqNome:'',link:'',criadoEm:Date.now()}]});
+  renderNRList();
+}
 function removeNR(i){curNRs.splice(i,1);renderNRList();}
+function renovarNR(i){
+  if(!curNRs[i].versoes) curNRs[i].versoes=[{}];
+  curNRs[i].versoes.unshift({vencimento:'',arqUrl:'',arqNome:'',link:'',criadoEm:Date.now()});
+  renderNRList();
+}
 
 async function uploadNRArq(i, input){
   const file=input.files[0]; if(!file) return;
@@ -5228,24 +5269,28 @@ async function uploadNRArq(i, input){
     const b64=await uploadFile(file,'',()=>{});
     const key=fid+'_nr'+Date.now().toString(36);
     await db.ref('erp/nr_arqs/'+key).set({b64,nome:file.name,atualizadoEm:Date.now()});
-    curNRs[i].arqUrl='db:'+key;
-    curNRs[i].arqNome=file.name;
-    curNRs[i].link='';
+    if(!curNRs[i].versoes||!curNRs[i].versoes.length) curNRs[i].versoes=[{vencimento:'',criadoEm:Date.now()}];
+    curNRs[i].versoes[0].arqUrl='db:'+key;
+    curNRs[i].versoes[0].arqNome=file.name;
+    curNRs[i].versoes[0].link='';
     renderNRList();
   }catch(e){alert('Erro: '+e.message);}
 }
-async function abrirNRArq(i){
+async function abrirNRArqVers(i, j){
   const nr=curNRs[i]; if(!nr) return;
-  if(nr.link&&!nr.arqUrl){window.open(nr.link,'_blank');return;}
-  if(!nr.arqUrl) return;
-  const key=nr.arqUrl.replace('db:','');
+  const v=(nr.versoes||[])[j]||{};
+  if(v.link&&!v.arqUrl){window.open(v.link,'_blank');return;}
+  if(!v.arqUrl) return;
+  const key=v.arqUrl.replace('db:','');
   const snap=await db.ref('erp/nr_arqs/'+key).once('value');
   const d=snap.val(); if(!d?.b64){alert('Arquivo não encontrado.');return;}
   const win=window.open('','_blank');
   win.document.write(`<html><body style="margin:0"><iframe src="${d.b64}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);
   win.document.close();
 }
-function removerNRArq(i){curNRs[i].arqUrl='';curNRs[i].arqNome='';curNRs[i].link='';renderNRList();}
+// compat
+function abrirNRArq(i){abrirNRArqVers(i,0);}
+function removerNRArq(i){if(curNRs[i]?.versoes?.[0]){curNRs[i].versoes[0].arqUrl='';curNRs[i].versoes[0].arqNome='';curNRs[i].versoes[0].link='';}renderNRList();}
 
 // ── Open / Save Func modal ──
 function openFuncModal(fid){
@@ -5286,11 +5331,19 @@ function openFuncModal(fid){
     else { asoDiv.style.display='none'; }
     document.getElementById('fnAsoFile').value='';
     document.getElementById('fnAsoProgress').textContent='';
-    // NRs: load dynamic NRs; also migrate legacy if present
-    curNRs=f.nrs?Object.values(f.nrs).map(nr=>({arqUrl:'',arqNome:'',link:'',...nr})):[];
+    // NRs: load dynamic NRs com suporte ao histórico de versões
+    curNRs=f.nrs?Object.values(f.nrs).map(nr=>{
+      if(nr.versoes){
+        // Formato novo: versoes é objeto Firebase → converte para array desc por criadoEm
+        const vers=Object.values(nr.versoes).sort((a,b)=>(b.criadoEm||0)-(a.criadoEm||0));
+        return {nome:nr.nome,versoes:vers};
+      }
+      // Formato antigo (flat) → migra para versoes
+      return {nome:nr.nome,versoes:[{vencimento:nr.vencimento||'',arqUrl:nr.arqUrl||'',arqNome:nr.arqNome||'',link:nr.link||'',criadoEm:0}]};
+    }):[];
     if(!curNRs.length){
       [['nr10','NR-10'],['nr35','NR-35'],['nr12','NR-12'],['nr18','NR-18']].forEach(([k,nome])=>{
-        if(f[k]) curNRs.push({nome,vencimento:f[k],link:'',arqUrl:'',arqNome:''});
+        if(f[k]) curNRs.push({nome,versoes:[{vencimento:f[k],arqUrl:'',arqNome:'',link:'',criadoEm:0}]});
       });
     }
   } else {
@@ -5318,9 +5371,17 @@ async function saveFunc(){
   if(!nome){alert('Informe o nome do funcionário.');return;}
   const fid=document.getElementById('editFuncId').value||genId();
   const existing=funcionarios[fid]||{};
-  // Convert curNRs array to object
+  // Converte curNRs para objeto Firebase com histórico de versões
   const nrsObj={};
-  curNRs.forEach((nr,i)=>{ if(nr.nome) nrsObj['nr'+i]={nome:nr.nome,vencimento:nr.vencimento||'',link:nr.link||'',arqUrl:nr.arqUrl||'',arqNome:nr.arqNome||''}; });
+  curNRs.forEach((nr,i)=>{
+    if(!nr.nome) return;
+    const versoesObj={};
+    (nr.versoes||[]).forEach((v,j)=>{
+      const vkey='v'+(v.criadoEm&&v.criadoEm>0?v.criadoEm:Date.now()-j);
+      versoesObj[vkey]={vencimento:v.vencimento||'',arqUrl:v.arqUrl||'',arqNome:v.arqNome||'',link:v.link||'',criadoEm:v.criadoEm||0};
+    });
+    nrsObj['nr'+i]={nome:nr.nome,versoes:versoesObj};
+  });
   // ASO arquivo
   let asoArqUrl=existing.asoArqUrl||'';
   let asoArqNome=existing.asoArqNome||'';
