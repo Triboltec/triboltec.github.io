@@ -5221,7 +5221,10 @@ function renderNRList(){
     const badge=_nrVencBadge(atual.vencimento);
     const temArq=atual.arqUrl||atual.link;
     const arqBtn=temArq
-      ?`<span style="font-size:0.72rem;color:var(--blue);cursor:pointer;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block" onclick="abrirNRArqVers(${i},0)" title="${atual.arqNome||atual.link||''}">📎 ${atual.arqNome||'Ver'}</span>`
+      ?`<span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span style="font-size:0.78rem;color:var(--blue);cursor:pointer;text-decoration:underline" onclick="abrirNRArqVers(${i},0)" title="${atual.arqNome||atual.link||''}">📎 ${atual.arqNome||'Ver'}</span>
+          <button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:0.78rem;padding:0" onclick="removerNRArq(${i})" title="Remover arquivo">✕ remover</button>
+        </span>`
       :`<label style="cursor:pointer;font-size:0.72rem;color:var(--sub)">
           <span style="background:#f3f4f6;border:1px dashed #d1d5db;border-radius:5px;padding:2px 7px">📎 Anexar</span>
           <input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="uploadNRArq(${i},this)"/>
@@ -5232,7 +5235,7 @@ function renderNRList(){
           ${hist.map((v,j)=>`<div style="display:flex;gap:10px;align-items:center;font-size:0.7rem;color:var(--sub);padding:2px 0">
             <span>${fmtD(v.vencimento)||'sem data'}</span>
             ${_nrVencBadge(v.vencimento)}
-            ${v.arqUrl||v.link?`<span style="color:var(--blue);cursor:pointer" onclick="abrirNRArqVers(${i},${j+1})">📎 ${v.arqNome?.slice(0,20)||'Ver'}</span>`:'<span style="color:#ccc">sem arquivo</span>'}
+            ${v.arqUrl||v.link?`<span style="color:var(--blue);cursor:pointer;text-decoration:underline" onclick="abrirNRArqVers(${i},${j+1})">📎 ${v.arqNome?.slice(0,25)||'Ver'}</span>`:'<span style="color:#ccc">sem arquivo</span>'}
           </div>`).join('')}
         </div>`
       :'';
