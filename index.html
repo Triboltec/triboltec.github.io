@@ -2734,8 +2734,8 @@ function renderDash(){
   const recVenc   = todosRec.filter(l=>l.status!=='pago'&&l.venc&&l.venc<hoje0).reduce((s,l)=>s+(l.valor||0),0);
   const desVenc   = todosDes.filter(l=>l.status!=='pago'&&l.venc&&l.venc<hoje0).reduce((s,l)=>s+(l.valor||0),0);
 
-  // ── KPIs — gestores veem financeiro, funcionários só operacional
-  const isGestor = curUser?.isSuper;
+  // ── KPIs — quem tem acesso ao módulo fin vê dados financeiros
+  const isGestor = curUser?.isSuper || canDo('fin');
   document.getElementById('dashKpis').innerHTML= isGestor ? `
     <div class="kpi" style="cursor:pointer" onclick="irFinFiltrado('receita','pendente')" title="Ver receitas pendentes"><div class="kpi-lbl">Total a Receber</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(aReceber)}</div><div class="kpi-sub">${recVenc>0?'⚠️ vencido: '+fmtBRL(recVenc):'recebido: '+fmtBRL(jaRecebido)}</div></div>
     <div class="kpi" style="cursor:pointer" onclick="irFinFiltrado('despesa','pendente')" title="Ver despesas pendentes"><div class="kpi-lbl">Total a Pagar</div><div class="kpi-val" style="color:${aPagar>0?'var(--red)':'var(--dark)'}">${fmtBRL(aPagar)}</div><div class="kpi-sub">${desVenc>0?'⚠️ vencido: '+fmtBRL(desVenc):'pago: '+fmtBRL(jaPago)}</div></div>
