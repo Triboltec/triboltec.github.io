@@ -557,10 +557,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <button class="fin-tab active" id="finTab-todos"    onclick="finSetTab('todos')">📋 Todos</button>
           <button class="fin-tab"        id="finTab-receita"  onclick="finSetTab('receita')">📈 Receitas</button>
           <button class="fin-tab"        id="finTab-despesa"  onclick="finSetTab('despesa')">📉 Despesas</button>
+          <button class="fin-tab"        id="finTab-inadimp"  onclick="finSetTab('inadimp')">🚨 Inadimplência</button>
         </div>
 
         <!-- Filters row -->
-        <div class="fin-filters">
+        <div class="fin-filters" id="finFiltersRow">
           <button class="fin-pill active" id="finSt-todos"    onclick="finSetSt('todos')">Todos</button>
           <button class="fin-pill"        id="finSt-pendente" onclick="finSetSt('pendente')">Pendente</button>
           <button class="fin-pill"        id="finSt-pago"     onclick="finSetSt('pago')">Pago / Recebido</button>
@@ -2666,7 +2667,7 @@ function renderDash(){
       <span onclick="navTo('fin')" style="display:block;text-align:center;margin-top:10px;font-size:0.75rem;color:var(--blue);cursor:pointer">Ver lançamentos → &nbsp;|&nbsp;</span>
     </div>`:''}
     ${inadimp.length?`
-    <div class="dash-card" style="border-color:#fca5a5;border-width:2px;cursor:pointer" onclick="irFinFiltrado('receita','vencido')">
+    <div class="dash-card" style="border-color:#fca5a5;border-width:2px;cursor:pointer" onclick="irFinFiltrado('inadimp','todos')">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <h3 style="color:#991b1b;margin:0">🚨 Inadimplência (${inadimp.length})</h3>
         <span style="font-weight:800;color:#991b1b;font-size:1rem">${fmtBRL(totalInad)}</span>
@@ -4574,9 +4575,11 @@ function renderProjecaoCaixa(){
 
 function finSetTab(t){
   finTab = t;
-  ['todos','receita','despesa'].forEach(x=>{
+  ['todos','receita','despesa','inadimp'].forEach(x=>{
     document.getElementById('finTab-'+x)?.classList.toggle('active', x===t);
   });
+  const filtersRow=document.getElementById('finFiltersRow');
+  if(filtersRow) filtersRow.style.display = t==='inadimp'?'none':'';
   renderFin();
 }
 function finSetSt(s){
@@ -4589,17 +4592,100 @@ function finSetSt(s){
 function irFinFiltrado(tab, st){
   navTo('fin');
   finTab=tab; finSt=st;
-  ['todos','receita','despesa'].forEach(x=>document.getElementById('finTab-'+x)?.classList.toggle('active',x===tab));
+  ['todos','receita','despesa','inadimp'].forEach(x=>document.getElementById('finTab-'+x)?.classList.toggle('active',x===tab));
   ['todos','pendente','pago','vencido'].forEach(x=>document.getElementById('finSt-'+x)?.classList.toggle('active',x===st));
+  const filtersRow=document.getElementById('finFiltersRow');
+  if(filtersRow) filtersRow.style.display=tab==='inadimp'?'none':'';
   // Limpa filtro de mês para ver tudo
   const mi=document.getElementById('finMesInput'); if(mi){mi.value='';mi.dataset.touched='1';}
   renderFin();
+}
+
+function renderInadimplencia(){
+  const today=todayStr();
+  const lan=Object.values(lancamentos)
+    .filter(l=>l.tipo==='receita'&&l.status!=='pago'&&l.aprovStatus!=='pendente'&&l.venc&&l.venc<today)
+    .map(l=>({...l, diasAtraso: Math.abs(diffD(l.venc))}))
+    .sort((a,b)=>b.diasAtraso-a.diasAtraso); // mais atrasado primeiro
+
+  const listEl=document.getElementById('finList');
+  if(!listEl) return;
+
+  if(!lan.length){
+    document.getElementById('finKpis').innerHTML='';
+    listEl.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--sub);font-size:0.88rem">
+      <div style="font-size:2rem;margin-bottom:8px">✅</div>
+      Sem inadimplência no momento!<br>
+      <span style="font-size:0.75rem">Todas as receitas estão em dia.</span>
+    </div>`;
+    return;
+  }
+
+  const totalInad=lan.reduce((s,l)=>s+(l.valor||0),0);
+  const clisSet=new Set(lan.map(l=>l.clienteId||l.desc).filter(Boolean));
+  const maiorAtraso=lan[0]?.diasAtraso||0;
+  const ticketMedio=totalInad/lan.length;
+
+  // KPIs
+  document.getElementById('finKpis').innerHTML=`
+    <div class="kpi"><div class="kpi-lbl">Total Inadimplente</div><div class="kpi-val" style="color:#991b1b">${fmtBRL(totalInad)}</div><div class="kpi-sub">${lan.length} recebimento${lan.length>1?'s':''} vencido${lan.length>1?'s':''}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Clientes em Atraso</div><div class="kpi-val" style="color:#991b1b">${clisSet.size}</div><div class="kpi-sub">distintos</div></div>
+    <div class="kpi"><div class="kpi-lbl">Maior Atraso</div><div class="kpi-val" style="color:#991b1b">${maiorAtraso}d</div><div class="kpi-sub">dias em atraso</div></div>
+    <div class="kpi"><div class="kpi-lbl">Ticket Médio</div><div class="kpi-val" style="color:#991b1b">${fmtBRL(ticketMedio)}</div><div class="kpi-sub">por recebimento</div></div>`;
+
+  // Aging buckets
+  const BUCKETS=[
+    {label:'1 – 30 dias',  min:1,  max:30,  bg:'#fef3c7',txt:'#92400e',icon:'🟡'},
+    {label:'31 – 60 dias', min:31, max:60,  bg:'#fed7aa',txt:'#9a3412',icon:'🟠'},
+    {label:'61 – 90 dias', min:61, max:90,  bg:'#fecaca',txt:'#991b1b',icon:'🔴'},
+    {label:'90+ dias',     min:91, max:9999,bg:'#fca5a5',txt:'#7f1d1d',icon:'⛔'},
+  ];
+
+  const agingSummary=BUCKETS.map(b=>{
+    const items=lan.filter(l=>l.diasAtraso>=b.min&&l.diasAtraso<=b.max);
+    const tot=items.reduce((s,l)=>s+(l.valor||0),0);
+    return`<div style="background:${b.bg};border-radius:10px;padding:12px 8px;text-align:center">
+      <div style="font-size:1.3rem;margin-bottom:3px">${b.icon}</div>
+      <div style="font-size:0.63rem;font-weight:700;color:${b.txt};margin-bottom:4px">${b.label}</div>
+      <div style="font-size:0.95rem;font-weight:800;color:${b.txt}">${fmtBRL(tot)}</div>
+      <div style="font-size:0.65rem;color:${b.txt};margin-top:2px">${items.length} item${items.length!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+
+  const detalhes=BUCKETS.map(b=>{
+    const items=lan.filter(l=>l.diasAtraso>=b.min&&l.diasAtraso<=b.max);
+    if(!items.length) return '';
+    return`<div style="margin-bottom:16px">
+      <div style="font-size:0.7rem;font-weight:700;color:${b.txt};text-transform:uppercase;letter-spacing:.5px;padding:5px 0;border-bottom:2px solid ${b.bg};margin-bottom:6px">${b.icon} ${b.label} — ${items.length} item${items.length!==1?'s':''}</div>
+      ${items.map(l=>{
+        const cliNome=l.clienteId&&clientes[l.clienteId]?clientes[l.clienteId].nome:'';
+        return`<div style="background:#fff;border:1px solid var(--border);border-left:4px solid ${b.bg};border-radius:8px;padding:10px 14px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:0.83rem;font-weight:700;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.desc||'—'}</div>
+            <div style="font-size:0.7rem;color:var(--sub);margin-top:2px">
+              Venc. ${fmtD(l.venc)} · <span style="color:${b.txt};font-weight:700">${l.diasAtraso} dias em atraso</span>${cliNome?` · 👤 ${cliNome}`:''}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:0.92rem;font-weight:800;color:#991b1b">${fmtBRL(l.valor||0)}</div>
+            <button onclick="openLancModal('${l.id}')" style="font-size:0.65rem;color:var(--blue);cursor:pointer;background:none;border:none;padding:2px 0;text-decoration:underline;font-family:inherit">Editar →</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+
+  listEl.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px">${agingSummary}</div>
+    ${detalhes}`;
 }
 
 function renderFin(){
   const kpiEl=document.getElementById('finKpis');
   const listEl=document.getElementById('finList');
   if(!kpiEl||!listEl) return;
+
+  if(finTab==='inadimp'){ renderInadimplencia(); return; }
 
   const mesInput=document.getElementById('finMesInput');
   // Pré-seleciona mês atual na primeira abertura
