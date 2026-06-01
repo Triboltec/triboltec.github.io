@@ -1914,7 +1914,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="fg"><label>Vencimento</label><input type="date" id="edVenc"/></div>
     </div>
     <div class="fg"><label>Descrição / Número</label><input type="text" id="edDesc" placeholder="Ex: AVCB nº 12345, válido até..."/></div>
-    <div class="fg"><label>Link do Documento (Google Drive) *</label><input type="url" id="edLink" placeholder="https://drive.google.com/..."/></div>
+    <div class="fg">
+      <label>Arquivo do Documento <span style="color:var(--sub);font-weight:400">(PDF, imagem)</span></label>
+      <input type="file" id="edArqFile" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" style="font-size:0.78rem;width:100%;padding:4px 0"/>
+      <div id="edArqAtual" style="display:none;font-size:0.71rem;margin-top:4px;color:var(--blue);cursor:pointer"></div>
+      <div id="edArqProg" style="font-size:0.71rem;color:var(--sub);margin-top:2px"></div>
+    </div>
+    <div class="fg"><label>Link externo <span style="color:var(--sub);font-weight:400">(Google Drive — opcional se fez upload)</span></label><input type="url" id="edLink" placeholder="https://drive.google.com/..."/></div>
     <div class="fg"><label>Observações</label><input type="text" id="edObs" placeholder="Órgão emissor, responsável..."/></div>
     <div class="mact">
       <button class="btn btn-ghost" id="delEmpDocBtn" onclick="delEmpDoc()" style="display:none;color:#e53935;border-color:#e53935">🗑️ Excluir</button>
@@ -3119,7 +3125,8 @@ function renderAuditoria(){
     .filter(a=>{
       if(filtMod&&!a.modulo?.toLowerCase().includes(filtMod)) return false;
       if(filtUser&&!a.userName?.toLowerCase().includes(filtUser)) return false;
-      const ds=new Date(a.criadoEm).toISOString().slice(0,10);
+      const _da=new Date(a.criadoEm);
+      const ds=_da.getFullYear()+'-'+String(_da.getMonth()+1).padStart(2,'0')+'-'+String(_da.getDate()).padStart(2,'0');
       if(filtDe&&ds<filtDe) return false;
       if(filtAte&&ds>filtAte) return false;
       return true;
@@ -6077,7 +6084,7 @@ function renderEmpresaDocs(){
         <div style="font-size:0.71rem;color:var(--sub);margin-top:1px">${d.desc||''} ${d.vencimento?'· Vence '+fmtD(d.vencimento):''}</div>
       </div>
       ${tag}
-      ${d.link?`<a href="${d.link}" target="_blank" onclick="event.stopPropagation()" style="font-size:1rem">🔗</a>`:''}
+      ${d.arqUrl?`<span style="color:var(--blue);cursor:pointer;font-size:0.75rem;text-decoration:underline" onclick="event.stopPropagation();abrirEmpDoc('${d.id}')">📎 ${(d.arqNome||'Ver arquivo').slice(0,30)}</span>`:d.link?`<a href="${d.link}" target="_blank" onclick="event.stopPropagation()" style="font-size:1rem;color:var(--blue)">🔗</a>`:''}
     </div>`;}).join('');
 }
 function openEmpDocModal(did){
@@ -6086,17 +6093,39 @@ function openEmpDocModal(did){
   document.getElementById('empDocModalTitle').textContent=did?'Editar Documento':'Novo Documento';
   const delBtn=document.getElementById('delEmpDocBtn');
   if(delBtn) delBtn.style.display=did?'':'none';
+  const arqAtual=document.getElementById('edArqAtual');
+  const arqProg=document.getElementById('edArqProg');
+  if(arqProg) arqProg.textContent='';
+  document.getElementById('edArqFile').value='';
   if(d){
     document.getElementById('edTipo').value=d.tipo||'';
     document.getElementById('edVenc').value=d.vencimento||'';
     document.getElementById('edDesc').value=d.desc||'';
     document.getElementById('edLink').value=d.link||'';
     document.getElementById('edObs').value=d.obs||'';
+    if(arqAtual){
+      if(d.arqNome){ arqAtual.style.display=''; arqAtual.textContent='📎 Arquivo atual: '+d.arqNome; arqAtual.onclick=()=>abrirEmpDoc(did); }
+      else { arqAtual.style.display='none'; arqAtual.textContent=''; }
+    }
   } else {
     ['edDesc','edVenc','edLink','edObs'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('edTipo').value='';
+    if(arqAtual){ arqAtual.style.display='none'; arqAtual.textContent=''; }
   }
   document.getElementById('ovlEmpDoc').classList.add('v');
+}
+async function abrirEmpDoc(did){
+  try{
+    const snap=await db.ref('erp/docs_arqs/'+did).once('value');
+    const d=snap.val(); if(!d?.b64){alert('Arquivo não encontrado.');return;}
+    const win=window.open('','_blank');
+    if(d.b64.startsWith('data:application/pdf')||d.nome?.toLowerCase().endsWith('.pdf')){
+      win.document.write(`<html><body style="margin:0"><iframe src="${d.b64}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);
+    } else {
+      win.document.write(`<html><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${d.b64}" style="max-width:100%;max-height:100vh"/></body></html>`);
+    }
+    win.document.close();
+  }catch(e){ alert('Erro ao abrir arquivo: '+e.message); }
 }
 async function delEmpDoc(){
   const did=document.getElementById('editEmpDocId').value;
@@ -6105,9 +6134,10 @@ async function delEmpDoc(){
   if(!confirm(`Excluir documento "${d?.tipo||did}"?`)) return;
   try{
     await db.ref('erp/empresa_docs/'+did).remove();
+    await db.ref('erp/docs_arqs/'+did).remove().catch(()=>{});
     logAudit('Documentos','excluir',`Excluiu documento: ${d?.tipo||did}`,did);
     closeOvl('ovlEmpDoc');
-    toast('Documento excluído.','ok');
+    toast('Documento excluído.');
   }catch(e){ alert('Erro ao excluir: '+e.message); }
 }
 async function saveEmpDoc(){
@@ -6115,12 +6145,25 @@ async function saveEmpDoc(){
   if(!tipo){alert('Selecione o tipo de documento.');return;}
   const did=document.getElementById('editEmpDocId').value||genId();
   const isNew=!empresaDocs[did];
+  const prog=document.getElementById('edArqProg');
+  const fileInput=document.getElementById('edArqFile');
+  let arqUrl=empresaDocs[did]?.arqUrl||'';
+  let arqNome=empresaDocs[did]?.arqNome||'';
   try{
-    await db.ref('erp/empresa_docs/'+did).set({id:did,tipo,vencimento:document.getElementById('edVenc').value||'',desc:document.getElementById('edDesc').value.trim(),link:document.getElementById('edLink').value.trim(),obs:document.getElementById('edObs').value.trim(),criadoEm:empresaDocs[did]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
+    if(fileInput?.files?.length){
+      if(prog) prog.textContent='⏳ Enviando arquivo...';
+      const b64=await uploadFile(fileInput.files[0],'',pct=>{if(prog)prog.textContent=`⏳ ${pct}%`;});
+      await db.ref('erp/docs_arqs/'+did).set({b64, nome:fileInput.files[0].name, atualizadoEm:Date.now()});
+      arqUrl='db:'+did;
+      arqNome=fileInput.files[0].name;
+      if(prog) prog.textContent='';
+    }
+    await db.ref('erp/empresa_docs/'+did).set({id:did,tipo,vencimento:document.getElementById('edVenc').value||'',desc:document.getElementById('edDesc').value.trim(),link:document.getElementById('edLink').value.trim(),obs:document.getElementById('edObs').value.trim(),arqUrl,arqNome,criadoEm:empresaDocs[did]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
     logAudit('Documentos',isNew?'criar':'editar',`${isNew?'Adicionou':'Editou'} documento: ${tipo}`,did);
     closeOvl('ovlEmpDoc');
     toast('Documento salvo com sucesso!');
   }catch(e){
+    if(prog) prog.textContent='';
     alert('Erro ao salvar documento: '+e.message+'\n\nVerifique sua conexão ou permissões no sistema.');
   }
 }
