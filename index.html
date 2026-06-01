@@ -713,6 +713,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <button class="adm-tab" id="admTab-exportar" onclick="admTab('exportar')">📤 Exportar</button>
           <button class="adm-tab" id="admTab-backup" onclick="admTab('backup')">💾 Backup</button>
           <button class="adm-tab" id="admTab-seguranca" onclick="admTab('seguranca')">🔒 Segurança</button>
+          <button class="adm-tab" id="admTab-auditoria" onclick="admTab('auditoria')">📋 Auditoria</button>
         </div>
 
         <!-- Pane: Usuários -->
@@ -876,6 +877,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
               ⬜ Firebase Authentication implementado (melhoria futura)
             </div>
           </div>
+        </div>
+
+        <!-- Pane: Auditoria -->
+        <div id="admPane-auditoria" style="display:none">
+          <div class="pgh" style="padding-top:0"><div class="pg-title">📋 Auditoria</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+            <select id="audFiltMod" onchange="renderAuditoria()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:inherit">
+              <option value="">Todos os módulos</option>
+              <option>Financeiro</option><option>RH</option><option>CRM</option>
+              <option>Propostas</option><option>Projetos</option><option>Compras</option>
+              <option>Estoque</option><option>Admin</option>
+            </select>
+            <select id="audFiltUser" onchange="renderAuditoria()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:inherit">
+              <option value="">Todos os usuários</option>
+            </select>
+            <input type="date" id="audFiltDe" onchange="renderAuditoria()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:inherit"/>
+            <input type="date" id="audFiltAte" onchange="renderAuditoria()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:inherit"/>
+            <button onclick="document.getElementById('audFiltMod').value='';document.getElementById('audFiltUser').value='';document.getElementById('audFiltDe').value='';document.getElementById('audFiltAte').value='';renderAuditoria()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.78rem;cursor:pointer;background:#fff">✕ Limpar</button>
+          </div>
+          <div id="audList"><div class="empty">Carregando...</div></div>
         </div>
       </div>
 
@@ -2108,6 +2129,7 @@ let curContatos = []; // contacts being edited in client modal
 let propostas = {}, projetos = {}, fornecedores = {}, pedidos = {}, estoque = {}, movimentos = {}, funcionarios = {};
 let lancamentos = {};
 let folhas = {};
+let auditoria = {};
 let notas = {}, nfConfig = {};
 let candidatos = {}, ausencias = {}, fechamentos = {}, empresaDocs = {}, pontoReg = {};
 let sysConfig = {};
@@ -2131,6 +2153,20 @@ function initials(n){ return (n||'?').split(' ').map(w=>w[0]).join('').slice(0,2
 function fmtD(s){ if(!s) return '—'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function localYM(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+
+// ── Auditoria ──
+async function logAudit(modulo, acao, desc, ref=''){
+  try{
+    if(!db) return;
+    const id=Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,5);
+    await db.ref('erp/auditoria/'+id).set({
+      id, modulo, acao, desc, ref,
+      uid: curUser?.uid||'sistema',
+      userName: curUser?.nome||curUser?.email||'—',
+      criadoEm: Date.now()
+    });
+  }catch(e){ console.warn('logAudit error:',e.message); }
+}
 function diffD(s){ if(!s) return null; const t=new Date(s+'T00:00:00'); const n=new Date(); n.setHours(0,0,0,0); return Math.round((t-n)/864e5); }
 function stInfo(id){ return STAGES.find(s=>s.id===id)||{label:id,cls:'s-prospect'}; }
 
@@ -2467,6 +2503,7 @@ function startListeners(){
   db.ref('erp/funcionarios').on('value', snap=>{ funcionarios=snap.val()||{}; renderFuncionarios(); renderRHAlerts(); updateRHBadge(); renderDash(); });
   db.ref('erp/lancamentos').on('value', snap=>{ lancamentos=snap.val()||{}; renderDash(); renderFin(); renderFolhas(); updateAprovBadge(Object.values(lancamentos).filter(l=>l.aprovStatus==='pendente').length+Object.values(pedidos).filter(p=>p.aprovStatus==='pendente').length); verificarParcelasComDataErrada(); });
   db.ref('erp/folhas').on('value', snap=>{ folhas=snap.val()||{}; renderFolhas(); });
+  db.ref('erp/auditoria').limitToLast(300).on('value', snap=>{ auditoria=snap.val()||{}; renderAuditoria(); });
   db.ref('erp/notas').on('value', snap=>{ notas=snap.val()||{}; renderNF(); });
   db.ref('erp/nfconfig').on('value', snap=>{ nfConfig=snap.val()||{}; renderNF(); });
   db.ref('erp/candidatos').on('value', snap=>{ candidatos=snap.val()||{}; renderKanban(); });
@@ -3036,7 +3073,7 @@ async function deleteUser(uid,nome){
 // ADMIN TABS
 // ══════════════════════════════════════════════
 function admTab(tab){
-  const tabs = ['usuarios','docs','ponto','exportar','backup','seguranca'];
+  const tabs = ['usuarios','docs','ponto','exportar','backup','seguranca','auditoria'];
   tabs.forEach(t=>{
     const btn=document.getElementById('admTab-'+t);
     const pane=document.getElementById('admPane-'+t);
@@ -3045,10 +3082,68 @@ function admTab(tab){
   });
   if(tab==='docs') renderEmpresaDocs();
   if(tab==='ponto') renderPonto();
-  // Segurança tab: only for super admins
-  if(tab==='seguranca' && !curUser?.isSuper){
-    admTab('usuarios');
+  if(tab==='auditoria') renderAuditoria();
+  if(tab==='seguranca' && !curUser?.isSuper){ admTab('usuarios'); }
+}
+
+function renderAuditoria(){
+  const el=document.getElementById('audList'); if(!el) return;
+  // Preenche filtro de usuários
+  const sel=document.getElementById('audFiltUser');
+  if(sel){
+    const users=[...new Set(Object.values(auditoria).map(a=>a.userName).filter(Boolean))].sort();
+    const cur=sel.value;
+    sel.innerHTML='<option value="">Todos os usuários</option>'+users.map(u=>`<option${cur===u?' selected':''}>${u}</option>`).join('');
   }
+  const filtMod=(document.getElementById('audFiltMod')?.value||'').toLowerCase();
+  const filtUser=(document.getElementById('audFiltUser')?.value||'').toLowerCase();
+  const filtDe=document.getElementById('audFiltDe')?.value||'';
+  const filtAte=document.getElementById('audFiltAte')?.value||'';
+
+  const COLORS={criar:'#dcfce7',editar:'#dbeafe',excluir:'#fee2e2',pagar:'#fef9c3',aprovar:'#dcfce7',rejeitar:'#fee2e2',status:'#f3f4f6'};
+  const CTXT={criar:'#166534',editar:'#1e40af',excluir:'#991b1b',pagar:'#854d0e',aprovar:'#166534',rejeitar:'#991b1b',status:'#374151'};
+
+  let items=Object.values(auditoria)
+    .filter(a=>{
+      if(filtMod&&!a.modulo?.toLowerCase().includes(filtMod)) return false;
+      if(filtUser&&!a.userName?.toLowerCase().includes(filtUser)) return false;
+      const ds=new Date(a.criadoEm).toISOString().slice(0,10);
+      if(filtDe&&ds<filtDe) return false;
+      if(filtAte&&ds>filtAte) return false;
+      return true;
+    })
+    .sort((a,b)=>b.criadoEm-a.criadoEm)
+    .slice(0,200);
+
+  if(!items.length){ el.innerHTML='<div class="empty">Nenhum registro encontrado.</div>'; return; }
+
+  // Agrupa por dia
+  const byDay={};
+  items.forEach(a=>{
+    const d=new Date(a.criadoEm).toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+    (byDay[d]=byDay[d]||[]).push(a);
+  });
+
+  el.innerHTML=Object.entries(byDay).map(([dia,logs])=>`
+    <div style="margin-bottom:16px">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:6px">${dia}</div>
+      ${logs.map(a=>{
+        const hora=new Date(a.criadoEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+        const ac=(a.acao||'status').toLowerCase();
+        const bg=COLORS[ac]||'#f3f4f6';
+        const tc=CTXT[ac]||'#374151';
+        return`<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 10px;background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:4px">
+          <span style="font-size:0.65rem;color:var(--sub);white-space:nowrap;margin-top:2px">${hora}</span>
+          <span style="background:${bg};color:${tc};font-size:0.62rem;font-weight:700;border-radius:4px;padding:2px 6px;white-space:nowrap">${a.modulo||'—'}</span>
+          <span style="background:#f1f5f9;color:#475569;font-size:0.62rem;font-weight:700;border-radius:4px;padding:2px 6px;white-space:nowrap">${a.acao||'—'}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:0.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.desc||'—'}</div>
+            <div style="font-size:0.68rem;color:var(--sub)">${a.userName||'—'}${a.ref?' · ref: '+a.ref:''}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`
+  ).join('');
 }
 
 // ══════════════════════════════════════════════
@@ -3410,6 +3505,7 @@ async function saveProp(status){
     criadoEm:existing.criadoEm||Date.now(),criadoPor:curUser.uid,criadoPorNome:curUser.nome.split(' ')[0],
     atualizadoEm:Date.now()
   });
+  logAudit('Propostas', existing.numero?'editar':'criar', `${existing.numero||'Nova proposta'} — ${cli?.nome||'—'} — ${fmtBRL(oferta)}`, pid);
   if(status==='enviada'){
     // show send options
     closeOvl('ovlProp');
@@ -3642,6 +3738,7 @@ async function saveProj(){
     equipe:document.getElementById('pjEquipe').value.trim(),
     criadoEm:existing.criadoEm||Date.now(),criadoPor:curUser.uid,atualizadoEm:Date.now()
   });
+  logAudit('Projetos', existing.titulo?'editar':'criar', `${titulo} — ${clientes[cid]?.nome||'—'}`, pid);
   closeOvl('ovlProj');
 }
 
@@ -3981,6 +4078,7 @@ async function savePedido(status){
     aprovSolicitadoPor: existing.aprovSolicitadoPor||curUser.uid,
     criadoEm:existing.criadoEm||Date.now(), criadoPor:curUser.uid, atualizadoEm:Date.now()
   });
+  logAudit('Compras', existing.numero?'editar':'criar', `Pedido ${document.getElementById('pedNumero')?.value||''} — ${fmtBRL(total)}`, pid);
   closeOvl('ovlPedido');
   if(aprovMsg) alert(aprovMsg);
   if(isSuper && status==='aprovado'){
@@ -4034,6 +4132,7 @@ async function criarLancsPedido(pid){
 
 async function aprovarPedido(pid){
   await db.ref('erp/pedidos/'+pid).update({aprovStatus:'aprovado', aprovadoPor:curUser.uid, aprovadoEm:Date.now()});
+  const p=pedidos[pid]; logAudit('Compras','aprovar',`Pedido ${p?.numero||pid} — ${fmtBRL(p?.total||0)}`,pid);
   await criarLancsPedido(pid);
   setTimeout(()=>gerarPedidoHTML(pid), 500);
 }
@@ -4041,14 +4140,17 @@ async function rejeitarPedido(pid){
   const motivo=prompt('Motivo da rejeição (opcional):');
   if(motivo===null) return;
   await db.ref('erp/pedidos/'+pid).update({aprovStatus:'rejeitado', aprovadoPor:curUser.uid, aprovadoEm:Date.now(), aprovObs:motivo||''});
+  const p=pedidos[pid]; logAudit('Compras','rejeitar',`Pedido ${p?.numero||pid}${motivo?' — '+motivo:''}`,pid);
 }
 async function aprovarLanc(lid){
   await db.ref('erp/lancamentos/'+lid).update({aprovStatus:'aprovado', aprovadoPor:curUser.uid, aprovadoEm:Date.now()});
+  const l=lancamentos[lid]; logAudit('Financeiro','aprovar',`${l?.desc||lid} — ${fmtBRL(l?.valor||0)}`,lid);
 }
 async function rejeitarLanc(lid){
   const motivo=prompt('Motivo da rejeição (opcional):');
   if(motivo===null) return;
   await db.ref('erp/lancamentos/'+lid).update({aprovStatus:'rejeitado', aprovadoPor:curUser.uid, aprovadoEm:Date.now(), aprovObs:motivo||''});
+  const l=lancamentos[lid]; logAudit('Financeiro','rejeitar',`${l?.desc||lid}${motivo?' — '+motivo:''}`,lid);
 }
 
 function gerarPedidoHTML(pid){
@@ -4762,6 +4864,7 @@ async function saveLanc(){
   };
   try{
     await db.ref('erp/lancamentos/'+lid).set(obj);
+    logAudit('Financeiro', lancExisting?'editar':'criar', `${obj.tipo==='receita'?'Receita':'Despesa'}: ${obj.desc} — ${fmtBRL(obj.valor)}`, lid);
     closeOvl('ovlLanc');
     if(!lancIsSuper && !lancExisting) alert('✅ Lançamento enviado para aprovação!');
   }catch(e){ alert('Erro ao salvar: '+e.message); }
@@ -4827,6 +4930,7 @@ async function markLancPago(lid){
   const l=lancamentos[lid]; if(!l) return;
   const novoSt=l.status==='pago'?'pendente':'pago';
   await db.ref('erp/lancamentos/'+lid+'/status').set(novoSt);
+  logAudit('Financeiro','pagar',`${novoSt==='pago'?'Marcou pago':'Desfez pagamento'}: ${l.desc||lid} — ${fmtBRL(l.valor||0)}`,lid);
 }
 
 async function delLanc(lid){
@@ -5575,6 +5679,7 @@ async function saveFunc(){
     atualizadoPor:curUser.uid
   };
   await db.ref('erp/funcionarios/'+fid).set(data);
+  logAudit('RH', existing.nome?'editar':'criar', `Funcionário: ${nome} — ${data.cargo||'sem cargo'}`, fid);
   closeOvl('ovlFunc');
 }
 
