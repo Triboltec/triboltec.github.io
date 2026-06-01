@@ -2934,7 +2934,7 @@ function renderCashFlow(lanArr){
     const opacity=d.isPast?'1':'0.45';
     const border=d.isCurrent?'border:2px solid var(--blue);border-radius:6px;padding:2px':'';
     const label=d.isPast?'Realizado':'Projetado';
-    return`<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;${border}" title="${mn} — ${label}">
+    return`<div onclick="irFinMes('${d.ym}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;cursor:pointer;${border}" title="${mn} — ${label} · Clique para ver no Financeiro">
       <div style="font-size:0.58rem;color:${d.rec+d.des>0?sColor:'var(--border)'};font-weight:700;white-space:nowrap">${d.saldo!==0?(d.saldo>=0?'+':'')+(Math.abs(d.saldo)>=1000?(d.saldo/1000).toFixed(0)+'k':Math.round(d.saldo)):'—'}</div>
       <div style="display:flex;align-items:flex-end;gap:2px;height:80px">
         <div style="width:10px;background:var(--green);opacity:${opacity};height:${rH}px;border-radius:2px 2px 0 0" title="Receita: ${fmtBRL(d.rec)}"></div>
@@ -4899,6 +4899,20 @@ function irFinFiltrado(tab, st){
   if(filtersRow) filtersRow.style.display=tab==='inadimp'?'none':'';
   // Limpa filtro de mês para ver tudo
   const mi=document.getElementById('finMesInput'); if(mi){mi.value='';mi.dataset.touched='1';}
+  renderFin();
+}
+
+function irFinMes(ym){
+  navTo('fin');
+  finTab='todos'; finSt='todos';
+  ['todos','receita','despesa','inadimp','dre','contratos'].forEach(x=>document.getElementById('finTab-'+x)?.classList.toggle('active',x==='todos'));
+  ['todos','pendente','pago','vencido'].forEach(x=>document.getElementById('finSt-'+x)?.classList.toggle('active',x==='todos'));
+  const filtersRow=document.getElementById('finFiltersRow');
+  if(filtersRow) filtersRow.style.display='';
+  const mi=document.getElementById('finMesInput');
+  if(mi){ mi.value=ym; }
+  const limpar=document.getElementById('finMesLimpar');
+  if(limpar) limpar.style.display='';
   renderFin();
 }
 
