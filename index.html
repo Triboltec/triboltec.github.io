@@ -1917,6 +1917,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="fg"><label>Link do Documento (Google Drive) *</label><input type="url" id="edLink" placeholder="https://drive.google.com/..."/></div>
     <div class="fg"><label>Observações</label><input type="text" id="edObs" placeholder="Órgão emissor, responsável..."/></div>
     <div class="mact">
+      <button class="btn btn-ghost" id="delEmpDocBtn" onclick="delEmpDoc()" style="display:none;color:#e53935;border-color:#e53935">🗑️ Excluir</button>
       <button class="btn btn-ghost" onclick="closeOvl('ovlEmpDoc')">Cancelar</button>
       <button class="btn btn-red" onclick="saveEmpDoc()">Salvar Documento</button>
     </div>
@@ -2154,6 +2155,12 @@ async function hashPin(p){
 }
 function genId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
 function initials(n){ return (n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+function toast(msg,tipo='ok'){
+  let t=document.getElementById('appToast');
+  if(!t){t=document.createElement('div');t.id='appToast';t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:10px;font-size:0.84rem;font-weight:600;z-index:99999;transition:opacity 0.3s;pointer-events:none;white-space:nowrap';document.body.appendChild(t);}
+  t.textContent=msg;t.style.background=tipo==='err'?'#e53935':'#2e7d32';t.style.color='#fff';t.style.opacity='1';
+  clearTimeout(t._tid);t._tid=setTimeout(()=>{t.style.opacity='0';},2800);
+}
 function fmtD(s){ if(!s) return '—'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function localYM(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
@@ -6077,6 +6084,8 @@ function openEmpDocModal(did){
   const d=did?empresaDocs[did]:null;
   document.getElementById('editEmpDocId').value=did||'';
   document.getElementById('empDocModalTitle').textContent=did?'Editar Documento':'Novo Documento';
+  const delBtn=document.getElementById('delEmpDocBtn');
+  if(delBtn) delBtn.style.display=did?'':'none';
   if(d){
     document.getElementById('edTipo').value=d.tipo||'';
     document.getElementById('edVenc').value=d.vencimento||'';
@@ -6089,12 +6098,31 @@ function openEmpDocModal(did){
   }
   document.getElementById('ovlEmpDoc').classList.add('v');
 }
+async function delEmpDoc(){
+  const did=document.getElementById('editEmpDocId').value;
+  if(!did) return;
+  const d=empresaDocs[did];
+  if(!confirm(`Excluir documento "${d?.tipo||did}"?`)) return;
+  try{
+    await db.ref('erp/empresa_docs/'+did).remove();
+    logAudit('Documentos','excluir',`Excluiu documento: ${d?.tipo||did}`,did);
+    closeOvl('ovlEmpDoc');
+    toast('Documento excluído.','ok');
+  }catch(e){ alert('Erro ao excluir: '+e.message); }
+}
 async function saveEmpDoc(){
   const tipo=document.getElementById('edTipo').value;
   if(!tipo){alert('Selecione o tipo de documento.');return;}
   const did=document.getElementById('editEmpDocId').value||genId();
-  await db.ref('erp/empresa_docs/'+did).set({id:did,tipo,vencimento:document.getElementById('edVenc').value||'',desc:document.getElementById('edDesc').value.trim(),link:document.getElementById('edLink').value.trim(),obs:document.getElementById('edObs').value.trim(),criadoEm:empresaDocs[did]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
-  closeOvl('ovlEmpDoc');
+  const isNew=!empresaDocs[did];
+  try{
+    await db.ref('erp/empresa_docs/'+did).set({id:did,tipo,vencimento:document.getElementById('edVenc').value||'',desc:document.getElementById('edDesc').value.trim(),link:document.getElementById('edLink').value.trim(),obs:document.getElementById('edObs').value.trim(),criadoEm:empresaDocs[did]?.criadoEm||Date.now(),atualizadoPor:curUser.uid});
+    logAudit('Documentos',isNew?'criar':'editar',`${isNew?'Adicionou':'Editou'} documento: ${tipo}`,did);
+    closeOvl('ovlEmpDoc');
+    toast('Documento salvo com sucesso!');
+  }catch(e){
+    alert('Erro ao salvar documento: '+e.message+'\n\nVerifique sua conexão ou permissões no sistema.');
+  }
 }
 
 // ── System Config ──
