@@ -4903,17 +4903,57 @@ function irFinFiltrado(tab, st){
 }
 
 function irFinMes(ym){
-  navTo('fin');
-  finTab='todos'; finSt='todos';
-  ['todos','receita','despesa','inadimp','dre','contratos'].forEach(x=>document.getElementById('finTab-'+x)?.classList.toggle('active',x==='todos'));
-  ['todos','pendente','pago','vencido'].forEach(x=>document.getElementById('finSt-'+x)?.classList.toggle('active',x==='todos'));
-  const filtersRow=document.getElementById('finFiltersRow');
-  if(filtersRow) filtersRow.style.display='';
-  const mi=document.getElementById('finMesInput');
-  if(mi){ mi.value=ym; }
-  const limpar=document.getElementById('finMesLimpar');
-  if(limpar) limpar.style.display='';
-  renderFin();
+  const monthNames=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const [y,m]=ym.split('-');
+  const label=monthNames[parseInt(m)-1]+' '+y;
+  document.getElementById('mesCFTitle').textContent='📅 '+label;
+
+  const lan=Object.values(lancamentos).filter(l=>l.aprovStatus!=='pendente'&&(l.venc||l.data||'').slice(0,7)===ym);
+  const rec=lan.filter(l=>l.tipo==='receita');
+  const des=lan.filter(l=>l.tipo==='despesa');
+  const recPago=rec.filter(l=>l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
+  const desPago=des.filter(l=>l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
+  const recTotal=rec.reduce((s,l)=>s+(l.valor||0),0);
+  const desTotal=des.reduce((s,l)=>s+(l.valor||0),0);
+  const resultado=recPago-desPago;
+
+  document.getElementById('mesCFKpis').innerHTML=`
+    <div style="background:#f0fff4;border-radius:8px;padding:8px;text-align:center">
+      <div style="font-size:0.58rem;color:var(--sub);font-weight:700;text-transform:uppercase">Receitas</div>
+      <div style="font-size:0.9rem;font-weight:800;color:var(--green)">${fmtBRL(recPago)}</div>
+      ${recTotal>recPago?`<div style="font-size:0.6rem;color:var(--sub)">+${fmtBRL(recTotal-recPago)} pend.</div>`:''}
+    </div>
+    <div style="background:#fff5f5;border-radius:8px;padding:8px;text-align:center">
+      <div style="font-size:0.58rem;color:var(--sub);font-weight:700;text-transform:uppercase">Despesas</div>
+      <div style="font-size:0.9rem;font-weight:800;color:var(--red)">${fmtBRL(desPago)}</div>
+      ${desTotal>desPago?`<div style="font-size:0.6rem;color:var(--sub)">+${fmtBRL(desTotal-desPago)} pend.</div>`:''}
+    </div>
+    <div style="background:${resultado>=0?'#f0fff4':'#fff5f5'};border-radius:8px;padding:8px;text-align:center">
+      <div style="font-size:0.58rem;color:var(--sub);font-weight:700;text-transform:uppercase">Resultado</div>
+      <div style="font-size:0.9rem;font-weight:800;color:${resultado>=0?'var(--green)':'var(--red)'}">${fmtBRL(resultado)}</div>
+    </div>`;
+
+  const sorted=[...rec,...des].sort((a,b)=>(a.venc||a.data||'').localeCompare(b.venc||b.data||''));
+  document.getElementById('mesCFList').innerHTML= sorted.length
+    ? `<div style="margin-top:4px">
+        ${sorted.map(l=>{
+          const isRec=l.tipo==='receita';
+          const pago=l.status==='pago';
+          return`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);gap:8px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:0.81rem;font-weight:600;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.desc||'—'}</div>
+              <div style="font-size:0.67rem;color:var(--sub)">${l.cat||'—'} · ${fmtD(l.venc||l.data||'')} · <span style="color:${pago?'var(--green)':'var(--amber)'}">${pago?'✓ pago':'pendente'}</span></div>
+            </div>
+            <div style="font-size:0.85rem;font-weight:700;color:${isRec?'var(--green)':'var(--red)'};">${isRec?'+':'-'}${fmtBRL(l.valor||0)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="text-align:center;margin-top:12px">
+        <button class="btn btn-ghost" style="font-size:0.73rem" onclick="closeOvl('ovlMesCF');irFinFiltrado('todos','todos');document.getElementById('finMesInput').value='${ym}';document.getElementById('finMesLimpar').style.display='';renderFin()">Ver tudo no Financeiro →</button>
+      </div>`
+    : '<div style="text-align:center;padding:30px;color:var(--sub);font-size:0.83rem">Nenhum lançamento neste mês.</div>';
+
+  document.getElementById('ovlMesCF').classList.add('v');
 }
 
 function renderInadimplencia(){
@@ -7918,6 +7958,17 @@ if('serviceWorker' in navigator)
   navigator.serviceWorker.register('./sw.js',{scope:'/'});
 window.addEventListener('online', ()=>document.getElementById('offWarn').classList.remove('show'));
 window.addEventListener('offline',()=>document.getElementById('offWarn').classList.add('show'));
+<!-- Modal mês fluxo de caixa -->
+<div class="ovl" id="ovlMesCF">
+  <div class="modal" style="max-width:520px;max-height:85vh;display:flex;flex-direction:column">
+    <div class="mhd" style="flex-shrink:0">
+      <div class="mtit" id="mesCFTitle">Lançamentos do Mês</div>
+      <button class="mclose" onclick="closeOvl('ovlMesCF')">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px 16px 0;flex-shrink:0" id="mesCFKpis"></div>
+    <div style="overflow-y:auto;padding:10px 16px 16px;flex:1" id="mesCFList"></div>
+  </div>
+</div>
 </script>
 </body>
 </html>
