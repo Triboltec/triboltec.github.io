@@ -203,9 +203,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .uacts{display:flex;gap:5px;flex-shrink:0}
 .ibtn{background:#f3f4f6;border:none;width:30px;height:30px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.82rem}
 .ibtn.del{background:#fee2e2}
-.modgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:4px}
-.mchk{display:flex;align-items:center;gap:6px;font-size:0.77rem;color:var(--txt)}
-.mchk input{width:14px;height:14px;accent-color:var(--red)}
+.modgrid{display:flex;flex-direction:column;gap:0;margin-top:4px}
+.perm-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.perm-row:last-child{border-bottom:none}
+.perm-seg{display:flex;gap:2px;background:var(--bg);border-radius:8px;padding:2px}
+.perm-btn{border:none;padding:4px 9px;border-radius:6px;font-size:0.68rem;font-weight:600;cursor:pointer;background:transparent;color:var(--sub);font-family:inherit;transition:all 0.15s}
+.perm-btn.active{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.perm-btn.active[data-v=""]{color:#991b1b}
+.perm-btn.active[data-v="leitura"]{color:var(--blue)}
+.perm-btn.active[data-v="completo"]{color:var(--green)}
 .pin-show{background:#111;color:#4ade80;font-family:monospace;font-size:1.3rem;letter-spacing:6px;padding:10px;border-radius:8px;text-align:center;margin:8px 0}
 
 /* ── ADMIN TABS ── */
@@ -550,7 +556,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="sec" id="secCRM">
         <div class="pgh">
           <div class="pg-title">👥 CRM</div>
-          <button class="btn btn-red" onclick="openClientModal()">+ Empresa</button>
+          <button id="btnNewCliente" class="btn btn-red" onclick="openClientModal()">+ Empresa</button>
         </div>
         <div class="filters">
           <input class="search" id="crmSearch" placeholder="Buscar empresa, cidade..." oninput="renderCRM()"/>
@@ -564,7 +570,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="sec" id="secFin">
         <div class="pgh">
           <div class="pg-title">💰 Financeiro</div>
-          <button class="btn btn-red" onclick="openLancModal()">+ Lançamento</button>
+          <button id="btnNewLanc" class="btn btn-red" onclick="openLancModal()">+ Lançamento</button>
           <button id="btnCorrigirParcelas" class="btn btn-ghost" style="font-size:0.72rem;display:none" onclick="corrigirParcelasFirebase()">🔧 Corrigir datas parcelas</button>
         </div>
 
@@ -602,7 +608,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="sec" id="secProp">
         <div class="pgh">
           <div class="pg-title">📄 Propostas</div>
-          <button class="btn btn-red" onclick="openPropModal()">+ Nova Proposta</button>
+          <button id="btnNewProp" class="btn btn-red" onclick="openPropModal()">+ Nova Proposta</button>
         </div>
         <div class="filters">
           <input class="search" id="propSearch" placeholder="Buscar proposta ou cliente..." oninput="renderProp()"/>
@@ -616,7 +622,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <div class="pgh">
           <div class="pg-title">📋 Projetos / OS</div>
           <button class="btn btn-ghost" style="font-size:0.76rem" onclick="toggleRentabilidade()">📊 Centro de Custo</button>
-          <button class="btn btn-red" onclick="openProjModal()">+ Nova OS</button>
+          <button id="btnNewProj" class="btn btn-red" onclick="openProjModal()">+ Nova OS</button>
         </div>
         <div id="rentabilidadePanel" style="display:none;margin-bottom:16px"></div>
         <div class="filters">
@@ -630,7 +636,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="sec" id="secCProj">
         <div class="pgh">
           <div class="pg-title">📑 Contratos de Projeto</div>
-          <button class="btn btn-red" onclick="openCProjModal()">+ Novo Contrato</button>
+          <button id="btnNewCProj" class="btn btn-red" onclick="openCProjModal()">+ Novo Contrato</button>
         </div>
         <div class="filters" style="margin-bottom:12px">
           <input class="search" id="cprojSearch" placeholder="Buscar contrato, cliente..." oninput="renderCProjs()"/>
@@ -646,7 +652,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <div style="display:flex;gap:7px">
             <button class="btn btn-ghost" id="btnForn" onclick="compTab('forn')">Fornecedores</button>
             <button class="btn btn-ghost" id="btnPed" onclick="compTab('ped')">Pedidos</button>
-            <button class="btn btn-red" onclick="compTab('ped');openPedidoModal()">+ Novo Pedido</button>
+            <button id="btnNewPedido" class="btn btn-red" onclick="compTab('ped');openPedidoModal()">+ Novo Pedido</button>
           </div>
         </div>
         <div id="compContent"></div>
@@ -656,7 +662,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="sec" id="secEst">
         <div class="pgh">
           <div class="pg-title">📦 Estoque</div>
-          <button class="btn btn-red" onclick="openEstModal()">+ Item</button>
+          <button id="btnNewEst" class="btn btn-red" onclick="openEstModal()">+ Item</button>
         </div>
         <div class="filters">
           <input class="search" id="estSearch" placeholder="Buscar material, ferramenta..." oninput="renderEst()"/>
@@ -686,14 +692,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <!-- FOLHAS -->
         <div id="rhPane-folhas" style="display:none">
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-            <button class="btn btn-red" onclick="openFolhaModal()">+ Nova Folha</button>
+            <button id="btnNewFolha" class="btn btn-red" onclick="openFolhaModal()">+ Nova Folha</button>
           </div>
           <div id="folhaList"></div>
         </div>
         <!-- EQUIPE -->
         <div id="rhPane-equipe" style="display:none">
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-            <button class="btn btn-red" onclick="openFuncModal()">+ Funcionário</button>
+            <button id="btnNewFunc" class="btn btn-red" onclick="openFuncModal()">+ Funcionário</button>
           </div>
           <div class="filters">
             <input class="search" id="rhSearch" placeholder="Buscar funcionário..." oninput="renderFuncionarios()"/>
@@ -730,7 +736,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <div class="pg-title">🧾 Notas Fiscais</div>
           <div style="display:flex;gap:7px">
             <button class="btn btn-ghost" onclick="openNFConfig()">⚙️ Configurar</button>
-            <button class="btn btn-red" onclick="openNFModal()">+ Nova NF</button>
+            <button id="btnNewNF" class="btn btn-red" onclick="openNFModal()">+ Nova NF</button>
           </div>
         </div>
         <div id="nfConfigAlert" style="display:none;background:#fef3c7;border:1px solid #fcd34d;border-radius:9px;padding:10px 14px;margin-bottom:12px;font-size:0.8rem;color:#92400e">
@@ -747,7 +753,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="sec" id="secDocs">
         <div class="pgh">
           <div class="pg-title">📁 Documentos da Empresa</div>
-          <button class="btn btn-red" onclick="openEmpDocModal()">+ Documento</button>
+          <button id="btnNewDoc" class="btn btn-red" onclick="openEmpDocModal()">+ Documento</button>
         </div>
         <div style="font-size:0.78rem;color:var(--sub);margin-bottom:14px">AVCB, Alvarás, Certidões, Licenças — com vencimento e link do arquivo.</div>
         <div id="empDocList"></div>
@@ -957,7 +963,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="cp-nm" id="cpName"></div>
       <div class="cp-sg" id="cpSeg"></div>
     </div>
-    <button class="btn btn-red" onclick="editCurrentClient()" style="font-size:0.71rem;padding:5px 10px">Editar</button>
+    <button id="btnEditCliente" class="btn btn-red" onclick="editCurrentClient()" style="font-size:0.71rem;padding:5px 10px">Editar</button>
   </div>
   <div class="cp-body">
     <div class="infogrid" id="cpInfo"></div>
@@ -2606,8 +2612,16 @@ function logout(){
 function canDo(mid){
   if(!curUser) return false;
   if(curUser.isSuper) return true;
-  if(mid==='dash' || mid==='docs') return true; // acessível a todos
-  return !!(curUser.modulos && curUser.modulos[mid]);
+  if(mid==='dash' || mid==='docs') return true;
+  const v=curUser.modulos?.[mid];
+  return v===true || v==='leitura' || v==='completo';
+}
+function canEdit(mid){
+  if(!curUser) return false;
+  if(curUser.isSuper) return true;
+  if(mid==='docs') return true; // todos podem subir documentos
+  const v=curUser.modulos?.[mid];
+  return v===true || v==='completo'; // true = legado (tratado como completo)
 }
 
 function buildNav(){
@@ -2621,6 +2635,28 @@ function buildNav(){
   sHtml += '<div class="sni-sep"></div>';
   sHtml += `<a href="https://triboltec.com.br" target="_blank" class="sni" style="text-decoration:none" title="Ir ao site Triboltec"><span class="sni-ico">🌐</span><span class="sni-lbl">Ir ao Site</span></a>`;
   document.getElementById('sidebar').innerHTML = sHtml;
+  applyUIPermissions();
+}
+
+function applyUIPermissions(){
+  if(curUser?.isSuper) return; // super vê tudo
+  // Mapa: id do botão → módulo necessário para edição
+  const btnMap={
+    btnNewCliente:'crm', btnEditCliente:'crm',
+    btnNewLanc:'fin',
+    btnNewProp:'prop',
+    btnNewProj:'proj',
+    btnNewCProj:'cproj',
+    btnNewPedido:'compras',
+    btnNewEst:'estoque',
+    btnNewFolha:'rh', btnNewFunc:'rh',
+    btnNewNF:'nf',
+    btnNewDoc:'docs'
+  };
+  Object.entries(btnMap).forEach(([id,mid])=>{
+    const btn=document.getElementById(id);
+    if(btn) btn.style.display=canEdit(mid)?'':'none';
+  });
 }
 
 function navTo(mid){
@@ -3160,6 +3196,7 @@ function fillRespSelect(){
 }
 
 async function saveClient(){
+  if(!canEdit('crm')){alert('⛔ Sem permissão para editar o CRM.');return;}
   const nome=(document.getElementById('cNome').value||'').trim();
   if(!nome){alert('Informe o nome da empresa.');return;}
   const cid=document.getElementById('editClientId').value||genId();
@@ -3211,8 +3248,13 @@ function renderAdminUsers(){
 
 function modLabel(mods){
   if(!mods) return 'Sem acesso';
-  const acc=MODS.filter(m=>m.id!=='dash'&&mods[m.id]).map(m=>m.label);
-  return acc.length?acc.join(', '):'Apenas Dashboard';
+  const edit=MODS.filter(m=>m.id!=='dash'&&(mods[m.id]==='completo'||mods[m.id]===true)).map(m=>m.icon);
+  const view=MODS.filter(m=>m.id!=='dash'&&mods[m.id]==='leitura').map(m=>m.icon);
+  if(!edit.length&&!view.length) return 'Apenas Dashboard';
+  const parts=[];
+  if(edit.length) parts.push('✏️ '+edit.join(''));
+  if(view.length) parts.push('👁 '+view.join(''));
+  return parts.join(' · ');
 }
 
 function openUserModal(uid){
@@ -3229,10 +3271,23 @@ function openUserModal(uid){
 }
 
 function renderModGrid(mods){
-  document.getElementById('modGrid').innerHTML=MODS.filter(m=>m.id!=='dash').map(m=>`
-    <label class="mchk">
-      <input type="checkbox" id="mc_${m.id}" ${mods[m.id]?'checked':''}/> ${m.icon} ${m.label}
-    </label>`).join('');
+  document.getElementById('modGrid').innerHTML=MODS.filter(m=>m.id!=='dash').map(m=>{
+    const raw=mods[m.id];
+    const cur=raw===true?'completo':(raw||'');
+    return`<div class="perm-row">
+      <span style="font-size:0.82rem;font-weight:600">${m.icon} ${m.label}</span>
+      <div class="perm-seg" id="ps_${m.id}">
+        <button class="perm-btn${cur===''?' active':''}" data-mid="${m.id}" data-v="" onclick="permSel(this)">Sem acesso</button>
+        <button class="perm-btn${cur==='leitura'?' active':''}" data-mid="${m.id}" data-v="leitura" onclick="permSel(this)">👁 Ver</button>
+        <button class="perm-btn${cur==='completo'?' active':''}" data-mid="${m.id}" data-v="completo" onclick="permSel(this)">✏️ Editar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function permSel(btn){
+  const mid=btn.dataset.mid;
+  document.querySelectorAll(`#ps_${mid} .perm-btn`).forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
 }
 
 async function saveUser(){
@@ -3249,7 +3304,11 @@ async function saveUser(){
     document.getElementById('pinReveal').style.display='block';
   } else if(!pinHash){alert('Informe um PIN para o novo usuário.');return;}
   const mods={dash:true};
-  MODS.filter(m=>m.id!=='dash').forEach(m=>{ mods[m.id]=!!(document.getElementById('mc_'+m.id)?.checked); });
+  MODS.filter(m=>m.id!=='dash').forEach(m=>{
+    const active=document.querySelector(`#ps_${m.id} .perm-btn.active`);
+    const v=active?.dataset.v||'';
+    mods[m.id]=v||false;
+  });
   const inic=(document.getElementById('uInic').value||'').trim().toUpperCase()||initials(nome);
   await db.ref('erp/usuarios/'+uid).set({
     ...existing, nome, iniciais:inic, pinHash, modulos:mods,
@@ -3664,6 +3723,7 @@ function calcProp(){
 }
 
 async function saveProp(status){
+  if(!canEdit('prop')){alert('⛔ Sem permissão para editar Propostas.');return;}
   const clienteId=document.getElementById('pCliente').value;
   const desc=(document.getElementById('pDesc').value||'').trim();
   if(!clienteId||!desc){alert('Selecione o cliente e descreva o serviço.');return;}
@@ -3743,8 +3803,8 @@ function openPropView(pid){
   const pvActs=document.getElementById('pvActs');
   pvActs.innerHTML=`
     <button class="btn btn-ghost" onclick="closeOvl('ovlPropView')">Fechar</button>
-    <button class="btn btn-ghost" onclick="closeOvl('ovlPropView');openPropModal('${pid}')">✏️ Editar</button>
-    <button class="btn btn-ghost" onclick="setPropStatus('${pid}','aprovada')" style="background:#dcfce7;color:var(--green)">✅ Aprovar</button>
+    ${canEdit('prop')?`<button class="btn btn-ghost" onclick="closeOvl('ovlPropView');openPropModal('${pid}')">✏️ Editar</button>`:''}
+    ${canEdit('prop')?`<button class="btn btn-ghost" onclick="setPropStatus('${pid}','aprovada')" style="background:#dcfce7;color:var(--green)">✅ Aprovar</button>`:''}
     <button class="btn btn-red" onclick="gerarProposta('${pid}')">📄 Gerar Proposta</button>`;
   document.getElementById('ovlPropView').classList.add('v');
 }
@@ -3937,6 +3997,7 @@ function openProjModal(pid){
 }
 
 async function saveProj(){
+  if(!canEdit('proj')){alert('⛔ Sem permissão para editar OS.');return;}
   const titulo=(document.getElementById('pjTitulo').value||'').trim();
   if(!titulo){alert('Informe o título da OS.');return;}
   const pid=document.getElementById('editProjId').value||genId();
@@ -4071,7 +4132,7 @@ function renderForn(){
       </div>
       <div style="display:flex;gap:5px">
         ${f.tel?`<button class="ibtn" onclick="window.open('https://wa.me/55${(f.tel||'').replace(/\D/g,'')}')">💬</button>`:''}
-        <button class="ibtn" onclick="openFornModal('${f.id}')">✏️</button>
+        ${canEdit('compras')?`<button class="ibtn" onclick="openFornModal('${f.id}')">✏️</button>`:''}
       </div>
     </div>`).join('');
 }
@@ -4096,6 +4157,7 @@ function openFornModal(fid){
   document.getElementById('ovlForn').classList.add('v');
 }
 async function saveForn(){
+  if(!canEdit('compras')){alert('⛔ Sem permissão para editar Fornecedores.');return;}
   const nome=(document.getElementById('fNome').value||'').trim();
   if(!nome){alert('Informe o nome do fornecedor.');return;}
   const fid=document.getElementById('editFornId').value||genId();
@@ -4285,6 +4347,7 @@ function calcPedParcTotal(){
   }
 }
 async function savePedido(status){
+  if(!canEdit('compras')){alert('⛔ Sem permissão para editar Compras.');return;}
   const fornId=document.getElementById('pedForn').value;
   if(!fornId){alert('Selecione o fornecedor.');return;}
   const pid=document.getElementById('editPedId').value||genId();
@@ -4549,7 +4612,7 @@ function renderEst(){
         <div class="est-qty-val ${alert?'est-alerta':''}">${e.qtd||0}</div>
         <div class="est-qty-unit">${e.unid||'un'}${alert?' ⚠️':''}</div>
       </div>
-      <button class="ibtn" onclick="event.stopPropagation();openEstModal('${e.id}')" style="margin-left:4px">✏️</button>
+      ${canEdit('estoque')?`<button class="ibtn" onclick="event.stopPropagation();openEstModal('${e.id}')" style="margin-left:4px">✏️</button>`:''}
     </div>`;}).join('');
 }
 function setEstFilter(f){estFilter=f;renderEst();}
@@ -4576,6 +4639,7 @@ function openEstModal(eid){
   document.getElementById('ovlEst').classList.add('v');
 }
 async function saveEst(){
+  if(!canEdit('estoque')){alert('⛔ Sem permissão para editar Estoque.');return;}
   const nome=(document.getElementById('eNome').value||'').trim();
   if(!nome){alert('Informe o nome do item.');return;}
   const eid=document.getElementById('editEstId').value||genId();
@@ -5050,8 +5114,8 @@ function renderLancItem(l, today){
           :`<button class="lan-btn pay" onclick="markLancPago('${l.id}')" title="${isRec?'Marcar recebido':'Marcar pago'}">✓</button>`)
           :''}
         ${l.arqUrl?`<button class="lan-btn" onclick="abrirAnexo('${l.id}')" title="Ver comprovante">📎</button>`:''}
-        <button class="lan-btn" onclick="openLancModal('${l.id}')" title="Editar">✏️</button>
-        <button class="lan-btn" onclick="delLanc('${l.id}')" title="Excluir">🗑️</button>
+        ${canEdit('fin')?`<button class="lan-btn" onclick="openLancModal('${l.id}')" title="Editar">✏️</button>`:''}
+        ${curUser?.isSuper?`<button class="lan-btn" onclick="delLanc('${l.id}')" title="Excluir">🗑️</button>`:''}
       </div>
     </div>
   </div>`;
@@ -5126,6 +5190,7 @@ function lancRemoveArq(){
 }
 
 async function saveLanc(){
+  if(!canEdit('fin')){alert('⛔ Sem permissão para editar o Financeiro.');return;}
   const desc=(document.getElementById('lancDesc').value||'').trim();
   const valor=parseFloat(document.getElementById('lancValor').value||0);
   if(!desc){alert('Informe a descrição.');return;}
@@ -5284,8 +5349,10 @@ async function markLancPago(lid){
 }
 
 async function delLanc(lid){
-  if(!confirm('Excluir este lançamento?')) return;
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir lançamentos.');return;}
+  if(!confirm('Excluir este lançamento? Esta ação não pode ser desfeita.')) return;
   await db.ref('erp/lancamentos/'+lid).remove();
+  logAudit('Financeiro','excluir','Excluiu lançamento',lid);
 }
 
 // ══════════════════════════════════════════════
@@ -5787,7 +5854,7 @@ function renderFuncionarios(){
     } else if(f.asoData){
       asoBadge=`<span class="nr-badge nr-ok">ASO s/ venc.</span>`;
     }
-    return`<div class="func-card" onclick="openFuncModal('${f.id}')">
+    return`<div class="func-card" onclick="${canEdit('rh')?`openFuncModal('${f.id}')`:''}" style="${canEdit('rh')?'':'cursor:default'}">
       <div class="func-av">${initials(f.nome)}</div>
       <div class="func-info">
         <div class="func-name">${f.nome} ${sts} ${expBadge}</div>
@@ -5968,6 +6035,7 @@ function openFuncModal(fid){
 }
 
 async function saveFunc(){
+  if(!canEdit('rh')){alert('⛔ Sem permissão para editar RH.');return;}
   const nome=(document.getElementById('fnNome').value||'').trim();
   if(!nome){alert('Informe o nome do funcionário.');return;}
   const fid=document.getElementById('editFuncId').value||genId();
@@ -6410,7 +6478,7 @@ function renderEmpresaDocs(){
     const days=d.vencimento?diffD(d.vencimento):null;
     const cls=days===null?'':'nr-badge '+(days<0?'nr-venc':days<=45?'nr-pend':'nr-ok');
     const tag=days===null?'':`<span class="${cls}" style="margin-left:auto">${days<0?'VENCIDO':days+'d'}</span>`;
-    return`<div class="edoc-card" onclick="openEmpDocModal('${d.id}')">
+    return`<div class="edoc-card" onclick="${canEdit('docs')?`openEmpDocModal('${d.id}')`:''}" style="${canEdit('docs')?'cursor:pointer':'cursor:default'}">
       <div class="edoc-icon">${days!==null&&days<0?'🔴':days!==null&&days<=45?'🟡':'📄'}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:0.86rem;font-weight:700;color:var(--dark)">${d.tipo||'—'}</div>
@@ -7276,6 +7344,7 @@ function calcNFISS(){
 }
 
 async function saveNF(action){
+  if(!canEdit('nf')){alert('⛔ Sem permissão para emitir Notas Fiscais.');return;}
   const razao = (document.getElementById('nfRazao').value||'').trim();
   const disc = (document.getElementById('nfDiscriminacao').value||'').trim();
   const valor = parseFloat(document.getElementById('nfValor').value||0);
@@ -7652,6 +7721,7 @@ function openCProjModal(cid){
 }
 
 async function saveCProj(){
+  if(!canEdit('cproj')){alert('⛔ Sem permissão para editar Contratos.');return;}
   const cid = document.getElementById('editCProjId').value;
   const numero = document.getElementById('cpNumero').value.trim();
   const clienteId = document.getElementById('cpClienteId').value;
