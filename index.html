@@ -464,6 +464,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:0.62rem;font-weight:700}
 .badge-p1{background:#fee2e2;color:var(--red)}
 .badge-p2{background:#fef3c7;color:var(--amber)}
+
+/* ── CONTRATOS PROJETO ── */
+.cproj-card{background:var(--card);border-radius:11px;border:1px solid var(--border);padding:13px 14px;margin-bottom:7px;transition:box-shadow 0.12s}
+.cproj-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.07)}
+.cproj-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.cproj-num{font-size:0.68rem;color:var(--sub);font-weight:700}
+.cproj-title{font-size:0.9rem;font-weight:700;color:var(--dark)}
+.cproj-client{font-size:0.73rem;color:var(--sub);margin-top:2px}
+.cproj-detail{background:#f8f9fa;border-radius:9px;padding:12px;margin-top:10px;border:1px solid var(--border)}
+.cproj-kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-bottom:10px}
+.cproj-kpi{background:#fff;border-radius:8px;padding:8px 10px;border:1px solid var(--border)}
+.cproj-kpi-lbl{font-size:0.6rem;font-weight:700;text-transform:uppercase;color:var(--sub);margin-bottom:2px}
+.cproj-kpi-val{font-size:0.88rem;font-weight:800;color:var(--dark)}
+.med-table{width:100%;border-collapse:collapse;font-size:0.78rem;margin-bottom:8px}
+.med-table th{background:#f3f4f6;padding:6px 8px;text-align:left;font-size:0.67rem;font-weight:700;color:var(--sub);text-transform:uppercase;border-bottom:1px solid var(--border)}
+.med-table td{padding:6px 8px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+.med-table tbody tr:hover{background:#fafafa}
+.pst-ativo{background:#dcfce7;color:var(--green)}
+.pst-suspenso{background:#fef3c7;color:var(--amber)}
+.pst-prevista{background:#f1f5f9;color:#64748b}
+.pst-faturada{background:#dbeafe;color:var(--blue)}
+.pst-recebida{background:#dcfce7;color:var(--green)}
 </style>
 </head>
 <body>
@@ -602,6 +624,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <div class="ftabs" id="projStatusTabs"></div>
         </div>
         <div id="projList"></div>
+      </div>
+
+      <!-- CONTRATOS PROJETO -->
+      <div class="sec" id="secCProj">
+        <div class="pgh">
+          <div class="pg-title">📑 Contratos de Projeto</div>
+          <button class="btn btn-red" onclick="openCProjModal()">+ Novo Contrato</button>
+        </div>
+        <div class="filters" style="margin-bottom:12px">
+          <input class="search" id="cprojSearch" placeholder="Buscar contrato, cliente..." oninput="renderCProjs()"/>
+        </div>
+        <div class="kpis" id="cprojKpis" style="margin-bottom:14px"></div>
+        <div id="cprojList"></div>
       </div>
 
       <!-- COMPRAS -->
@@ -2124,6 +2159,66 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
 </div>
 
+<!-- ═══ MODAL: CONTRATO DE PROJETO ═══ -->
+<div class="ovl" id="ovlCProj" onclick="if(event.target===this)closeOvl('ovlCProj')">
+  <div class="modal" style="max-width:580px">
+    <div class="mhead">
+      <div class="mtitle" id="cprojModalTitle">Novo Contrato de Projeto</div>
+      <button class="mclose" onclick="closeOvl('ovlCProj')">✕</button>
+    </div>
+    <input type="hidden" id="editCProjId"/>
+    <div class="f2">
+      <div class="fg"><label>Número do Contrato *</label><input type="text" id="cpNumero" placeholder="Ex: CT-2024-001"/></div>
+      <div class="fg"><label>Cliente *</label><select id="cpClienteId"></select></div>
+    </div>
+    <div class="fg"><label>Descrição / Objeto *</label><input type="text" id="cpDescricao" placeholder="Ex: Manutenção elétrica anual planta Honda"/></div>
+    <div class="f2">
+      <div class="fg"><label>Valor Total (R$) *</label><input type="number" id="cpValorTotal" placeholder="0,00" min="0" step="0.01"/></div>
+      <div class="fg"><label>Status</label>
+        <select id="cpStatus">
+          <option value="ativo">Ativo</option>
+          <option value="concluido">Concluído</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Data Início</label><input type="date" id="cpDataInicio"/></div>
+      <div class="fg"><label>Data Fim</label><input type="date" id="cpDataFim"/></div>
+    </div>
+    <div class="fg"><label>OS / Projeto Vinculado</label><select id="cpProjId"><option value="">— Sem vínculo —</option></select></div>
+    <div class="fg"><label>Observações</label><textarea id="cpObs" placeholder="Condições, escopo, observações..."></textarea></div>
+    <div class="mact">
+      <button class="btn btn-ghost" id="btnDelCProj" style="display:none;margin-right:auto;color:var(--red)" onclick="delCProj()">Excluir</button>
+      <button class="btn btn-ghost" onclick="closeOvl('ovlCProj')">Cancelar</button>
+      <button class="btn btn-red" onclick="saveCProj()">Salvar Contrato</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: MEDIÇÃO ═══ -->
+<div class="ovl" id="ovlMedicao" onclick="if(event.target===this)closeOvl('ovlMedicao')">
+  <div class="modal" style="max-width:460px">
+    <div class="mhead">
+      <div class="mtitle" id="medicaoModalTitle">Nova Medição</div>
+      <button class="mclose" onclick="closeOvl('ovlMedicao')">✕</button>
+    </div>
+    <input type="hidden" id="editMedicaoContId"/>
+    <input type="hidden" id="editMedicaoId"/>
+    <div class="fg"><label>Descrição *</label><input type="text" id="medDesc" placeholder="Ex: 1ª Medição — 30%"/></div>
+    <div class="f2">
+      <div class="fg"><label>Valor (R$) *</label><input type="number" id="medValor" placeholder="0,00" min="0" step="0.01"/></div>
+      <div class="fg"><label>Data Prevista</label><input type="date" id="medDataPrev"/></div>
+    </div>
+    <div class="mact">
+      <button class="btn btn-ghost" id="btnDelMedicao" style="display:none;margin-right:auto;color:var(--red)" onclick="delMedicaoCur()">Excluir</button>
+      <button class="btn btn-ghost" onclick="closeOvl('ovlMedicao')">Cancelar</button>
+      <button class="btn btn-red" onclick="saveMedicao()">Salvar Medição</button>
+    </div>
+  </div>
+</div>
+
 <div class="offline-warn" id="offWarn">⚠️ Sem conexão — modo offline</div>
 <button class="fab h" id="fab" onclick="fabAct()">+</button>
 
@@ -2146,6 +2241,7 @@ const MODS = [
   {id:'fin',  label:'Financeiro',icon:'💰', sec:'secFin'},
   {id:'prop', label:'Propostas', icon:'📄', sec:'secProp'},
   {id:'proj', label:'Projetos',  icon:'📋', sec:'secProj'},
+  {id:'cproj', label:'Contratos', icon:'📑', sec:'secCProj'},
   {id:'compras',label:'Compras', icon:'🛒', sec:'secComp'},
   {id:'estoque',label:'Estoque', icon:'📦', sec:'secEst'},
   {id:'rh',   label:'RH',        icon:'👷', sec:'secRH'},
@@ -2195,7 +2291,7 @@ let lancamentos = {};
 let folhas = {};
 let auditoria = {};
 let notas = {}, nfConfig = {};
-let candidatos = {}, ausencias = {}, fechamentos = {}, empresaDocs = {}, pontoReg = {}, contratos = {}, orcamentos = {};
+let candidatos = {}, ausencias = {}, fechamentos = {}, empresaDocs = {}, pontoReg = {}, contratos = {}, orcamentos = {}, cprojs = {};
 let sysConfig = {};
 let nfFilter = 'all';
 let selUID = null, pinBuf = '', curCID = null, crmFilter = 'all';
@@ -2542,6 +2638,7 @@ function navTo(mid){
   document.getElementById('fab').classList.toggle('h', mid!=='crm');
   closePanel();
   if(mid==='compras'&&!document.getElementById('compContent').innerHTML.trim()) compTab('ped');
+  if(mid==='cproj') renderCProjs();
   if(mid==='docs') renderEmpresaDocs();
   if(mid==='admin'){
     // Restrict tabs to super admin
@@ -2583,6 +2680,7 @@ function startListeners(){
   db.ref('erp/empresa_docs').on('value', snap=>{ empresaDocs=snap.val()||{}; renderEmpresaDocs(); renderRHAlerts(); updateRHBadge(); renderDash(); });
   db.ref('erp/contratos').on('value', snap=>{ contratos=snap.val()||{}; if(finTab==='contratos') renderContratos(); });
   db.ref('erp/orcamentos').on('value', snap=>{ orcamentos=snap.val()||{}; });
+  db.ref('erp/contratos_proj').on('value', snap=>{ cprojs=snap.val()||{}; if(document.getElementById('secCProj')?.classList.contains('active')) renderCProjs(); });
   verificarContratos();
   db.ref('erp/ponto').on('value', snap=>{ pontoReg=snap.val()||{}; renderPonto(); });
   // Load ControlID config
@@ -7251,6 +7349,335 @@ async function cancelarNF(nid){
     await db.ref('erp/notas/'+nid).update({status:'cancelada', atualizadoEm:Date.now()});
     closeOvl('ovlNFView');
   }
+}
+
+// ══════════════════════════════════════════════
+// CONTRATOS DE PROJETO
+// ══════════════════════════════════════════════
+
+function cprojStatusLabel(status){
+  const map = {
+    ativo:     {label:'Ativo',     cls:'pst-ativo'},
+    concluido: {label:'Concluído', cls:'pst-concluido'},
+    suspenso:  {label:'Suspenso',  cls:'pst-suspenso'},
+    cancelado: {label:'pst-cancelado', cls:'pst-cancelado'},
+  };
+  const s = map[status] || {label: status||'—', cls:'pst-pendente'};
+  if(status==='cancelado') return {label:'Cancelado', cls:'pst-cancelado'};
+  return s;
+}
+
+function renderCProjs(){
+  const q = (document.getElementById('cprojSearch')?.value||'').toLowerCase();
+  const arr = Object.values(cprojs).sort((a,b)=>(b.criadoEm||0)-(a.criadoEm||0));
+
+  // KPIs
+  const total = arr.length;
+  const valorTotal = arr.reduce((s,c)=>s+(c.valorTotal||0),0);
+  let faturado = 0, recebido = 0;
+  arr.forEach(c=>{
+    Object.values(c.medicoes||{}).forEach(m=>{
+      if(m.status==='faturada'||m.status==='recebida') faturado += (m.valor||0);
+      if(m.status==='recebida') recebido += (m.valor||0);
+    });
+  });
+  document.getElementById('cprojKpis').innerHTML = `
+    <div class="kpi"><div class="kpi-lbl">Contratos</div><div class="kpi-val">${total}</div><div class="kpi-sub">${arr.filter(c=>c.status==='ativo').length} ativos</div></div>
+    <div class="kpi"><div class="kpi-lbl">Valor Total Contratado</div><div class="kpi-val">${fmtBRL(valorTotal)}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Total Faturado</div><div class="kpi-val" style="color:var(--blue)">${fmtBRL(faturado)}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Total Recebido</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(recebido)}</div></div>`;
+
+  const filtered = arr.filter(c=>{
+    if(!q) return true;
+    const cli = clientes[c.clienteId]?.nome||'';
+    return (c.numero||'').toLowerCase().includes(q)
+      || (c.descricao||'').toLowerCase().includes(q)
+      || cli.toLowerCase().includes(q);
+  });
+
+  if(!filtered.length){
+    document.getElementById('cprojList').innerHTML = '<div class="empty">Nenhum contrato encontrado.</div>';
+    return;
+  }
+
+  document.getElementById('cprojList').innerHTML = filtered.map(c=>{
+    const cli = clientes[c.clienteId]?.nome || '—';
+    const st = cprojStatusLabel(c.status);
+    const meds = Object.values(c.medicoes||{});
+    const fatMed = meds.filter(m=>m.status==='faturada'||m.status==='recebida').reduce((s,m)=>s+(m.valor||0),0);
+    const pct = c.valorTotal>0 ? Math.round(fatMed/c.valorTotal*100) : 0;
+    return `<div class="cproj-card" id="cprojCard_${c.id}">
+      <div class="cproj-head">
+        <div>
+          <div class="cproj-num">${c.numero||'—'} ${c.dataInicio?'· '+fmtD(c.dataInicio):''} ${c.dataFim?'→ '+fmtD(c.dataFim):''}</div>
+          <div class="cproj-title">${c.descricao||'Sem descrição'}</div>
+          <div class="cproj-client">👤 ${cli}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+          <span class="stbdg ${st.cls}">${st.label}</span>
+          <span style="font-size:1rem;font-weight:800;color:var(--dark)">${fmtBRL(c.valorTotal)}</span>
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-ghost" style="font-size:0.72rem;padding:5px 9px" onclick="toggleCProjDetail('${c.id}')">📊 Ver Detalhes</button>
+            <button class="btn btn-ghost" style="font-size:0.72rem;padding:5px 9px" onclick="openCProjModal('${c.id}')">✏️ Editar</button>
+          </div>
+        </div>
+      </div>
+      <div class="proj-prog">
+        <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:var(--sub);margin-bottom:2px">
+          <span>Faturado: ${fmtBRL(fatMed)}</span><span>${pct}%</span>
+        </div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:var(--blue)"></div></div>
+      </div>
+      <div class="cproj-detail" id="cprojDetail_${c.id}" style="display:none">
+        ${renderCProjDetail(c)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCProjDetail(c){
+  const meds = Object.values(c.medicoes||{}).sort((a,b)=>(a.dataPrev||'').localeCompare(b.dataPrev||''));
+  const fatMed = meds.filter(m=>m.status==='faturada'||m.status==='recebida').reduce((s,m)=>s+(m.valor||0),0);
+  const recMed = meds.filter(m=>m.status==='recebida').reduce((s,m)=>s+(m.valor||0),0);
+  const saldo = (c.valorTotal||0) - fatMed;
+
+  // Compras vinculadas via projId
+  const comprasVinc = c.projId ? Object.values(pedidos).filter(p=>p.projId===c.projId) : [];
+  const totalCompras = comprasVinc.reduce((s,p)=>{
+    const tot = p.itens ? Object.values(p.itens).reduce((ss,i)=>ss+(i.qtd||0)*(i.vlrUnit||0),0) : (p.valorTotal||0);
+    return s + tot;
+  },0);
+
+  const medStatusBadge = s => {
+    if(s==='faturada') return '<span class="stbdg pst-faturada">Faturada</span>';
+    if(s==='recebida') return '<span class="stbdg pst-recebida">Recebida</span>';
+    return '<span class="stbdg pst-prevista">Prevista</span>';
+  };
+
+  const medAcoes = (m) => {
+    let btns = '';
+    if(m.status==='prevista'){
+      btns += `<button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 7px;color:var(--blue)" onclick="faturarMedicao('${c.id}','${m.id}')">Faturar</button>`;
+      btns += `<button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 7px;color:var(--red)" onclick="delMedicao('${c.id}','${m.id}')">✕</button>`;
+    } else if(m.status==='faturada'){
+      btns += `<button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 7px;color:var(--green)" onclick="receberMedicao('${c.id}','${m.id}')">Recebido</button>`;
+    }
+    btns += `<button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 7px" onclick="openMedicaoModal('${c.id}','${m.id}')">✏️</button>`;
+    return btns;
+  };
+
+  return `
+    <div class="cproj-kpi-row">
+      <div class="cproj-kpi"><div class="cproj-kpi-lbl">Contratado</div><div class="cproj-kpi-val">${fmtBRL(c.valorTotal)}</div></div>
+      <div class="cproj-kpi"><div class="cproj-kpi-lbl">Compras Vinc.</div><div class="cproj-kpi-val" style="color:var(--amber)">${fmtBRL(totalCompras)}</div></div>
+      <div class="cproj-kpi"><div class="cproj-kpi-lbl">Faturado</div><div class="cproj-kpi-val" style="color:var(--blue)">${fmtBRL(fatMed)}</div></div>
+      <div class="cproj-kpi"><div class="cproj-kpi-lbl">Recebido</div><div class="cproj-kpi-val" style="color:var(--green)">${fmtBRL(recMed)}</div></div>
+      <div class="cproj-kpi"><div class="cproj-kpi-lbl">Saldo</div><div class="cproj-kpi-val" style="color:${saldo>=0?'var(--dark)':'var(--red)'}">${fmtBRL(saldo)}</div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:0.78rem;font-weight:700;color:var(--dark)">Medições</div>
+      <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 9px" onclick="openMedicaoModal('${c.id}','')">+ Medição</button>
+    </div>
+    ${meds.length ? `<table class="med-table">
+      <thead><tr><th>Descrição</th><th>Valor</th><th>Data Prev.</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody>
+        ${meds.map(m=>`<tr>
+          <td>${m.desc||'—'}</td>
+          <td style="font-weight:700">${fmtBRL(m.valor)}</td>
+          <td>${fmtD(m.dataPrev)}</td>
+          <td>${medStatusBadge(m.status)}</td>
+          <td style="white-space:nowrap">${medAcoes(m)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '<div style="font-size:0.8rem;color:var(--sub);margin-bottom:8px">Nenhuma medição cadastrada.</div>'}
+    ${comprasVinc.length ? `<div style="font-size:0.78rem;font-weight:700;color:var(--dark);margin-top:10px;margin-bottom:6px">Compras Vinculadas (OS: ${c.projId})</div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      ${comprasVinc.map(p=>{
+        const forn = fornecedores[p.fornId]?.nome||'—';
+        const tot = p.itens ? Object.values(p.itens).reduce((s,i)=>s+(i.qtd||0)*(i.vlrUnit||0),0) : (p.valorTotal||0);
+        return `<div style="background:#fff;border:1px solid var(--border);border-radius:7px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;font-size:0.78rem">
+          <div><span style="font-weight:600">${p.numero||'PED'}</span> · ${forn}</div>
+          <div style="font-weight:700">${fmtBRL(tot)}</div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}`;
+}
+
+function toggleCProjDetail(cid){
+  const el = document.getElementById('cprojDetail_'+cid);
+  if(!el) return;
+  const isOpen = el.style.display !== 'none';
+  if(isOpen){
+    el.style.display = 'none';
+  } else {
+    el.style.display = 'block';
+    el.innerHTML = renderCProjDetail(cprojs[cid]);
+  }
+}
+
+function openCProjModal(cid){
+  const c = cid ? (cprojs[cid]||{}) : {};
+  document.getElementById('cprojModalTitle').textContent = cid ? 'Editar Contrato' : 'Novo Contrato de Projeto';
+  document.getElementById('editCProjId').value = cid||'';
+  document.getElementById('cpNumero').value = c.numero||'';
+  document.getElementById('cpDescricao').value = c.descricao||'';
+  document.getElementById('cpValorTotal').value = c.valorTotal||'';
+  document.getElementById('cpDataInicio').value = c.dataInicio||'';
+  document.getElementById('cpDataFim').value = c.dataFim||'';
+  document.getElementById('cpStatus').value = c.status||'ativo';
+  document.getElementById('cpObs').value = c.obs||'';
+  document.getElementById('btnDelCProj').style.display = cid ? '' : 'none';
+
+  // Populate clientes select
+  const cliSel = document.getElementById('cpClienteId');
+  cliSel.innerHTML = '<option value="">— Selecione —</option>' +
+    Object.values(clientes).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(cl=>
+      `<option value="${cl.id}" ${cl.id===c.clienteId?'selected':''}>${cl.nome}</option>`).join('');
+
+  // Populate projetos select
+  const projSel = document.getElementById('cpProjId');
+  projSel.innerHTML = '<option value="">— Sem vínculo —</option>' +
+    Object.values(projetos).sort((a,b)=>(a.numero||'').localeCompare(b.numero||'')).map(p=>
+      `<option value="${p.id}" ${p.id===c.projId?'selected':''}>${p.numero||p.id} — ${p.titulo||''}</option>`).join('');
+
+  document.getElementById('ovlCProj').classList.add('v');
+}
+
+async function saveCProj(){
+  const cid = document.getElementById('editCProjId').value;
+  const numero = document.getElementById('cpNumero').value.trim();
+  const clienteId = document.getElementById('cpClienteId').value;
+  const descricao = document.getElementById('cpDescricao').value.trim();
+  const valorTotal = parseFloat(document.getElementById('cpValorTotal').value)||0;
+  if(!numero || !descricao){ toast('Preencha número e descrição.','err'); return; }
+  const id = cid || genId();
+  const existing = cprojs[id] || {};
+  const obj = {
+    id, numero, clienteId, descricao, valorTotal,
+    dataInicio: document.getElementById('cpDataInicio').value,
+    dataFim: document.getElementById('cpDataFim').value,
+    status: document.getElementById('cpStatus').value,
+    projId: document.getElementById('cpProjId').value,
+    obs: document.getElementById('cpObs').value.trim(),
+    medicoes: existing.medicoes||{},
+    criadoEm: existing.criadoEm||Date.now(),
+    uid: curUser?.uid||''
+  };
+  await db.ref('erp/contratos_proj/'+id).set(obj);
+  await logAudit('Contratos', cid?'editar':'criar', `Contrato ${numero}`, id);
+  toast(cid ? 'Contrato atualizado.' : 'Contrato criado.');
+  closeOvl('ovlCProj');
+}
+
+async function delCProj(){
+  const cid = document.getElementById('editCProjId').value;
+  if(!cid) return;
+  const c = cprojs[cid]; if(!c) return;
+  if(!confirm(`Excluir contrato "${c.numero}"? Esta ação não pode ser desfeita.`)) return;
+  await db.ref('erp/contratos_proj/'+cid).remove();
+  await logAudit('Contratos', 'excluir', `Contrato ${c.numero}`, cid);
+  toast('Contrato excluído.');
+  closeOvl('ovlCProj');
+}
+
+function openMedicaoModal(contratoId, mid){
+  const c = cprojs[contratoId]; if(!c) return;
+  const m = mid ? (c.medicoes?.[mid]||{}) : {};
+  document.getElementById('medicaoModalTitle').textContent = mid ? 'Editar Medição' : 'Nova Medição';
+  document.getElementById('editMedicaoContId').value = contratoId;
+  document.getElementById('editMedicaoId').value = mid||'';
+  document.getElementById('medDesc').value = m.desc||'';
+  document.getElementById('medValor').value = m.valor||'';
+  document.getElementById('medDataPrev').value = m.dataPrev||'';
+  // Only allow delete if prevista (or new)
+  const canDel = mid && (!m.status || m.status==='prevista');
+  document.getElementById('btnDelMedicao').style.display = canDel ? '' : 'none';
+  document.getElementById('ovlMedicao').classList.add('v');
+}
+
+async function saveMedicao(){
+  const contratoId = document.getElementById('editMedicaoContId').value;
+  const mid = document.getElementById('editMedicaoId').value;
+  const desc = document.getElementById('medDesc').value.trim();
+  const valor = parseFloat(document.getElementById('medValor').value)||0;
+  const dataPrev = document.getElementById('medDataPrev').value;
+  if(!contratoId){ toast('Contrato inválido.','err'); return; }
+  if(!desc){ toast('Informe a descrição da medição.','err'); return; }
+  const id = mid || genId();
+  const c = cprojs[contratoId]; if(!c) return;
+  const existing = c.medicoes?.[id] || {};
+  const obj = {
+    id, desc, valor, dataPrev,
+    status: existing.status||'prevista',
+    lancId: existing.lancId||''
+  };
+  await db.ref(`erp/contratos_proj/${contratoId}/medicoes/${id}`).set(obj);
+  await logAudit('Contratos', mid?'editar-medicao':'criar-medicao', `${c.numero} — ${desc}`, contratoId);
+  toast(mid ? 'Medição atualizada.' : 'Medição criada.');
+  closeOvl('ovlMedicao');
+}
+
+async function delMedicaoCur(){
+  const contratoId = document.getElementById('editMedicaoContId').value;
+  const mid = document.getElementById('editMedicaoId').value;
+  if(!mid){ closeOvl('ovlMedicao'); return; }
+  await delMedicao(contratoId, mid);
+  closeOvl('ovlMedicao');
+}
+
+async function delMedicao(contratoId, mid){
+  const c = cprojs[contratoId]; if(!c) return;
+  const m = c.medicoes?.[mid]; if(!m) return;
+  if(m.status!=='prevista'){ toast('Só é possível excluir medições com status Prevista.','err'); return; }
+  if(!confirm(`Excluir medição "${m.desc}"?`)) return;
+  await db.ref(`erp/contratos_proj/${contratoId}/medicoes/${mid}`).remove();
+  await logAudit('Contratos', 'excluir-medicao', `${c.numero} — ${m.desc}`, contratoId);
+  toast('Medição excluída.');
+  // Refresh detail if open
+  const detEl = document.getElementById('cprojDetail_'+contratoId);
+  if(detEl && detEl.style.display !== 'none'){
+    // Reload from local state after Firebase update
+    setTimeout(()=>{ const cc=cprojs[contratoId]; if(cc) detEl.innerHTML=renderCProjDetail(cc); },400);
+  }
+}
+
+async function faturarMedicao(contratoId, mid){
+  const c = cprojs[contratoId]; if(!c) return;
+  const m = c.medicoes?.[mid]; if(!m) return;
+  if(m.status!=='prevista'){ toast('Esta medição já foi faturada.','err'); return; }
+  if(!confirm(`Faturar medição "${m.desc}" — ${fmtBRL(m.valor)}? Será criado um lançamento de receita.`)) return;
+  const lid = genId();
+  const lan = {
+    id: lid, tipo: 'receita',
+    desc: `${c.numero} — ${m.desc}`,
+    valor: m.valor,
+    data: m.dataPrev||todayStr(),
+    venc: m.dataPrev||todayStr(),
+    cat: 'Contratos', status: 'pendente',
+    clienteId: c.clienteId,
+    projeto: c.numero,
+    obs: `Medição do contrato ${c.numero}`,
+    aprovStatus: 'aprovado', aprovadoPor: curUser?.uid||'',
+    contratoId: contratoId, contratoMed: mid,
+    criadoEm: Date.now(), uid: curUser?.uid||''
+  };
+  await db.ref('erp/lancamentos/'+lid).set(lan);
+  await db.ref(`erp/contratos_proj/${contratoId}/medicoes/${mid}`).update({status:'faturada', lancId: lid});
+  await logAudit('Contratos', 'faturar-medicao', `${c.numero} — ${m.desc} — ${fmtBRL(m.valor)}`, contratoId);
+  toast('Medição faturada. Lançamento criado no financeiro.');
+}
+
+async function receberMedicao(contratoId, mid){
+  const c = cprojs[contratoId]; if(!c) return;
+  const m = c.medicoes?.[mid]; if(!m) return;
+  if(m.status!=='faturada'){ toast('Medição não está no status "faturada".','err'); return; }
+  if(!confirm(`Marcar medição "${m.desc}" como recebida?`)) return;
+  if(m.lancId){
+    await db.ref('erp/lancamentos/'+m.lancId).update({status:'pago', data: todayStr()});
+  }
+  await db.ref(`erp/contratos_proj/${contratoId}/medicoes/${mid}`).update({status:'recebida'});
+  await logAudit('Contratos', 'receber-medicao', `${c.numero} — ${m.desc}`, contratoId);
+  toast('Medição marcada como recebida.');
 }
 
 // ══════════════════════════════════════════════
