@@ -615,7 +615,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="sec" id="secProj">
         <div class="pgh">
           <div class="pg-title">📋 Projetos / OS</div>
-          <button class="btn btn-ghost" style="font-size:0.76rem" onclick="toggleRentabilidade()">📊 Rentabilidade</button>
+          <button class="btn btn-ghost" style="font-size:0.76rem" onclick="toggleRentabilidade()">📊 Centro de Custo</button>
           <button class="btn btn-red" onclick="openProjModal()">+ Nova OS</button>
         </div>
         <div id="rentabilidadePanel" style="display:none;margin-bottom:16px"></div>
@@ -1905,7 +1905,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <option value="pago">Pago / Recebido</option>
         </select>
       </div>
-      <div class="fg"><label>Projeto (opcional)</label><input type="text" id="lancProjeto" placeholder="Nome ou OS"/></div>
+      <div class="fg"><label>Projeto / OS (opcional)</label><select id="lancProjeto" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit"><option value="">— Sem vínculo —</option></select></div>
     </div>
     <div class="fg"><label>Observações</label><textarea id="lancObs" rows="2" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit;resize:vertical" placeholder="Detalhes adicionais…"></textarea></div>
     <!-- Parcelamento -->
@@ -3846,17 +3846,31 @@ function renderProj(){
     [['em-andamento','Em andamento'],['concluido','Concluídas'],['pausado','Pausadas'],['cancelado','Canceladas']]
     .map(([id,l])=>`<div class="ftab ${projFilter===id?'active':''}" onclick="setProjFilter('${id}')">${l} (${cnts[id]})</div>`).join('');
   if(!arr.length){document.getElementById('projList').innerHTML='<div class="empty">Nenhuma OS encontrada.</div>';return;}
-  document.getElementById('projList').innerHTML=arr.map(p=>`
-    <div class="proj-card" onclick="openProjView('${p.id}')">
+  document.getElementById('projList').innerHTML=arr.map(p=>{
+    // mini P&L: receitas recebidas, despesas+compras pagas
+    const lanP=Object.values(lancamentos).filter(l=>l.projId===p.id&&l.aprovStatus!=='pendente');
+    const recP=lanP.filter(l=>l.tipo==='receita'&&l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
+    const desP=lanP.filter(l=>l.tipo==='despesa'&&l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
+    const compP=Object.values(pedidos).filter(l=>l.projId===p.id&&(l.status==='recebido'||l.status==='entregue')).reduce((s,l)=>s+(l.total||0),0);
+    const resultado=recP-(desP+compP);
+    const temDados=recP>0||desP>0||compP>0;
+    const margem=recP>0?(resultado/recP*100):null;
+    return`<div class="proj-card" onclick="openProjView('${p.id}')">
       <div class="proj-head">
         <div><div class="proj-num">${p.numero||'—'}</div><div class="proj-title">${p.titulo}</div><div class="proj-client">${p.clienteNome||'—'} · ${p.responsavelNome||'—'}</div></div>
         <span class="stbdg pst-${p.status}">${({'em-andamento':'Em andamento',concluido:'Concluído',pausado:'Pausado',cancelado:'Cancelado'})[p.status]||p.status}</span>
       </div>
       ${p.valor?`<div style="font-size:0.82rem;font-weight:700;color:var(--dark);margin-top:4px">${fmtBRL(p.valor)}</div>`:''}
+      ${temDados?`<div style="display:flex;gap:8px;margin-top:6px;padding:6px 8px;background:#f8f9fa;border-radius:7px;flex-wrap:wrap">
+        <div style="font-size:0.66rem;color:var(--sub)">💰 Rec: <span style="color:var(--green);font-weight:700">${fmtBRL(recP)}</span></div>
+        <div style="font-size:0.66rem;color:var(--sub)">📉 Custo: <span style="color:var(--red);font-weight:700">${fmtBRL(desP+compP)}</span></div>
+        <div style="font-size:0.66rem;color:var(--sub)">= <span style="font-weight:700;color:${resultado>=0?'var(--green)':'var(--red)'}">${fmtBRL(resultado)}</span>${margem!==null?` <span style="color:${margem>=20?'var(--green)':margem>=0?'var(--amber)':'var(--red)'}">(${margem.toFixed(0)}%)</span>`:''}</div>
+      </div>`:''}
       <div class="proj-prog"><div style="display:flex;justify-content:space-between;font-size:0.69rem;color:var(--sub)"><span>Progresso</span><span>${p.progresso||0}%</span></div>
         <div class="prog-bar"><div class="prog-fill" style="width:${p.progresso||0}%"></div></div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function setProjFilter(f){projFilter=f;renderProj();}
 
@@ -3873,6 +3887,9 @@ function fillProjSelects(){
   if(prEl) prEl.innerHTML=respOpts;
   if(mvEl) mvEl.innerHTML=projOpts;
   if(ppEl) ppEl.innerHTML=projOpts;
+  // proj select in lancamento
+  const lpEl=document.getElementById('lancProjeto');
+  if(lpEl) lpEl.innerHTML=projOpts;
   // forn select in pedido
   const pfEl=document.getElementById('pedForn');
   if(pfEl) pfEl.innerHTML='<option value="">— Selecione —</option>'+Object.values(fornecedores).map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
@@ -3942,6 +3959,18 @@ function openProjView(pid){
   const p=projetos[pid]; if(!p) return;
   document.getElementById('pvjTitle').textContent=(p.numero||'OS')+' — '+p.titulo;
   const updates=Object.values(movimentos).filter(m=>m.projId===pid&&m._type==='update').sort((a,b)=>b.criadoEm-a.criadoEm);
+  // P&L para este projeto
+  const lanP=Object.values(lancamentos).filter(l=>l.projId===pid&&l.aprovStatus!=='pendente');
+  const recTotal=lanP.filter(l=>l.tipo==='receita').reduce((s,l)=>s+(l.valor||0),0);
+  const recPago=lanP.filter(l=>l.tipo==='receita'&&l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
+  const desTotal=lanP.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+(l.valor||0),0);
+  const desPago=lanP.filter(l=>l.tipo==='despesa'&&l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
+  const compAll=Object.values(pedidos).filter(l=>l.projId===pid);
+  const compTotal=compAll.reduce((s,l)=>s+(l.total||0),0);
+  const compPago=compAll.filter(l=>l.status==='recebido'||l.status==='entregue').reduce((s,l)=>s+(l.total||0),0);
+  const resultado=recPago-(desPago+compPago);
+  const margem=recPago>0?(resultado/recPago*100):null;
+  const temDadosFin=recTotal>0||desTotal>0||compTotal>0;
   document.getElementById('pvjBody').innerHTML=`
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
       <span class="stbdg pst-${p.status}">${({'em-andamento':'Em andamento',concluido:'Concluído',pausado:'Pausado',cancelado:'Cancelado'})[p.status]||p.status}</span>
@@ -3950,6 +3979,31 @@ function openProjView(pid){
     <div style="font-size:0.82rem;margin-bottom:8px">${p.desc||''}</div>
     <div style="font-size:0.78rem;color:var(--sub);margin-bottom:4px">${p.equipe?'👷 '+p.equipe:''}</div>
     <div class="prog-bar" style="margin-bottom:14px"><div class="prog-fill" style="width:${p.progresso||0}%"></div></div>
+    ${temDadosFin?`
+    <div class="s-title">💰 Centro de Custo</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      <div style="background:#f0fff4;border-radius:8px;padding:8px 10px;text-align:center">
+        <div style="font-size:0.6rem;color:var(--sub);margin-bottom:2px">RECEITA</div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--green)">${fmtBRL(recPago)}</div>
+        ${recTotal>recPago?`<div style="font-size:0.58rem;color:var(--sub)">+${fmtBRL(recTotal-recPago)} a receber</div>`:''}
+      </div>
+      <div style="background:#fff5f5;border-radius:8px;padding:8px 10px;text-align:center">
+        <div style="font-size:0.6rem;color:var(--sub);margin-bottom:2px">DESPESAS</div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--red)">${fmtBRL(desPago)}</div>
+        ${desTotal>desPago?`<div style="font-size:0.58rem;color:var(--sub)">+${fmtBRL(desTotal-desPago)} pendente</div>`:''}
+      </div>
+      <div style="background:#fff8f0;border-radius:8px;padding:8px 10px;text-align:center">
+        <div style="font-size:0.6rem;color:var(--sub);margin-bottom:2px">COMPRAS</div>
+        <div style="font-size:0.78rem;font-weight:700;color:#e67e22">${fmtBRL(compPago)}</div>
+        ${compTotal>compPago?`<div style="font-size:0.58rem;color:var(--sub)">+${fmtBRL(compTotal-compPago)} pendente</div>`:''}
+      </div>
+    </div>
+    <div style="background:${resultado>=0?'#e8f5e9':'#ffebee'};border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--sub)">RESULTADO REALIZADO</div>
+      <div style="font-size:1rem;font-weight:700;color:${resultado>=0?'var(--green)':'var(--red)'}">
+        ${fmtBRL(resultado)}${margem!==null?` <span style="font-size:0.72rem;opacity:0.8">(${margem.toFixed(1)}%)</span>`:''}
+      </div>
+    </div>`:''}
     <div class="s-title">Histórico</div>
     ${updates.length?updates.map(u=>`<div class="update-item"><div class="update-meta"><span class="update-user">${u.usuarioNome||'—'}</span><span class="update-date">${fmtD(new Date(u.criadoEm).toISOString().slice(0,10))}</span></div><div>${u.desc}</div></div>`).join(''):'<div class="empty" style="padding:20px 0">Nenhuma atualização ainda.</div>'}`;
   document.getElementById('upProg').value=p.progresso||0;
@@ -5030,7 +5084,7 @@ function openLancModal(lid){
     document.getElementById('lancVenc').value=l.venc||'';
     document.getElementById('lancCat').value=l.cat||l.categoria||'';
     document.getElementById('lancStatus').value=l.status||'pendente';
-    document.getElementById('lancProjeto').value=l.projeto||'';
+    document.getElementById('lancProjeto').value=l.projId||'';
     document.getElementById('lancObs').value=l.obs||'';
     document.getElementById('lancForn').value=l.fornId||'';
     document.getElementById('lancCliente').value=l.clienteId||'';
@@ -5092,7 +5146,9 @@ async function saveLanc(){
   const tipo=document.getElementById('lancTipo').value;
   const cat=document.getElementById('lancCat').value.trim();
   const status=document.getElementById('lancStatus').value;
-  const projeto=document.getElementById('lancProjeto').value.trim();
+  const projId=document.getElementById('lancProjeto').value||'';
+  const _projObj=projId&&projetos[projId]?projetos[projId]:null;
+  const projeto=_projObj?((_projObj.numero?_projObj.numero+' — ':'')+_projObj.titulo):'';
   const obs=document.getElementById('lancObs').value.trim();
   const data=document.getElementById('lancData').value||new Date().toISOString().slice(0,10);
   const venc=document.getElementById('lancVenc').value||'';
@@ -5125,7 +5181,7 @@ async function saveLanc(){
         await db.ref('erp/lancamentos/'+pid).set({
           id:pid, tipo, desc:`${desc} (${i+1}/${n})`,
           valor:valParc, data:vencParc, venc:vencParc,
-          cat, status:'pendente', projeto, obs, fornId, clienteId, notaNum,
+          cat, status:'pendente', projeto, projId, obs, fornId, clienteId, notaNum,
           aprovStatus: curUser?.isSuper?'aprovado':'pendente',
           aprovSolicitadoPor: curUser?.uid||'',
           parcelaGrupo:grupoId, parcelaNum:i+1, parcelaTotal:n,
@@ -5142,7 +5198,7 @@ async function saveLanc(){
   const lancAprovStatus=lancIsSuper?'aprovado':'pendente';
   const lancExisting=lancamentos[lid];
   const obj={
-    id:lid, tipo, desc, valor, data, venc, cat, status, projeto, obs,
+    id:lid, tipo, desc, valor, data, venc, cat, status, projeto, projId, obs,
     fornId, clienteId, notaNum,
     arqUrl, arqNome,
     aprovStatus: lancExisting?.aprovStatus==='aprovado' ? 'aprovado' : lancAprovStatus,
@@ -6663,35 +6719,81 @@ function toggleRentabilidade(){
 function renderRentabilidade(){
   const el=document.getElementById('rentabilidadePanel');
   if(!el) return;
-  const lan=Object.values(lancamentos).filter(l=>l.status==='pago'&&l.aprovStatus!=='pendente'&&l.projeto);
-  if(!lan.length){el.innerHTML='<div class="scard" style="text-align:center;color:var(--sub);padding:20px">Nenhum lançamento com projeto vinculado e status pago.</div>';return;}
+  // Lancamentos vinculados a projeto (por projId ou fallback texto)
+  const lan=Object.values(lancamentos).filter(l=>l.aprovStatus!=='pendente'&&(l.projId||l.projeto));
+  // Compras vinculadas a projId
+  const ped=Object.values(pedidos).filter(p=>p.projId);
   const byProj={};
+  // helper: garante entrada no map
+  function ensureProj(key,label){
+    if(!byProj[key]) byProj[key]={key,label,rec:0,des:0,comp:0,recPago:0,desPago:0,compPago:0};
+  }
   lan.forEach(l=>{
-    const p=l.projeto;
-    if(!byProj[p]) byProj[p]={proj:p,rec:0,des:0};
-    if(l.tipo==='receita') byProj[p].rec+=(l.valor||0);
-    else byProj[p].des+=(l.valor||0);
+    const key=l.projId||(l.projeto||'').trim();
+    if(!key) return;
+    const lbl=l.projId&&projetos[l.projId]
+      ?((projetos[l.projId].numero?projetos[l.projId].numero+' — ':'')+projetos[l.projId].titulo)
+      :(l.projeto||key);
+    ensureProj(key,lbl);
+    const v=l.valor||0;
+    const pago=l.status==='pago';
+    if(l.tipo==='receita'){byProj[key].rec+=v;if(pago)byProj[key].recPago+=v;}
+    else{byProj[key].des+=v;if(pago)byProj[key].desPago+=v;}
   });
-  const arr=Object.values(byProj).map(p=>({...p,result:p.rec-p.des,margem:p.rec>0?((p.rec-p.des)/p.rec*100):0})).sort((a,b)=>b.result-a.result);
+  ped.forEach(p=>{
+    const key=p.projId;
+    const proj=projetos[key];
+    const lbl=proj?((proj.numero?proj.numero+' — ':'')+proj.titulo):key;
+    ensureProj(key,lbl);
+    const v=p.total||0;
+    byProj[key].comp+=v;
+    if(p.status==='recebido'||p.status==='entregue') byProj[key].compPago+=v;
+  });
+  if(!Object.keys(byProj).length){
+    el.innerHTML='<div class="scard" style="text-align:center;color:var(--sub);padding:20px">Nenhum lançamento ou compra com OS vinculada.</div>';return;
+  }
+  const arr=Object.values(byProj).map(p=>{
+    // receita realizada - (despesas pagas + compras pagas)
+    const custoTotal=p.desPago+p.compPago;
+    const result=p.recPago-custoTotal;
+    const margem=p.recPago>0?(result/p.recPago*100):0;
+    return{...p,custoTotal,result,margem};
+  }).sort((a,b)=>b.result-a.result);
   el.innerHTML=`<div class="scard" style="overflow-x:auto">
-    <div style="font-size:0.78rem;font-weight:700;color:var(--dark);margin-bottom:10px">📊 Rentabilidade por Projeto</div>
-    <table style="width:100%;border-collapse:collapse;font-size:0.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:0.78rem;font-weight:700;color:var(--dark)">📊 Centro de Custo — P&amp;L por Projeto</div>
+      <div style="font-size:0.63rem;color:var(--sub)">Valores realizados (pagos/recebidos)</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:0.74rem">
       <thead><tr style="background:#f8f9fa">
-        <th style="padding:6px 8px;text-align:left;color:var(--sub);font-size:0.62rem">Projeto</th>
-        <th style="padding:6px 8px;text-align:right;color:var(--sub);font-size:0.62rem">Receita</th>
-        <th style="padding:6px 8px;text-align:right;color:var(--sub);font-size:0.62rem">Custo</th>
-        <th style="padding:6px 8px;text-align:right;color:var(--sub);font-size:0.62rem">Resultado</th>
+        <th style="padding:6px 8px;text-align:left;color:var(--sub);font-size:0.62rem">OS / Projeto</th>
+        <th style="padding:6px 8px;text-align:right;color:var(--green);font-size:0.62rem">Receita</th>
+        <th style="padding:6px 8px;text-align:right;color:var(--red);font-size:0.62rem">Despesas</th>
+        <th style="padding:6px 8px;text-align:right;color:#e67e22;font-size:0.62rem">Compras</th>
+        <th style="padding:6px 8px;text-align:right;color:var(--sub);font-size:0.62rem">Custo Total</th>
+        <th style="padding:6px 8px;text-align:right;color:var(--dark);font-size:0.62rem">Resultado</th>
         <th style="padding:6px 8px;text-align:right;color:var(--sub);font-size:0.62rem">Margem</th>
       </tr></thead>
       <tbody>
       ${arr.map(p=>`<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:7px 8px;font-weight:600;color:var(--dark)">${p.proj}</td>
-        <td style="padding:7px 8px;text-align:right;color:var(--green)">${fmtBRL(p.rec)}</td>
-        <td style="padding:7px 8px;text-align:right;color:var(--red)">${fmtBRL(p.des)}</td>
+        <td style="padding:7px 8px;font-weight:600;color:var(--dark)">${p.label}</td>
+        <td style="padding:7px 8px;text-align:right;color:var(--green)">${fmtBRL(p.recPago)}</td>
+        <td style="padding:7px 8px;text-align:right;color:var(--red)">${fmtBRL(p.desPago)}</td>
+        <td style="padding:7px 8px;text-align:right;color:#e67e22">${fmtBRL(p.compPago)}</td>
+        <td style="padding:7px 8px;text-align:right;color:var(--sub)">${fmtBRL(p.custoTotal)}</td>
         <td style="padding:7px 8px;text-align:right;font-weight:700;color:${p.result>=0?'var(--green)':'var(--red)'}">${fmtBRL(p.result)}</td>
-        <td style="padding:7px 8px;text-align:right;color:${p.margem>=20?'var(--green)':p.margem>=0?'var(--amber)':'var(--red)'}">${p.rec>0?p.margem.toFixed(1)+'%':'—'}</td>
+        <td style="padding:7px 8px;text-align:right;font-weight:700;color:${p.margem>=20?'var(--green)':p.margem>=0?'var(--amber)':'var(--red)'}">${p.recPago>0?p.margem.toFixed(1)+'%':'—'}</td>
       </tr>`).join('')}
       </tbody>
+      <tfoot><tr style="background:#f8f9fa;font-weight:700">
+        <td style="padding:7px 8px;font-size:0.72rem">TOTAL</td>
+        <td style="padding:7px 8px;text-align:right;color:var(--green)">${fmtBRL(arr.reduce((s,p)=>s+p.recPago,0))}</td>
+        <td style="padding:7px 8px;text-align:right;color:var(--red)">${fmtBRL(arr.reduce((s,p)=>s+p.desPago,0))}</td>
+        <td style="padding:7px 8px;text-align:right;color:#e67e22">${fmtBRL(arr.reduce((s,p)=>s+p.compPago,0))}</td>
+        <td style="padding:7px 8px;text-align:right;color:var(--sub)">${fmtBRL(arr.reduce((s,p)=>s+p.custoTotal,0))}</td>
+        <td style="padding:7px 8px;text-align:right;font-weight:700;color:${arr.reduce((s,p)=>s+p.result,0)>=0?'var(--green)':'var(--red)'}">${fmtBRL(arr.reduce((s,p)=>s+p.result,0))}</td>
+        <td style="padding:7px 8px;text-align:right"></td>
+      </tr></tfoot>
     </table>
   </div>`;
 }
@@ -7655,7 +7757,8 @@ async function faturarMedicao(contratoId, mid){
     venc: m.dataPrev||todayStr(),
     cat: 'Contratos', status: 'pendente',
     clienteId: c.clienteId,
-    projeto: c.numero,
+    projeto: c.numero+(c.projId&&projetos[c.projId]?' — '+(projetos[c.projId].titulo||''):''),
+    projId: c.projId||'',
     obs: `Medição do contrato ${c.numero}`,
     aprovStatus: 'aprovado', aprovadoPor: curUser?.uid||'',
     contratoId: contratoId, contratoMed: mid,
