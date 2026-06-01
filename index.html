@@ -7958,6 +7958,7 @@ if('serviceWorker' in navigator)
   navigator.serviceWorker.register('./sw.js',{scope:'/'});
 window.addEventListener('online', ()=>document.getElementById('offWarn').classList.remove('show'));
 window.addEventListener('offline',()=>document.getElementById('offWarn').classList.add('show'));
+</script>
 <!-- Modal mês fluxo de caixa -->
 <div class="ovl" id="ovlMesCF">
   <div class="modal" style="max-width:520px;max-height:85vh;display:flex;flex-direction:column">
@@ -7969,6 +7970,5 @@ window.addEventListener('offline',()=>document.getElementById('offWarn').classLi
     <div style="overflow-y:auto;padding:10px 16px 16px;flex:1" id="mesCFList"></div>
   </div>
 </div>
-</script>
 </body>
 </html>
