@@ -2523,8 +2523,8 @@ function renderDash(){
 
   // ── KPIs (8 cards, 2 rows)
   document.getElementById('dashKpis').innerHTML=`
-    <div class="kpi" style="cursor:pointer" onclick="navTo('fin')" title="Clique para ver Financeiro"><div class="kpi-lbl">Total a Receber</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(aReceber)}</div><div class="kpi-sub">${recVenc>0?'⚠️ vencido: '+fmtBRL(recVenc):'recebido: '+fmtBRL(jaRecebido)}</div></div>
-    <div class="kpi" style="cursor:pointer" onclick="navTo('fin')" title="Clique para ver Financeiro"><div class="kpi-lbl">Total a Pagar</div><div class="kpi-val" style="color:${aPagar>0?'var(--red)':'var(--dark)'}">${fmtBRL(aPagar)}</div><div class="kpi-sub">${desVenc>0?'⚠️ vencido: '+fmtBRL(desVenc):'pago: '+fmtBRL(jaPago)}</div></div>
+    <div class="kpi" style="cursor:pointer" onclick="irFinFiltrado('receita','pendente')" title="Ver receitas pendentes"><div class="kpi-lbl">Total a Receber</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(aReceber)}</div><div class="kpi-sub">${recVenc>0?'⚠️ vencido: '+fmtBRL(recVenc):'recebido: '+fmtBRL(jaRecebido)}</div></div>
+    <div class="kpi" style="cursor:pointer" onclick="irFinFiltrado('despesa','pendente')" title="Ver despesas pendentes"><div class="kpi-lbl">Total a Pagar</div><div class="kpi-val" style="color:${aPagar>0?'var(--red)':'var(--dark)'}">${fmtBRL(aPagar)}</div><div class="kpi-sub">${desVenc>0?'⚠️ vencido: '+fmtBRL(desVenc):'pago: '+fmtBRL(jaPago)}</div></div>
     <div class="kpi"><div class="kpi-lbl">Recebido — ${new Date().toLocaleString('pt-BR',{month:'short'})}</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(recMesPago)}</div><div class="kpi-sub">${desMesPago>0?'pago no mês: '+fmtBRL(desMesPago):'sem despesas pagas no mês'}</div></div>
     <div class="kpi"><div class="kpi-lbl">Saldo Líquido</div><div class="kpi-val" style="color:${(aReceber-aPagar)>=0?'var(--green)':'var(--red)'}">${fmtBRL(aReceber-aPagar)}</div><div class="kpi-sub">a receber − a pagar</div></div>
     <div class="kpi"><div class="kpi-lbl">Empresas CRM</div><div class="kpi-val">${arr.length}</div><div class="kpi-sub">${byS.cliente||0} clientes ativos</div></div>
@@ -4345,6 +4345,15 @@ function finSetSt(s){
   ['todos','pendente','pago','vencido'].forEach(x=>{
     document.getElementById('finSt-'+x)?.classList.toggle('active', x===s);
   });
+  renderFin();
+}
+function irFinFiltrado(tab, st){
+  navTo('fin');
+  finTab=tab; finSt=st;
+  ['todos','receita','despesa'].forEach(x=>document.getElementById('finTab-'+x)?.classList.toggle('active',x===tab));
+  ['todos','pendente','pago','vencido'].forEach(x=>document.getElementById('finSt-'+x)?.classList.toggle('active',x===st));
+  // Limpa filtro de mês para ver tudo
+  const mi=document.getElementById('finMesInput'); if(mi){mi.value='';mi.dataset.touched='1';}
   renderFin();
 }
 
