@@ -2734,8 +2734,9 @@ function renderDash(){
   const recVenc   = todosRec.filter(l=>l.status!=='pago'&&l.venc&&l.venc<hoje0).reduce((s,l)=>s+(l.valor||0),0);
   const desVenc   = todosDes.filter(l=>l.status!=='pago'&&l.venc&&l.venc<hoje0).reduce((s,l)=>s+(l.valor||0),0);
 
-  // ── KPIs (8 cards, 2 rows)
-  document.getElementById('dashKpis').innerHTML=`
+  // ── KPIs — gestores veem financeiro, funcionários só operacional
+  const isGestor = curUser?.isSuper;
+  document.getElementById('dashKpis').innerHTML= isGestor ? `
     <div class="kpi" style="cursor:pointer" onclick="irFinFiltrado('receita','pendente')" title="Ver receitas pendentes"><div class="kpi-lbl">Total a Receber</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(aReceber)}</div><div class="kpi-sub">${recVenc>0?'⚠️ vencido: '+fmtBRL(recVenc):'recebido: '+fmtBRL(jaRecebido)}</div></div>
     <div class="kpi" style="cursor:pointer" onclick="irFinFiltrado('despesa','pendente')" title="Ver despesas pendentes"><div class="kpi-lbl">Total a Pagar</div><div class="kpi-val" style="color:${aPagar>0?'var(--red)':'var(--dark)'}">${fmtBRL(aPagar)}</div><div class="kpi-sub">${desVenc>0?'⚠️ vencido: '+fmtBRL(desVenc):'pago: '+fmtBRL(jaPago)}</div></div>
     <div class="kpi"><div class="kpi-lbl">Recebido — ${new Date().toLocaleString('pt-BR',{month:'short'})}</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(recMesPago)}</div><div class="kpi-sub">${desMesPago>0?'pago no mês: '+fmtBRL(desMesPago):'sem despesas pagas no mês'}</div></div>
@@ -2743,7 +2744,12 @@ function renderDash(){
     <div class="kpi"><div class="kpi-lbl">Empresas CRM</div><div class="kpi-val">${arr.length}</div><div class="kpi-sub">${byS.cliente||0} clientes ativos</div></div>
     <div class="kpi"><div class="kpi-lbl">Em Negociação</div><div class="kpi-val" style="color:var(--amber)">${(byS.negociacao||0)+(byS.proposta||0)}</div><div class="kpi-sub">${overdue} follow-ups venc.</div></div>
     <div class="kpi"><div class="kpi-lbl">Propostas Abertas</div><div class="kpi-val" style="color:var(--blue)">${propAberto}</div><div class="kpi-sub">aprovadas: ${fmtBRL(propValor)}</div></div>
-    <div class="kpi"><div class="kpi-lbl">OS em Andamento</div><div class="kpi-val" style="color:var(--green)">${projAtivos}</div><div class="kpi-sub">equipe: ${funcAtivos} ativos</div></div>`;
+    <div class="kpi"><div class="kpi-lbl">OS em Andamento</div><div class="kpi-val" style="color:var(--green)">${projAtivos}</div><div class="kpi-sub">equipe: ${funcAtivos} ativos</div></div>`
+  : `
+    <div class="kpi"><div class="kpi-lbl">OS em Andamento</div><div class="kpi-val" style="color:var(--green)">${projAtivos}</div><div class="kpi-sub">projetos ativos</div></div>
+    <div class="kpi"><div class="kpi-lbl">Equipe Ativa</div><div class="kpi-val">${funcAtivos}</div><div class="kpi-sub">funcionários ativos</div></div>
+    <div class="kpi"><div class="kpi-lbl">Propostas Abertas</div><div class="kpi-val" style="color:var(--blue)">${propAberto}</div><div class="kpi-sub">aguardando resposta</div></div>
+    <div class="kpi"><div class="kpi-lbl">Follow-ups CRM</div><div class="kpi-val" style="color:${overdue>0?'var(--amber)':'var(--dark)'}">${overdue}</div><div class="kpi-sub">${overdue>0?'vencidos':'em dia'}</div></div>`;
 
   // ── Cash flow últimos 6 meses
   const cfHtml = renderCashFlow(lanArr);
@@ -2773,8 +2779,8 @@ function renderDash(){
   updateAprovBadge(totalPend);
 
   document.getElementById('dashCards').innerHTML=`
-    ${cfHtml}
-    ${curUser?.isSuper && totalPend>0?`
+    ${isGestor?cfHtml:''}
+    ${isGestor && totalPend>0?`
     <div class="dash-card" style="border-color:#fcd34d;border-width:2px">
       <h3 style="color:#92400e">🔔 Aprovações Pendentes (${totalPend})</h3>
       ${pendPed.map(p=>{
@@ -2805,7 +2811,7 @@ function renderDash(){
         </div>`;}).join('')}
       <span onclick="navTo('fin')" style="display:block;text-align:center;margin-top:10px;font-size:0.75rem;color:var(--blue);cursor:pointer">Ver lançamentos → &nbsp;|&nbsp;</span>
     </div>`:''}
-    ${inadimp.length?`
+    ${isGestor && inadimp.length?`
     <div class="dash-card" style="border-color:#fca5a5;border-width:2px;cursor:pointer" onclick="irFinFiltrado('inadimp','todos')">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <h3 style="color:#991b1b;margin:0">🚨 Inadimplência (${inadimp.length})</h3>
@@ -2828,7 +2834,7 @@ function renderDash(){
       ${rhAlertsDash.map(a=>`<div class="ritem"><div class="ritem-name">${a.nome}</div><div class="ritem-sub">${a.desc}</div></div>`).join('')}
       <span onclick="navTo('rh')" style="display:block;text-align:center;margin-top:10px;font-size:0.75rem;color:var(--blue);cursor:pointer">Ver todos os alertas →</span>
     </div>`:''}
-    ${vencFin.length?`
+    ${isGestor && vencFin.length?`
     <div class="dash-card" style="border-color:#fef3c7">
       <h3 style="color:var(--amber)">📅 Vencimentos próximos (7 dias)</h3>
       ${vencFin.map(l=>`<div class="ritem" style="display:flex;justify-content:space-between;align-items:center">
@@ -2859,7 +2865,7 @@ function renderDash(){
           <div style="font-size:0.76rem;color:var(--txt);margin-top:2px">${(i.descricao||'').slice(0,70)}${(i.descricao||'').length>70?'…':''}</div>
         </div>`;}).join(''):`<div style="color:var(--sub);font-size:0.81rem;padding:8px 0">Nenhuma interação ainda.</div>`}
     </div>
-    ${renderComparativoMensal()}`;
+    ${isGestor?renderComparativoMensal():''}`;
 }
 
 function renderCashFlow(lanArr){
