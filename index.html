@@ -1787,11 +1787,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <div id="folhaArqBtn_CMb"></div>
         </div>
         <!-- Caju Indaiatuba -->
-        <div style="display:grid;grid-template-columns:1fr 110px 105px 34px;gap:5px;align-items:center">
+        <div style="display:grid;grid-template-columns:1fr 110px 105px 34px;gap:5px;align-items:center;margin-bottom:5px">
           <div style="font-size:0.8rem;font-weight:600">Caju <span style="font-size:0.65rem;color:var(--sub)">Indaiatuba</span></div>
           <input type="number" id="folhaSwileVal" placeholder="0,00" min="0" step="0.01" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.8rem;font-family:inherit;width:100%"/>
           <input type="date" id="folhaSwileVenc" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.78rem;font-family:inherit;width:100%"/>
           <div id="folhaArqBtn_Swi"></div>
+        </div>
+        <!-- Seguro de Vida -->
+        <div style="display:grid;grid-template-columns:1fr 110px 105px 34px;gap:5px;align-items:center;margin-bottom:5px">
+          <div style="font-size:0.8rem;font-weight:600">Seguro de Vida</div>
+          <input type="number" id="folhaSVdVal" placeholder="0,00" min="0" step="0.01" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.8rem;font-family:inherit;width:100%"/>
+          <input type="date" id="folhaSVdVenc" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.78rem;font-family:inherit;width:100%"/>
+          <div id="folhaArqBtn_SVd"></div>
+        </div>
+        <!-- Seguro Saúde -->
+        <div style="display:grid;grid-template-columns:1fr 110px 105px 34px;gap:5px;align-items:center">
+          <div style="font-size:0.8rem;font-weight:600">Seguro Saúde</div>
+          <input type="number" id="folhaSSaVal" placeholder="0,00" min="0" step="0.01" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.8rem;font-family:inherit;width:100%"/>
+          <input type="date" id="folhaSSaVenc" style="padding:6px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:0.78rem;font-family:inherit;width:100%"/>
+          <div id="folhaArqBtn_SSa"></div>
         </div>
         <!-- Total -->
         <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px;display:flex;justify-content:space-between;align-items:center">
@@ -4966,6 +4980,8 @@ const FOLHA_ITENS=[
   {id:'CVA', label:'Caju VA',         valId:'folhaCajuVAVal', vencId:'folhaCajuVAVenc'},
   {id:'CMb', label:'Caju Mobilidade', valId:'folhaCajuMobVal',vencId:'folhaCajuMobVenc'},
   {id:'Swi', label:'Caju Indaiatuba', valId:'folhaSwileVal',  vencId:'folhaSwileVenc'},
+  {id:'SVd', label:'Seguro de Vida',  valId:'folhaSVdVal',    vencId:'folhaSVdVenc'},
+  {id:'SSa', label:'Seguro Saúde',    valId:'folhaSSaVal',    vencId:'folhaSSaVenc'},
 ];
 
 // Estado temporário dos arquivos por item no modal
