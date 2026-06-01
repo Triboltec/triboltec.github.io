@@ -703,12 +703,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <div id="nfList"></div>
       </div>
 
+      <!-- DOCUMENTOS DA EMPRESA -->
+      <div class="sec" id="secDocs">
+        <div class="pgh">
+          <div class="pg-title">📁 Documentos da Empresa</div>
+          <button class="btn btn-red" onclick="openEmpDocModal()">+ Documento</button>
+        </div>
+        <div style="font-size:0.78rem;color:var(--sub);margin-bottom:14px">AVCB, Alvarás, Certidões, Licenças — com vencimento e link do arquivo.</div>
+        <div id="empDocList"></div>
+      </div>
+
       <!-- ADMIN -->
       <div class="sec" id="secAdmin">
         <!-- Admin Tabs -->
         <div class="adm-tabs">
           <button class="adm-tab active" id="admTab-usuarios" onclick="admTab('usuarios')">👥 Usuários</button>
-          <button class="adm-tab" id="admTab-docs" onclick="admTab('docs')">🏢 Docs Empresa</button>
           <button class="adm-tab" id="admTab-ponto" onclick="admTab('ponto')">⏱️ Ponto</button>
           <button class="adm-tab" id="admTab-exportar" onclick="admTab('exportar')">📤 Exportar</button>
           <button class="adm-tab" id="admTab-backup" onclick="admTab('backup')">💾 Backup</button>
@@ -725,17 +734,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <div class="ulist" id="userList"></div>
         </div>
 
-        <!-- Pane: Docs Empresa -->
+        <!-- Pane: Config E-mail (antes em Docs, agora só config) -->
         <div id="admPane-docs" style="display:none">
-          <div class="pgh" style="padding-top:0">
-            <div class="pg-title">Documentos da Empresa</div>
-            <button class="btn btn-red" onclick="openEmpDocModal()">+ Documento</button>
-          </div>
-          <div style="font-size:0.78rem;color:var(--sub);margin-bottom:14px">AVCB, Alvarás, Certidões, Licenças — com vencimento e link do arquivo (Google Drive).</div>
-          <div id="empDocList"></div>
-          <!-- Config: accounting email -->
-          <div class="scard" style="margin-top:20px">
-            <div class="s-title" style="font-size:0.8rem;font-weight:800;margin-bottom:12px">✉️ Configurações de Envio</div>
+          <div class="pgh" style="padding-top:0"><div class="pg-title">✉️ Configurações de Envio</div></div>
+          <div class="scard">
             <div class="fg" style="margin-bottom:10px">
               <label>E-mail da Contabilidade <span style="color:var(--sub);font-weight:400">(destinatário)</span></label>
               <input type="email" id="configContEmail" placeholder="contabilidade@escritorio.com.br" style="width:100%"/>
@@ -744,10 +746,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
               <label>E-mail do RH <span style="color:var(--sub);font-weight:400">(em cópia — CC)</span></label>
               <input type="email" id="configRhEmail" placeholder="rh@triboltec.com.br" style="width:100%"/>
             </div>
-            <div style="font-size:0.72rem;color:var(--sub);margin-bottom:10px">Usados no botão "✉️ Enviar por E-mail" no fechamento mensal. O RH fica em cópia automaticamente.</div>
+            <div style="font-size:0.72rem;color:var(--sub);margin-bottom:10px">Usados no fechamento mensal do RH. O RH fica em cópia automaticamente.</div>
             <button class="btn btn-red" onclick="saveEmpConfig()">💾 Salvar</button>
             <span id="configMsg" style="font-size:0.73rem;color:var(--sub);margin-left:10px"></span>
           </div>
+          <div style="margin-top:12px;font-size:0.78rem;color:var(--blue);cursor:pointer" onclick="navTo('docs')">→ Ver Documentos da Empresa</div>
         </div>
 
         <!-- Pane: Ponto ControlID -->
@@ -2086,6 +2089,7 @@ const MODS = [
   {id:'compras',label:'Compras', icon:'🛒', sec:'secComp'},
   {id:'estoque',label:'Estoque', icon:'📦', sec:'secEst'},
   {id:'rh',   label:'RH',        icon:'👷', sec:'secRH'},
+  {id:'docs', label:'Documentos', icon:'📁', sec:'secDocs'},
   {id:'nf',   label:'Notas Fiscais',icon:'🧾', sec:'secNF'},
   {id:'admin',label:'Admin',     icon:'⚙️', sec:'secAdmin'},
 ];
@@ -2440,7 +2444,7 @@ function logout(){
 function canDo(mid){
   if(!curUser) return false;
   if(curUser.isSuper) return true;
-  if(mid==='dash') return true;
+  if(mid==='dash' || mid==='docs') return true; // acessível a todos
   return !!(curUser.modulos && curUser.modulos[mid]);
 }
 
@@ -2472,6 +2476,7 @@ function navTo(mid){
   document.getElementById('fab').classList.toggle('h', mid!=='crm');
   closePanel();
   if(mid==='compras'&&!document.getElementById('compContent').innerHTML.trim()) compTab('ped');
+  if(mid==='docs') renderEmpresaDocs();
   if(mid==='admin'){
     // Restrict tabs to super admin
     ['backup','seguranca'].forEach(t=>{
@@ -3073,7 +3078,7 @@ async function deleteUser(uid,nome){
 // ADMIN TABS
 // ══════════════════════════════════════════════
 function admTab(tab){
-  const tabs = ['usuarios','docs','ponto','exportar','backup','seguranca','auditoria'];
+  const tabs = ['usuarios','docs','ponto','exportar','backup','seguranca','auditoria']; // 'docs' mantido para config de e-mail
   tabs.forEach(t=>{
     const btn=document.getElementById('admTab-'+t);
     const pane=document.getElementById('admPane-'+t);
