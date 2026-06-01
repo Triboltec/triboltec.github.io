@@ -549,6 +549,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <!-- KPI cards -->
         <div class="kpis" id="finKpis" style="margin-bottom:16px"></div>
 
+        <!-- Inadimplência + Projeção de Caixa -->
+        <div id="finAlerts" style="margin-bottom:12px"></div>
+
         <!-- Tipo tabs -->
         <div class="fin-tabs">
           <button class="fin-tab active" id="finTab-todos"    onclick="finSetTab('todos')">📋 Todos</button>
@@ -2526,7 +2529,7 @@ function renderDash(){
     <div class="kpi" style="cursor:pointer" onclick="irFinFiltrado('receita','pendente')" title="Ver receitas pendentes"><div class="kpi-lbl">Total a Receber</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(aReceber)}</div><div class="kpi-sub">${recVenc>0?'⚠️ vencido: '+fmtBRL(recVenc):'recebido: '+fmtBRL(jaRecebido)}</div></div>
     <div class="kpi" style="cursor:pointer" onclick="irFinFiltrado('despesa','pendente')" title="Ver despesas pendentes"><div class="kpi-lbl">Total a Pagar</div><div class="kpi-val" style="color:${aPagar>0?'var(--red)':'var(--dark)'}">${fmtBRL(aPagar)}</div><div class="kpi-sub">${desVenc>0?'⚠️ vencido: '+fmtBRL(desVenc):'pago: '+fmtBRL(jaPago)}</div></div>
     <div class="kpi"><div class="kpi-lbl">Recebido — ${new Date().toLocaleString('pt-BR',{month:'short'})}</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(recMesPago)}</div><div class="kpi-sub">${desMesPago>0?'pago no mês: '+fmtBRL(desMesPago):'sem despesas pagas no mês'}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Saldo Realizado</div><div class="kpi-val" style="color:${(jaRecebido-jaPago)>=0?'var(--green)':'var(--red)'}">${fmtBRL(jaRecebido-jaPago)}</div><div class="kpi-sub">projetado: ${fmtBRL((jaRecebido+aReceber)-(jaPago+aPagar))}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Resultado — ${new Date().toLocaleString('pt-BR',{month:'short'})}</div><div class="kpi-val" style="color:${(recMesPago-desMesPago)>=0?'var(--green)':'var(--red)'}">${fmtBRL(recMesPago-desMesPago)}</div><div class="kpi-sub">${recMesPago-desMesPago>=0?'positivo no mês':'negativo no mês'}</div></div>
     <div class="kpi"><div class="kpi-lbl">Empresas CRM</div><div class="kpi-val">${arr.length}</div><div class="kpi-sub">${byS.cliente||0} clientes ativos</div></div>
     <div class="kpi"><div class="kpi-lbl">Em Negociação</div><div class="kpi-val" style="color:var(--amber)">${(byS.negociacao||0)+(byS.proposta||0)}</div><div class="kpi-sub">${overdue} follow-ups venc.</div></div>
     <div class="kpi"><div class="kpi-lbl">Propostas Abertas</div><div class="kpi-val" style="color:var(--blue)">${propAberto}</div><div class="kpi-sub">aprovadas: ${fmtBRL(propValor)}</div></div>
@@ -2544,6 +2547,11 @@ function renderDash(){
   const d7 = new Date(); d7.setDate(d7.getDate()+7); const d7s=d7.toISOString().slice(0,10);
   const vencFin = lanArr.filter(l=>l.status!=='pago'&&(l.venc||l.data)>=(today)&&(l.venc||l.data)<=d7s)
     .sort((a,b)=>(a.venc||a.data||'').localeCompare(b.venc||b.data||'')).slice(0,6);
+
+  // ── Inadimplência (receitas vencidas e não pagas)
+  const inadimp = lanArr.filter(l=>l.tipo==='receita'&&l.status!=='pago'&&l.venc&&l.venc<today)
+    .sort((a,b)=>(a.venc||'').localeCompare(b.venc||''));
+  const totalInad = inadimp.reduce((s,l)=>s+(l.valor||0),0);
 
   // ── RH Alerts for dashboard
   const rhAlertsDash = getRHAlerts().slice(0,5);
@@ -2587,6 +2595,23 @@ function renderDash(){
         </div>`;}).join('')}
       <span onclick="navTo('fin')" style="display:block;text-align:center;margin-top:10px;font-size:0.75rem;color:var(--blue);cursor:pointer">Ver lançamentos → &nbsp;|&nbsp;</span>
     </div>`:''}
+    ${inadimp.length?`
+    <div class="dash-card" style="border-color:#fca5a5;border-width:2px;cursor:pointer" onclick="irFinFiltrado('receita','vencido')">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h3 style="color:#991b1b;margin:0">🚨 Inadimplência (${inadimp.length})</h3>
+        <span style="font-weight:800;color:#991b1b;font-size:1rem">${fmtBRL(totalInad)}</span>
+      </div>
+      ${inadimp.slice(0,4).map(l=>`<div class="ritem" style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="ritem-name">${l.desc||'—'}</div>
+          <div class="ritem-sub">Venc. ${fmtD(l.venc)} · ${Math.abs(diffD(l.venc))}d em atraso</div>
+        </div>
+        <span style="font-weight:700;color:#991b1b">${fmtBRL(l.valor||0)}</span>
+      </div>`).join('')}
+      ${inadimp.length>4?`<div style="font-size:0.72rem;color:#991b1b;text-align:center;margin-top:6px">+ ${inadimp.length-4} outros → Ver no Financeiro</div>`
+      :`<div style="font-size:0.72rem;color:#991b1b;text-align:center;margin-top:6px">Ver no Financeiro →</div>`}
+    </div>`:''
+    }
     ${rhAlertsDash.length?`
     <div class="dash-card" style="border-color:#fee2e2">
       <h3 style="color:var(--red)">⚠️ Alertas RH (${getRHAlerts().length})</h3>
@@ -4331,7 +4356,85 @@ function getRHAlerts(){
 // ══════════════════════════════════════════════════════
 // ── FINANCEIRO ──
 // ══════════════════════════════════════════════════════
-let finTab = 'todos', finSt = 'todos';
+let finTab = 'todos', finSt = 'todos', finProjecaoAberta = false;
+
+function toggleProjecaoCaixa(){
+  finProjecaoAberta=!finProjecaoAberta;
+  renderFin();
+  // Scroll para a projeção
+  if(finProjecaoAberta) document.getElementById('finAlerts')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderProjecaoCaixa(){
+  const btn=`<div style="text-align:right;margin-bottom:4px">
+    <button onclick="toggleProjecaoCaixa()" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:5px 12px;font-size:0.75rem;cursor:pointer;color:var(--dark)">
+      ${finProjecaoAberta?'▲ Fechar':'📊 Ver Projeção de Caixa'}
+    </button>
+  </div>`;
+  if(!finProjecaoAberta) return btn;
+
+  const lan=Object.values(lancamentos).filter(l=>l.aprovStatus!=='pendente');
+  const hoje=new Date(); hoje.setHours(0,0,0,0);
+  const ymAtual=hoje.toISOString().slice(0,7);
+
+  // Gera 3 meses atrás + atual + 5 à frente
+  const meses=[];
+  for(let i=-3;i<=5;i++){
+    const d=new Date(hoje.getFullYear(),hoje.getMonth()+i,1);
+    meses.push(d.toISOString().slice(0,7));
+  }
+
+  let acum=0;
+  // Calcula saldo acumulado até início da janela (meses anteriores aos -3)
+  const antes=lan.filter(l=>{const ym=(l.venc||l.data||'').slice(0,7); return ym && ym<meses[0] && l.status==='pago';});
+  acum=antes.filter(l=>l.tipo==='receita').reduce((s,l)=>s+(l.valor||0),0)
+      -antes.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+(l.valor||0),0);
+
+  const rows=meses.map(ym=>{
+    const isPast=ym<ymAtual;
+    const isAtual=ym===ymAtual;
+    const lanMes=lan.filter(l=>(l.venc||l.data||'').slice(0,7)===ym);
+    const recMes=isPast?lanMes.filter(l=>l.tipo==='receita'&&l.status==='pago'):lanMes.filter(l=>l.tipo==='receita');
+    const desMes=isPast?lanMes.filter(l=>l.tipo==='despesa'&&l.status==='pago'):lanMes.filter(l=>l.tipo==='despesa');
+    const entradas=recMes.reduce((s,l)=>s+(l.valor||0),0);
+    const saidas=desMes.reduce((s,l)=>s+(l.valor||0),0);
+    const resultado=entradas-saidas;
+    acum+=resultado;
+    const [y,m]=ym.split('-');
+    const nomeMes=new Date(+y,+m-1,1).toLocaleString('pt-BR',{month:'short',year:'2-digit'});
+    const bg=isAtual?'background:#eff6ff':'';
+    const fw=isAtual?'font-weight:700':'';
+    return`<tr style="${bg}${isAtual?';border-left:3px solid var(--blue)':''}">
+      <td style="padding:5px 8px;font-size:0.75rem;${fw};white-space:nowrap">${isAtual?'▶ ':isPast?'':'◦ '}${nomeMes}</td>
+      <td style="padding:5px 8px;font-size:0.75rem;color:var(--green);text-align:right;${fw}">${entradas?fmtBRL(entradas):'—'}</td>
+      <td style="padding:5px 8px;font-size:0.75rem;color:var(--red);text-align:right;${fw}">${saidas?fmtBRL(saidas):'—'}</td>
+      <td style="padding:5px 8px;font-size:0.75rem;text-align:right;font-weight:700;color:${resultado>=0?'var(--green)':'var(--red)'}">${fmtBRL(resultado)}</td>
+      <td style="padding:5px 8px;font-size:0.75rem;text-align:right;font-weight:700;color:${acum>=0?'var(--dark)':'var(--red)'}">${fmtBRL(acum)}</td>
+    </tr>`;
+  }).join('');
+
+  return btn+`
+    <div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px">
+      <div style="background:#f8f9fa;padding:8px 12px;font-weight:700;font-size:0.8rem;display:flex;justify-content:space-between;align-items:center">
+        <span>📊 Projeção de Caixa</span>
+        <span style="font-size:0.65rem;color:var(--sub);font-weight:400">passado = realizado · futuro = projetado</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#f1f5f9">
+              <th style="padding:5px 8px;font-size:0.68rem;text-align:left;color:var(--sub)">Mês</th>
+              <th style="padding:5px 8px;font-size:0.68rem;text-align:right;color:var(--sub)">Entradas</th>
+              <th style="padding:5px 8px;font-size:0.68rem;text-align:right;color:var(--sub)">Saídas</th>
+              <th style="padding:5px 8px;font-size:0.68rem;text-align:right;color:var(--sub)">Resultado</th>
+              <th style="padding:5px 8px;font-size:0.68rem;text-align:right;color:var(--sub)">Acumulado</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
 
 function finSetTab(t){
   finTab = t;
@@ -4391,6 +4494,35 @@ function renderFin(){
     <div class="kpi"><div class="kpi-lbl">Saldo Realizado</div><div class="kpi-val" style="color:${saldo>=0?'var(--green)':'var(--red)'}">${fmtBRL(saldo)}</div><div class="kpi-sub">recebido − pago</div></div>
     <div class="kpi"><div class="kpi-lbl">Saldo Projetado</div><div class="kpi-val" style="color:${(recPend-desPend)>=0?'var(--green)':'var(--amber)'}">${fmtBRL(recPend-desPend)}</div><div class="kpi-sub">a receber − a pagar</div></div>
   `;
+
+  // ── Inadimplência + Projeção de Caixa ──
+  const alertsEl=document.getElementById('finAlerts');
+  if(alertsEl){
+    const hoje0s=new Date().toISOString().slice(0,10);
+    const inadimp=Object.values(lancamentos).filter(l=>l.aprovStatus!=='pendente'&&l.tipo==='receita'&&l.status!=='pago'&&l.venc&&l.venc<hoje0s)
+      .sort((a,b)=>(a.venc||'').localeCompare(b.venc||''));
+    const totalInad=inadimp.reduce((s,l)=>s+(l.valor||0),0);
+    const inadHtml=inadimp.length?`
+      <div style="background:#fff5f5;border:1.5px solid #fca5a5;border-radius:10px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-weight:700;color:#991b1b;font-size:0.88rem">🚨 Inadimplência — ${inadimp.length} recebimento${inadimp.length>1?'s':''} vencido${inadimp.length>1?'s':''}</span>
+          <span style="font-weight:800;color:#991b1b;font-size:0.95rem">${fmtBRL(totalInad)}</span>
+        </div>
+        ${inadimp.slice(0,5).map(l=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;padding:4px 0;border-bottom:1px solid #fee2e2">
+            <div>
+              <span style="font-weight:600">${l.desc||'—'}</span>
+              <span style="color:#991b1b;margin-left:6px">${diffD(l.venc)<0?Math.abs(diffD(l.venc))+'d atraso':''}</span>
+            </div>
+            <span style="font-weight:700;color:#991b1b">${fmtBRL(l.valor||0)}</span>
+          </div>`).join('')}
+        ${inadimp.length>5?`<div style="font-size:0.7rem;color:#991b1b;margin-top:4px;text-align:center">+ ${inadimp.length-5} outros</div>`:''}
+      </div>`:''
+    ;
+    // Projeção de Caixa (tabela mês a mês)
+    const projHtml=renderProjecaoCaixa();
+    alertsEl.innerHTML=inadHtml+projHtml;
+  }
 
   // List: apply filters
   let items=[...all];
