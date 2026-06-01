@@ -964,6 +964,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="cp-sg" id="cpSeg"></div>
     </div>
     <button id="btnEditCliente" class="btn btn-red" onclick="editCurrentClient()" style="font-size:0.71rem;padding:5px 10px">Editar</button>
+    <button id="btnDelCliente" class="btn btn-ghost" onclick="delCliente(curCID)" style="font-size:0.71rem;padding:5px 10px;background:#fee2e2;color:#991b1b;border-color:#fca5a5;display:none">🗑️</button>
   </div>
   <div class="cp-body">
     <div class="infogrid" id="cpInfo"></div>
@@ -3024,12 +3025,34 @@ function openPanel(cid){
   document.getElementById('clientPanel').classList.add('v');
 }
 function closePanel(){ document.getElementById('clientPanel').classList.remove('v'); curCID=null; }
+
+async function delCliente(cid){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir clientes.');return;}
+  const c=clientes[cid]; if(!c) return;
+  const interCount=Object.values(interacoes).filter(i=>i.clienteId===cid).length;
+  const propCount=Object.values(propostas).filter(p=>p.clienteId===cid).length;
+  const lancCount=Object.values(lancamentos).filter(l=>l.clienteId===cid).length;
+  let msg=`⚠️ Excluir "${c.nome}" permanentemente?\n\nEsta ação não pode ser desfeita.`;
+  if(interCount||propCount||lancCount){
+    msg+='\n\nRegistros vinculados que serão mantidos:';
+    if(interCount) msg+=`\n• ${interCount} interação(ões) no CRM`;
+    if(propCount) msg+=`\n• ${propCount} proposta(s)`;
+    if(lancCount) msg+=`\n• ${lancCount} lançamento(s) no Financeiro`;
+  }
+  if(!confirm(msg)) return;
+  await db.ref('erp/clientes/'+cid).remove();
+  logAudit('CRM','excluir',`Excluiu cliente: ${c.nome}`,cid);
+  closePanel();
+  toast('Cliente excluído.');
+}
 function editCurrentClient(){ if(curCID) openClientModal(curCID); }
 
 function renderPanel(cid){
   const c=clientes[cid]; if(!c) return;
   document.getElementById('cpName').textContent=c.nome;
   document.getElementById('cpSeg').textContent=[(c.segmento||''),(c.cidade||''),(c.prioridade||'')].filter(Boolean).join(' · ');
+  const delBtn=document.getElementById('btnDelCliente');
+  if(delBtn) delBtn.style.display=curUser?.isSuper?'':'none';
   document.getElementById('cpInfo').innerHTML=`
     <div class="iitem"><label>CNPJ</label><span>${c.cnpj||'—'}</span></div>
     <div class="iitem"><label>Responsável</label><span>${c.responsavelNome||'—'}</span></div>
