@@ -558,6 +558,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <button class="fin-tab"        id="finTab-receita"  onclick="finSetTab('receita')">📈 Receitas</button>
           <button class="fin-tab"        id="finTab-despesa"  onclick="finSetTab('despesa')">📉 Despesas</button>
           <button class="fin-tab"        id="finTab-inadimp"  onclick="finSetTab('inadimp')">🚨 Inadimplência</button>
+          <button class="fin-tab"        id="finTab-dre"      onclick="finSetTab('dre')">📊 DRE</button>
+          <button class="fin-tab"        id="finTab-contratos" onclick="finSetTab('contratos')">🔄 Contratos</button>
         </div>
 
         <!-- Filters row -->
@@ -591,8 +593,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="sec" id="secProj">
         <div class="pgh">
           <div class="pg-title">📋 Projetos / OS</div>
+          <button class="btn btn-ghost" style="font-size:0.76rem" onclick="toggleRentabilidade()">📊 Rentabilidade</button>
           <button class="btn btn-red" onclick="openProjModal()">+ Nova OS</button>
         </div>
+        <div id="rentabilidadePanel" style="display:none;margin-bottom:16px"></div>
         <div class="filters">
           <input class="search" id="projSearch" placeholder="Buscar OS ou cliente..." oninput="renderProj()"/>
           <div class="ftabs" id="projStatusTabs"></div>
@@ -929,6 +933,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <button class="qa qa-w" id="qaWA">💬 WhatsApp</button>
       <button class="qa qa-e" id="qaEmail">📧 E-mail</button>
     </div>
+    <div class="s-title">💰 Histórico Financeiro</div>
+    <div id="cpFin" style="margin-bottom:12px"></div>
     <div class="s-title">Histórico de Interações</div>
     <div class="inter-list" id="cpInter"></div>
     <div class="add-inter">
@@ -1945,6 +1951,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
 </div>
 
+<!-- ═══ MODAL: CONTRATO RECORRENTE ═══ -->
+<div class="ovl" id="ovlContrato" onclick="if(event.target===this)closeOvl('ovlContrato')">
+  <div class="modal" style="max-width:480px">
+    <div class="mhead">
+      <div class="mtitle" id="contratoModalTitle">Novo Contrato Recorrente</div>
+      <button class="mclose" onclick="closeOvl('ovlContrato')">✕</button>
+    </div>
+    <input type="hidden" id="editContratoId"/>
+    <div class="fg"><label>Descrição *</label><input type="text" id="ctrDesc" placeholder="Ex: Manutenção Mensal — Cliente X"/></div>
+    <div class="f2">
+      <div class="fg"><label>Tipo</label>
+        <select id="ctrTipo">
+          <option value="receita">📈 Receita</option>
+          <option value="despesa">📉 Despesa</option>
+        </select>
+      </div>
+      <div class="fg"><label>Valor (R$) *</label><input type="number" id="ctrValor" placeholder="0,00" min="0" step="0.01"/></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Categoria</label><input type="text" id="ctrCat" list="lancCatData" placeholder="Ex: Contratos"/></div>
+      <div class="fg"><label>Dia de vencimento</label><input type="number" id="ctrDia" placeholder="Ex: 5" min="1" max="31"/></div>
+    </div>
+    <div class="fg"><label>Cliente (opcional)</label><select id="ctrCliente"><option value="">— Nenhum —</option></select></div>
+    <div class="fg"><label>Observações</label><input type="text" id="ctrObs" placeholder="Contrato nº, detalhes..."/></div>
+    <div class="mact">
+      <button class="btn btn-ghost" id="delContratoBtn" onclick="delContrato()" style="display:none;color:#e53935;border-color:#e53935">🗑️ Excluir</button>
+      <button class="btn btn-ghost" onclick="closeOvl('ovlContrato')">Cancelar</button>
+      <button class="btn btn-red" onclick="saveContrato()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ MODAL: CONFIGURAÇÃO FOCUS NFe ═══ -->
 <div class="ovl" id="ovlNFConfig" onclick="if(event.target===this)closeOvl('ovlNFConfig')">
   <div class="modal" style="max-width:520px">
@@ -2157,7 +2195,7 @@ let lancamentos = {};
 let folhas = {};
 let auditoria = {};
 let notas = {}, nfConfig = {};
-let candidatos = {}, ausencias = {}, fechamentos = {}, empresaDocs = {}, pontoReg = {};
+let candidatos = {}, ausencias = {}, fechamentos = {}, empresaDocs = {}, pontoReg = {}, contratos = {}, orcamentos = {};
 let sysConfig = {};
 let nfFilter = 'all';
 let selUID = null, pinBuf = '', curCID = null, crmFilter = 'all';
@@ -2543,6 +2581,9 @@ function startListeners(){
   db.ref('erp/ausencias').on('value', snap=>{ ausencias=snap.val()||{}; renderAusencias(); });
   db.ref('erp/fechamentos').on('value', snap=>{ fechamentos=snap.val()||{}; renderFechamentos(); });
   db.ref('erp/empresa_docs').on('value', snap=>{ empresaDocs=snap.val()||{}; renderEmpresaDocs(); renderRHAlerts(); updateRHBadge(); renderDash(); });
+  db.ref('erp/contratos').on('value', snap=>{ contratos=snap.val()||{}; if(finTab==='contratos') renderContratos(); });
+  db.ref('erp/orcamentos').on('value', snap=>{ orcamentos=snap.val()||{}; });
+  verificarContratos();
   db.ref('erp/ponto').on('value', snap=>{ pontoReg=snap.val()||{}; renderPonto(); });
   // Load ControlID config
   db.ref('erp/cidconfig').once('value', snap=>{ const c=snap.val()||{}; if(c.email)document.getElementById('cidEmail').value=c.email; if(c.url)document.getElementById('cidUrl').value=c.url; });
@@ -2719,7 +2760,8 @@ function renderDash(){
           <div class="ritem-sub">${i.tipo} · ${i.usuarioNome||'—'} · ${fmtD(ds)}</div>
           <div style="font-size:0.76rem;color:var(--txt);margin-top:2px">${(i.descricao||'').slice(0,70)}${(i.descricao||'').length>70?'…':''}</div>
         </div>`;}).join(''):`<div style="color:var(--sub);font-size:0.81rem;padding:8px 0">Nenhuma interação ainda.</div>`}
-    </div>`;
+    </div>
+    ${renderComparativoMensal()}`;
 }
 
 function renderCashFlow(lanArr){
@@ -2897,6 +2939,27 @@ function renderPanel(cid){
 
   document.getElementById('iDesc').value='';
   document.getElementById('iNext').value='';
+
+  // Histórico financeiro do cliente
+  const cliLan=Object.values(lancamentos).filter(l=>l.clienteId===cid&&l.aprovStatus!=='pendente').sort((a,b)=>b.criadoEm-a.criadoEm);
+  const totalFat=cliLan.filter(l=>l.tipo==='receita').reduce((s,l)=>s+(l.valor||0),0);
+  const totalPg=cliLan.filter(l=>l.tipo==='receita'&&l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
+  const emAberto=cliLan.filter(l=>l.tipo==='receita'&&l.status!=='pago').reduce((s,l)=>s+(l.valor||0),0);
+  const cliFinEl=document.getElementById('cpFin');
+  if(cliFinEl){
+    if(!cliLan.length){cliFinEl.innerHTML='<div style="font-size:0.75rem;color:var(--sub);padding:4px 0">Nenhum lançamento vinculado a este cliente.</div>';return;}
+    cliFinEl.innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+        <div style="background:#f0fdf4;border-radius:8px;padding:8px;text-align:center"><div style="font-size:0.6rem;color:var(--sub);font-weight:700">FATURADO</div><div style="font-size:0.85rem;font-weight:800;color:var(--green)">${fmtBRL(totalFat)}</div></div>
+        <div style="background:#dcfce7;border-radius:8px;padding:8px;text-align:center"><div style="font-size:0.6rem;color:var(--sub);font-weight:700">RECEBIDO</div><div style="font-size:0.85rem;font-weight:800;color:var(--green)">${fmtBRL(totalPg)}</div></div>
+        <div style="background:${emAberto?'#fff5f5':'#f8f9fa'};border-radius:8px;padding:8px;text-align:center"><div style="font-size:0.6rem;color:var(--sub);font-weight:700">EM ABERTO</div><div style="font-size:0.85rem;font-weight:800;color:${emAberto?'var(--red)':'var(--sub)'}">${fmtBRL(emAberto)}</div></div>
+      </div>
+      ${cliLan.slice(0,6).map(l=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f0f0f0;font-size:0.72rem">
+        <div><span style="color:var(--dark);font-weight:600">${l.desc||'—'}</span><span style="font-size:0.65rem;color:var(--sub);margin-left:4px">${fmtD(l.data)}</span></div>
+        <div style="text-align:right"><span style="font-weight:700;color:${l.tipo==='receita'?'var(--green)':'var(--red)'}">${l.tipo==='receita'?'+':'-'}${fmtBRL(l.valor||0)}</span><span style="margin-left:6px;font-size:0.62rem;padding:1px 5px;border-radius:4px;background:${l.status==='pago'?'#dcfce7':'#fef3c7'};color:${l.status==='pago'?'#166534':'#92400e'}">${l.status==='pago'?'pago':'pendente'}</span></div>
+      </div>`).join('')}
+      ${cliLan.length>6?`<div style="font-size:0.7rem;color:var(--blue);text-align:center;margin-top:6px;cursor:pointer" onclick="navTo('fin')">Ver todos (${cliLan.length}) →</div>`:''}`;
+  }
 }
 
 async function setStage(cid,s){
@@ -4575,11 +4638,14 @@ function renderProjecaoCaixa(){
 
 function finSetTab(t){
   finTab = t;
-  ['todos','receita','despesa','inadimp'].forEach(x=>{
+  ['todos','receita','despesa','inadimp','dre','contratos'].forEach(x=>{
     document.getElementById('finTab-'+x)?.classList.toggle('active', x===t);
   });
+  const noFilters=['inadimp','dre','contratos'];
   const filtersRow=document.getElementById('finFiltersRow');
-  if(filtersRow) filtersRow.style.display = t==='inadimp'?'none':'';
+  if(filtersRow) filtersRow.style.display=noFilters.includes(t)?'none':'';
+  const addBtn=document.querySelector('#secFin .btn-red');
+  if(addBtn) addBtn.style.display=t==='contratos'?'none':'';
   renderFin();
 }
 function finSetSt(s){
@@ -4666,9 +4732,12 @@ function renderInadimplencia(){
               Venc. ${fmtD(l.venc)} · <span style="color:${b.txt};font-weight:700">${l.diasAtraso} dias em atraso</span>${cliNome?` · 👤 ${cliNome}`:''}
             </div>
           </div>
-          <div style="text-align:right;flex-shrink:0">
+          <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
             <div style="font-size:0.92rem;font-weight:800;color:#991b1b">${fmtBRL(l.valor||0)}</div>
-            <button onclick="openLancModal('${l.id}')" style="font-size:0.65rem;color:var(--blue);cursor:pointer;background:none;border:none;padding:2px 0;text-decoration:underline;font-family:inherit">Editar →</button>
+            <div style="display:flex;gap:6px">
+              ${(()=>{const c=clientes[l.clienteId];const tel=(c?.telefone||c?.contatos&&Object.values(c.contatos)[0]?.tel||'').replace(/\D/g,'');const msg=encodeURIComponent(`Olá! Identificamos um pagamento de ${fmtBRL(l.valor||0)} referente a "${l.desc||'serviço'}" com vencimento em ${fmtD(l.venc)}, já com ${l.diasAtraso} dia${l.diasAtraso>1?'s':''} em atraso. Poderia nos confirmar a previsão de pagamento? Obrigado!`);return tel?`<a href="https://wa.me/55${tel}?text=${msg}" target="_blank" style="font-size:0.65rem;color:#25d366;text-decoration:none;font-weight:700">💬 Cobrar</a>`:'';})()}
+              <button onclick="openLancModal('${l.id}')" style="font-size:0.65rem;color:var(--blue);cursor:pointer;background:none;border:none;padding:0;text-decoration:underline;font-family:inherit">Editar →</button>
+            </div>
           </div>
         </div>`;
       }).join('')}
@@ -4686,6 +4755,8 @@ function renderFin(){
   if(!kpiEl||!listEl) return;
 
   if(finTab==='inadimp'){ renderInadimplencia(); return; }
+  if(finTab==='dre'){ renderDRE(); return; }
+  if(finTab==='contratos'){ renderContratos(); return; }
 
   const mesInput=document.getElementById('finMesInput');
   // Pré-seleciona mês atual na primeira abertura
@@ -6268,6 +6339,306 @@ async function saveEmpDoc(){
     if(prog) prog.textContent='';
     alert('Erro ao salvar documento: '+e.message+'\n\nVerifique sua conexão ou permissões no sistema.');
   }
+}
+
+// ══════════════════════════════════════════════
+// DRE — Demonstrativo de Resultado
+// ══════════════════════════════════════════════
+function renderDRE(){
+  const listEl=document.getElementById('finList');
+  const kpiEl=document.getElementById('finKpis');
+  if(!listEl||!kpiEl) return;
+  const anoAtual=new Date().getFullYear();
+  const yearSel=document.getElementById('dreAno')?.value||anoAtual.toString();
+  const lan=Object.values(lancamentos).filter(l=>l.status==='pago'&&l.aprovStatus!=='pendente'&&(l.data||'').startsWith(yearSel));
+  const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const ymAtual=localYM();
+  const monthKeys=months.map((_,i)=>yearSel+'-'+String(i+1).padStart(2,'0')).filter(ym=>ym<=ymAtual);
+  const catOf=(l,fallback)=>l.cat||l.categoria||fallback;
+  const recCats=[...new Set(lan.filter(l=>l.tipo==='receita').map(l=>catOf(l,'Outras Receitas')))].sort();
+  const desCats=[...new Set(lan.filter(l=>l.tipo==='despesa').map(l=>catOf(l,'Outras Despesas')))].sort();
+  const sumLan=(tipo,cat,ym)=>lan.filter(l=>l.tipo===tipo&&catOf(l,tipo==='receita'?'Outras Receitas':'Outras Despesas')===cat&&(l.data||'').startsWith(ym)).reduce((s,l)=>s+(l.valor||0),0);
+  const sumTipo=(tipo,ym)=>lan.filter(l=>l.tipo===tipo&&(l.data||'').startsWith(ym)).reduce((s,l)=>s+(l.valor||0),0);
+  const totalRec=lan.filter(l=>l.tipo==='receita').reduce((s,l)=>s+(l.valor||0),0);
+  const totalDes=lan.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+(l.valor||0),0);
+  const resultado=totalRec-totalDes;
+  const margem=totalRec>0?(resultado/totalRec*100):0;
+  kpiEl.innerHTML=`
+    <div class="kpi"><div class="kpi-lbl">Receita ${yearSel}</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(totalRec)}</div><div class="kpi-sub">realizado</div></div>
+    <div class="kpi"><div class="kpi-lbl">Despesa ${yearSel}</div><div class="kpi-val" style="color:var(--red)">${fmtBRL(totalDes)}</div><div class="kpi-sub">realizado</div></div>
+    <div class="kpi"><div class="kpi-lbl">Resultado ${yearSel}</div><div class="kpi-val" style="color:${resultado>=0?'var(--green)':'var(--red)'}">${fmtBRL(resultado)}</div><div class="kpi-sub">${resultado>=0?'lucro':'prejuízo'}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Margem ${yearSel}</div><div class="kpi-val" style="color:${margem>=20?'var(--green)':margem>=0?'var(--amber)':'var(--red)'}">${margem.toFixed(1)}%</div><div class="kpi-sub">sobre receita</div></div>`;
+  const th='font-size:0.6rem;font-weight:700;color:var(--sub);padding:5px 6px;text-align:right;white-space:nowrap';
+  const td='font-size:0.7rem;padding:4px 6px;text-align:right;white-space:nowrap';
+  const mkRow=(label,vals,total,color,bold)=>`<tr style="border-bottom:1px solid #f0f0f0">
+    <td style="font-size:0.7rem;padding:4px 8px;color:var(--dark)${bold?';font-weight:800':''}">${label}</td>
+    ${vals.map(v=>`<td style="${td};color:${v>0?color:'#ccc'}">${v>0?fmtBRL(v):'—'}</td>`).join('')}
+    <td style="${td};font-weight:700;color:${color}">${fmtBRL(total)}</td>
+  </tr>`;
+  const anos=[anoAtual-1,anoAtual,anoAtual+1].map(y=>`<option${y.toString()===yearSel?' selected':''}>${y}</option>`).join('');
+  listEl.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <strong style="font-size:0.83rem">DRE — Demonstrativo de Resultado</strong>
+      <select id="dreAno" onchange="renderDRE()" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:inherit">${anos}</select>
+    </div>
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-family:inherit">
+      <thead><tr style="background:#f8f9fa;border-bottom:2px solid var(--border)">
+        <th style="${th};text-align:left;min-width:150px">Categoria</th>
+        ${monthKeys.map((_,i)=>`<th style="${th}">${months[i]}</th>`).join('')}
+        <th style="${th};color:var(--dark)">Total</th>
+      </tr></thead>
+      <tbody>
+        <tr><td colspan="${monthKeys.length+2}" style="padding:5px 8px;font-size:0.62rem;font-weight:800;color:var(--green);background:#f0fdf4;text-transform:uppercase;letter-spacing:.5px">📈 RECEITAS</td></tr>
+        ${recCats.map(cat=>{const vals=monthKeys.map(ym=>sumLan('receita',cat,ym));const tot=vals.reduce((s,v)=>s+v,0);return tot?mkRow(cat,vals,tot,'var(--green)'):''}).join('')}
+        <tr style="background:#dcfce7;border-top:1px solid #86efac"><td style="font-size:0.7rem;padding:5px 8px;font-weight:800;color:var(--green)">▶ TOTAL RECEITAS</td>${monthKeys.map(ym=>`<td style="${td};font-weight:700;color:var(--green)">${fmtBRL(sumTipo('receita',ym))}</td>`).join('')}<td style="${td};font-weight:800;color:var(--green)">${fmtBRL(totalRec)}</td></tr>
+        <tr><td colspan="${monthKeys.length+2}" style="padding:5px 8px;font-size:0.62rem;font-weight:800;color:var(--red);background:#fff5f5;text-transform:uppercase;letter-spacing:.5px">📉 DESPESAS</td></tr>
+        ${desCats.map(cat=>{const vals=monthKeys.map(ym=>sumLan('despesa',cat,ym));const tot=vals.reduce((s,v)=>s+v,0);return tot?mkRow(cat,vals,tot,'var(--red)'):''}).join('')}
+        <tr style="background:#fee2e2;border-top:1px solid #fca5a5"><td style="font-size:0.7rem;padding:5px 8px;font-weight:800;color:var(--red)">▶ TOTAL DESPESAS</td>${monthKeys.map(ym=>`<td style="${td};font-weight:700;color:var(--red)">${fmtBRL(sumTipo('despesa',ym))}</td>`).join('')}<td style="${td};font-weight:800;color:var(--red)">${fmtBRL(totalDes)}</td></tr>
+        <tr style="background:#f0fdf4;border-top:2px solid var(--border)"><td style="font-size:0.75rem;padding:7px 8px;font-weight:900;color:var(--dark)">💰 RESULTADO</td>${monthKeys.map(ym=>{const r=sumTipo('receita',ym)-sumTipo('despesa',ym);return`<td style="${td};font-weight:800;color:${r>=0?'var(--green)':'var(--red)'}">${fmtBRL(r)}</td>`;}).join('')}<td style="${td};font-weight:900;color:${resultado>=0?'var(--green)':'var(--red)'}">${fmtBRL(resultado)}</td></tr>
+        <tr style="background:#fafafa"><td style="font-size:0.7rem;padding:4px 8px;color:var(--sub)">Margem %</td>${monthKeys.map(ym=>{const r=sumTipo('receita',ym);const d=sumTipo('despesa',ym);const m=r>0?((r-d)/r*100):null;return`<td style="${td};color:${m===null?'#ccc':m>=0?'var(--green)':'var(--red)'}">${m===null?'—':m.toFixed(1)+'%'}</td>`;}).join('')}<td style="${td};color:${margem>=0?'var(--green)':'var(--red)'}">${margem.toFixed(1)}%</td></tr>
+      </tbody>
+    </table></div>`;
+}
+
+// ══════════════════════════════════════════════
+// CONTRATOS RECORRENTES
+// ══════════════════════════════════════════════
+function renderContratos(){
+  const listEl=document.getElementById('finList');
+  const kpiEl=document.getElementById('finKpis');
+  if(!listEl) return;
+  const arr=Object.values(contratos).sort((a,b)=>(a.desc||'').localeCompare(b.desc||''));
+  const totalAtivo=arr.filter(c=>c.ativo).reduce((s,c)=>s+(c.valor||0),0);
+  const recArr=arr.filter(c=>c.ativo&&c.tipo==='receita');
+  const desArr=arr.filter(c=>c.ativo&&c.tipo==='despesa');
+  kpiEl.innerHTML=`
+    <div class="kpi"><div class="kpi-lbl">Contratos Ativos</div><div class="kpi-val">${arr.filter(c=>c.ativo).length}</div><div class="kpi-sub">${arr.length} total</div></div>
+    <div class="kpi"><div class="kpi-lbl">Receita Recorrente</div><div class="kpi-val" style="color:var(--green)">${fmtBRL(recArr.reduce((s,c)=>s+(c.valor||0),0))}</div><div class="kpi-sub">por mês</div></div>
+    <div class="kpi"><div class="kpi-lbl">Despesa Recorrente</div><div class="kpi-val" style="color:var(--red)">${fmtBRL(desArr.reduce((s,c)=>s+(c.valor||0),0))}</div><div class="kpi-sub">por mês</div></div>
+    <div class="kpi"><div class="kpi-lbl">Saldo Recorrente</div><div class="kpi-val" style="color:${totalAtivo>=0?'var(--green)':'var(--red)'}">${fmtBRL(recArr.reduce((s,c)=>s+(c.valor||0),0)-desArr.reduce((s,c)=>s+(c.valor||0),0))}</div><div class="kpi-sub">mensal líquido</div></div>`;
+  if(!arr.length){
+    listEl.innerHTML=`<div style="text-align:center;padding:50px;color:var(--sub)">
+      <div style="font-size:2rem;margin-bottom:8px">🔄</div>
+      Nenhum contrato recorrente cadastrado.<br>
+      <button class="btn btn-red" onclick="openContratoModal()" style="margin-top:12px">+ Novo Contrato</button>
+    </div>`;
+    return;
+  }
+  listEl.innerHTML=`
+    <div style="text-align:right;margin-bottom:10px"><button class="btn btn-red" style="font-size:0.76rem" onclick="openContratoModal()">+ Novo Contrato</button></div>
+    ${arr.map(c=>{
+      const cli=clientes[c.clienteId];
+      const isRec=c.tipo==='receita';
+      return`<div style="background:#fff;border:1px solid var(--border);border-left:4px solid ${c.ativo?(isRec?'var(--green)':'var(--red)'):'#ccc'};border-radius:8px;padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.84rem;font-weight:700;color:${c.ativo?'var(--dark)':'#999'}">${c.desc||'—'} ${c.ativo?'':' <span style="font-size:0.65rem;color:#999">(inativo)</span>'}</div>
+          <div style="font-size:0.7rem;color:var(--sub);margin-top:2px">
+            ${isRec?'📈 Receita':'📉 Despesa'} · ${c.cat||'—'} · Dia ${c.dia||'—'}${cli?' · 👤 '+cli.nome:''}
+            ${c.ultimoGerado?' · último: '+fmtMesRef(c.ultimoGerado):''}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:0.95rem;font-weight:800;color:${isRec?'var(--green)':'var(--red)'}">${fmtBRL(c.valor||0)}</div>
+          <div style="display:flex;gap:6px;margin-top:4px;justify-content:flex-end">
+            <button onclick="toggleContrato('${c.id}')" style="font-size:0.65rem;padding:2px 8px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:${c.ativo?'#fee2e2':'#dcfce7'};color:${c.ativo?'#991b1b':'#166534'};font-family:inherit">${c.ativo?'Pausar':'Ativar'}</button>
+            <button onclick="gerarContratoAgora('${c.id}')" style="font-size:0.65rem;padding:2px 8px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:#dbeafe;color:#1e40af;font-family:inherit" title="Gerar lançamento agora">⚡ Gerar</button>
+            <button onclick="openContratoModal('${c.id}')" style="font-size:0.65rem;color:var(--blue);cursor:pointer;background:none;border:none;padding:0;text-decoration:underline;font-family:inherit">Editar</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+function openContratoModal(cid){
+  const c=cid?contratos[cid]:null;
+  document.getElementById('editContratoId').value=cid||'';
+  document.getElementById('contratoModalTitle').textContent=cid?'Editar Contrato':'Novo Contrato Recorrente';
+  document.getElementById('delContratoBtn').style.display=cid?'':'none';
+  if(c){
+    document.getElementById('ctrDesc').value=c.desc||'';
+    document.getElementById('ctrTipo').value=c.tipo||'receita';
+    document.getElementById('ctrValor').value=c.valor||'';
+    document.getElementById('ctrCat').value=c.cat||'';
+    document.getElementById('ctrDia').value=c.dia||'';
+    document.getElementById('ctrObs').value=c.obs||'';
+    document.getElementById('ctrCliente').value=c.clienteId||'';
+  } else {
+    ['ctrDesc','ctrValor','ctrCat','ctrDia','ctrObs'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('ctrTipo').value='receita';
+    document.getElementById('ctrCliente').value='';
+  }
+  // Preenche clientes
+  const sel=document.getElementById('ctrCliente');
+  sel.innerHTML='<option value="">— Nenhum —</option>'+Object.values(clientes).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(cl=>`<option value="${cl.id}"${c?.clienteId===cl.id?' selected':''}>${cl.nome}</option>`).join('');
+  document.getElementById('ovlContrato').classList.add('v');
+}
+async function saveContrato(){
+  const desc=document.getElementById('ctrDesc').value.trim();
+  const valor=parseFloat(document.getElementById('ctrValor').value||0);
+  if(!desc||!valor){alert('Preencha descrição e valor.');return;}
+  const cid=document.getElementById('editContratoId').value||genId();
+  const isNew=!contratos[cid];
+  await db.ref('erp/contratos/'+cid).set({
+    id:cid, desc, tipo:document.getElementById('ctrTipo').value,
+    valor, cat:document.getElementById('ctrCat').value.trim(),
+    dia:parseInt(document.getElementById('ctrDia').value||1),
+    clienteId:document.getElementById('ctrCliente').value||'',
+    obs:document.getElementById('ctrObs').value.trim(),
+    ativo:contratos[cid]?.ativo??true,
+    ultimoGerado:contratos[cid]?.ultimoGerado||'',
+    criadoEm:contratos[cid]?.criadoEm||Date.now()
+  });
+  logAudit('Financeiro',isNew?'criar':'editar',`Contrato: ${desc} — ${fmtBRL(valor)}/mês`,cid);
+  closeOvl('ovlContrato');
+  toast('Contrato salvo!');
+}
+async function toggleContrato(cid){
+  const c=contratos[cid]; if(!c) return;
+  await db.ref('erp/contratos/'+cid+'/ativo').set(!c.ativo);
+  toast(c.ativo?'Contrato pausado.':'Contrato ativado!');
+}
+async function delContrato(){
+  const cid=document.getElementById('editContratoId').value; if(!cid) return;
+  if(!confirm('Excluir este contrato recorrente?')) return;
+  await db.ref('erp/contratos/'+cid).remove();
+  logAudit('Financeiro','excluir',`Contrato excluído: ${contratos[cid]?.desc||cid}`,cid);
+  closeOvl('ovlContrato');
+  toast('Contrato excluído.');
+}
+async function gerarContratoAgora(cid){
+  const c=contratos[cid]; if(!c||!c.ativo) return;
+  const ym=localYM();
+  const [yy,mm]=ym.split('-').map(Number);
+  const mesLabel=new Date(yy,mm-1,1).toLocaleString('pt-BR',{month:'long',year:'numeric'});
+  const dia=Math.min(c.dia||1,new Date(yy,mm,0).getDate());
+  const venc=ym+'-'+String(dia).padStart(2,'0');
+  const lid=genId();
+  await db.ref('erp/lancamentos/'+lid).set({
+    id:lid, tipo:c.tipo, desc:c.desc+' — '+mesLabel,
+    valor:c.valor, data:venc, venc, cat:c.cat||'Contratos',
+    status:'pendente', projeto:'', obs:c.obs||'',
+    clienteId:c.clienteId||'', folhaMes:'', folhaItem:'',
+    aprovStatus:'aprovado', aprovadoPor:curUser?.uid||'',
+    contratoId:cid, criadoEm:Date.now(), uid:curUser?.uid||''
+  });
+  await db.ref('erp/contratos/'+cid+'/ultimoGerado').set(ym);
+  logAudit('Financeiro','criar',`Lançamento de contrato: ${c.desc} — ${fmtBRL(c.valor)}`,lid);
+  toast(`✅ Lançamento criado para ${mesLabel}!`);
+}
+async function verificarContratos(){
+  if(!db) return;
+  const snap=await db.ref('erp/contratos').once('value');
+  const cAll=snap.val()||{};
+  const ym=localYM();
+  const [yy,mm]=ym.split('-').map(Number);
+  const mesLabel=new Date(yy,mm-1,1).toLocaleString('pt-BR',{month:'long',year:'numeric'});
+  for(const c of Object.values(cAll)){
+    if(!c.ativo) continue;
+    if(c.ultimoGerado===ym) continue; // já gerado este mês
+    const dia=Math.min(c.dia||1,new Date(yy,mm,0).getDate());
+    const venc=ym+'-'+String(dia).padStart(2,'0');
+    const lid=genId();
+    await db.ref('erp/lancamentos/'+lid).set({
+      id:lid, tipo:c.tipo, desc:c.desc+' — '+mesLabel,
+      valor:c.valor, data:venc, venc, cat:c.cat||'Contratos',
+      status:'pendente', projeto:'', obs:c.obs||'',
+      clienteId:c.clienteId||'', folhaMes:'', folhaItem:'',
+      aprovStatus:'aprovado', aprovadoPor:'sistema',
+      contratoId:c.id, criadoEm:Date.now(), uid:'sistema'
+    });
+    await db.ref('erp/contratos/'+c.id+'/ultimoGerado').set(ym);
+    console.log('Contrato gerado automaticamente:',c.desc);
+  }
+}
+
+// ══════════════════════════════════════════════
+// RENTABILIDADE POR PROJETO
+// ══════════════════════════════════════════════
+let rentabilidadeAberto=false;
+function toggleRentabilidade(){
+  rentabilidadeAberto=!rentabilidadeAberto;
+  const el=document.getElementById('rentabilidadePanel');
+  if(!el) return;
+  el.style.display=rentabilidadeAberto?'':'none';
+  if(rentabilidadeAberto) renderRentabilidade();
+}
+function renderRentabilidade(){
+  const el=document.getElementById('rentabilidadePanel');
+  if(!el) return;
+  const lan=Object.values(lancamentos).filter(l=>l.status==='pago'&&l.aprovStatus!=='pendente'&&l.projeto);
+  if(!lan.length){el.innerHTML='<div class="scard" style="text-align:center;color:var(--sub);padding:20px">Nenhum lançamento com projeto vinculado e status pago.</div>';return;}
+  const byProj={};
+  lan.forEach(l=>{
+    const p=l.projeto;
+    if(!byProj[p]) byProj[p]={proj:p,rec:0,des:0};
+    if(l.tipo==='receita') byProj[p].rec+=(l.valor||0);
+    else byProj[p].des+=(l.valor||0);
+  });
+  const arr=Object.values(byProj).map(p=>({...p,result:p.rec-p.des,margem:p.rec>0?((p.rec-p.des)/p.rec*100):0})).sort((a,b)=>b.result-a.result);
+  el.innerHTML=`<div class="scard" style="overflow-x:auto">
+    <div style="font-size:0.78rem;font-weight:700;color:var(--dark);margin-bottom:10px">📊 Rentabilidade por Projeto</div>
+    <table style="width:100%;border-collapse:collapse;font-size:0.75rem">
+      <thead><tr style="background:#f8f9fa">
+        <th style="padding:6px 8px;text-align:left;color:var(--sub);font-size:0.62rem">Projeto</th>
+        <th style="padding:6px 8px;text-align:right;color:var(--sub);font-size:0.62rem">Receita</th>
+        <th style="padding:6px 8px;text-align:right;color:var(--sub);font-size:0.62rem">Custo</th>
+        <th style="padding:6px 8px;text-align:right;color:var(--sub);font-size:0.62rem">Resultado</th>
+        <th style="padding:6px 8px;text-align:right;color:var(--sub);font-size:0.62rem">Margem</th>
+      </tr></thead>
+      <tbody>
+      ${arr.map(p=>`<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:7px 8px;font-weight:600;color:var(--dark)">${p.proj}</td>
+        <td style="padding:7px 8px;text-align:right;color:var(--green)">${fmtBRL(p.rec)}</td>
+        <td style="padding:7px 8px;text-align:right;color:var(--red)">${fmtBRL(p.des)}</td>
+        <td style="padding:7px 8px;text-align:right;font-weight:700;color:${p.result>=0?'var(--green)':'var(--red)'}">${fmtBRL(p.result)}</td>
+        <td style="padding:7px 8px;text-align:right;color:${p.margem>=20?'var(--green)':p.margem>=0?'var(--amber)':'var(--red)'}">${p.rec>0?p.margem.toFixed(1)+'%':'—'}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+// COMPARATIVO MENSAL (Dashboard)
+// ══════════════════════════════════════════════
+function renderComparativoMensal(){
+  const lan=Object.values(lancamentos).filter(l=>l.status==='pago'&&l.aprovStatus!=='pendente');
+  const hoje=new Date();
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(hoje.getFullYear(),hoje.getMonth()-i,1);
+    const ym=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    const label=d.toLocaleString('pt-BR',{month:'short'}).replace('.','');
+    const rec=lan.filter(l=>l.tipo==='receita'&&(l.data||'').startsWith(ym)).reduce((s,l)=>s+(l.valor||0),0);
+    const des=lan.filter(l=>l.tipo==='despesa'&&(l.data||'').startsWith(ym)).reduce((s,l)=>s+(l.valor||0),0);
+    months.push({ym,label,rec,des,res:rec-des});
+  }
+  const isCur=(ym)=>ym===localYM();
+  return`<div style="background:var(--card);border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:12px">
+    <div style="font-size:0.72rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📅 Comparativo — Últimos 6 Meses</div>
+    <table style="width:100%;border-collapse:collapse;font-size:0.72rem">
+      <thead><tr>
+        <th style="text-align:left;color:var(--sub);font-size:0.6rem;padding:3px 6px">Mês</th>
+        <th style="text-align:right;color:var(--green);font-size:0.6rem;padding:3px 6px">Receita</th>
+        <th style="text-align:right;color:var(--red);font-size:0.6rem;padding:3px 6px">Despesa</th>
+        <th style="text-align:right;color:var(--dark);font-size:0.6rem;padding:3px 6px">Resultado</th>
+        <th style="text-align:right;color:var(--sub);font-size:0.6rem;padding:3px 6px">Margem</th>
+      </tr></thead>
+      <tbody>
+      ${months.map(m=>{
+        const margem=m.rec>0?((m.res/m.rec)*100):null;
+        const isAtual=isCur(m.ym);
+        return`<tr style="border-bottom:1px solid ${isAtual?'var(--border)':'#f0f0f0'};${isAtual?'background:#f0f9ff':''}">
+          <td style="padding:5px 6px;font-weight:${isAtual?'800':'600'};color:var(--dark)">${m.label}${isAtual?' ←':''}</td>
+          <td style="padding:5px 6px;text-align:right;color:var(--green)">${m.rec?fmtBRL(m.rec):'—'}</td>
+          <td style="padding:5px 6px;text-align:right;color:var(--red)">${m.des?fmtBRL(m.des):'—'}</td>
+          <td style="padding:5px 6px;text-align:right;font-weight:700;color:${m.res>=0?'var(--green)':'var(--red)'}">${(m.rec||m.des)?fmtBRL(m.res):'—'}</td>
+          <td style="padding:5px 6px;text-align:right;color:${margem===null?'#ccc':margem>=20?'var(--green)':margem>=0?'var(--amber)':'var(--red)'}">${margem===null?'—':margem.toFixed(1)+'%'}</td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>
+  </div>`;
 }
 
 // ── System Config ──
