@@ -1263,6 +1263,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <button class="mclose" onclick="closeOvl('ovlProjView')">✕</button>
     </div>
     <div id="pvjBody"></div>
+    <div id="pvjDelBar" style="display:none;padding:10px 0 0;border-top:1px solid var(--border);margin-top:4px">
+      <button id="btnDelProj" class="btn btn-ghost" onclick="delProj(curProjViewId)" style="color:var(--red);border-color:#fca5a5">🗑️ Excluir esta OS</button>
+    </div>
     <div class="orc-section" style="margin-top:12px">
       <h3>+ Nova Atualização</h3>
       <div class="fg"><label>Status</label>
@@ -1312,6 +1315,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
     <div class="fg"><label>Observações</label><textarea id="fObs" placeholder="Condições, prazo de entrega, etc."></textarea></div>
     <div class="mact">
+      <button id="btnDelForn" class="btn btn-ghost" onclick="delForn()" style="display:none;margin-right:auto;color:var(--red);border-color:#fca5a5">🗑️ Excluir</button>
       <button class="btn btn-ghost" onclick="closeOvl('ovlForn')">Cancelar</button>
       <button class="btn btn-red" onclick="saveForn()">Salvar Fornecedor</button>
     </div>
@@ -1421,6 +1425,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
     <div class="fg"><label>Observações</label><textarea id="eObs" placeholder="Especificações, marca, fornecedor preferencial..."></textarea></div>
     <div class="mact">
+      <button id="btnDelEst" class="btn btn-ghost" onclick="delEst()" style="display:none;margin-right:auto;color:var(--red);border-color:#fca5a5">🗑️ Excluir</button>
       <button class="btn btn-ghost" onclick="closeOvl('ovlEst')">Cancelar</button>
       <button class="btn btn-red" onclick="saveEst()">Salvar Item</button>
     </div>
@@ -1654,6 +1659,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       </div>
     </div>
     <div class="mact">
+      <button id="btnDelFunc" class="btn btn-ghost" onclick="delFunc()" style="display:none;margin-right:auto;color:var(--red);border-color:#fca5a5">🗑️ Excluir</button>
       <button class="btn btn-ghost" onclick="closeOvl('ovlFunc')">Cancelar</button>
       <button class="btn btn-red" onclick="saveFunc()">Salvar Funcionário</button>
     </div>
@@ -1701,6 +1707,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="fg"><label>Link Currículo (Drive)</label><input type="url" id="cLink" placeholder="https://drive.google.com/..."/></div>
     <div class="fg"><label>Observações</label><textarea id="cObs" rows="2" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit;resize:vertical" placeholder="Anotações da entrevista, perfil..."></textarea></div>
     <div class="mact">
+      <button id="btnDelCand" class="btn btn-ghost" onclick="delCand()" style="display:none;margin-right:auto;color:var(--red);border-color:#fca5a5">🗑️ Excluir</button>
       <button class="btn btn-ghost" onclick="closeOvl('ovlCand')">Cancelar</button>
       <button class="btn btn-red" onclick="saveCand()">Salvar</button>
     </div>
@@ -1739,6 +1746,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="fg"><label>Link Documento (Drive)</label><input type="url" id="ausLink" placeholder="Atestado, declaração..."/></div>
     <div class="fg"><label>Observações</label><textarea id="ausObs" rows="2" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit;resize:vertical"></textarea></div>
     <div class="mact">
+      <button id="btnDelAus" class="btn btn-ghost" onclick="delAus()" style="display:none;margin-right:auto;color:var(--red);border-color:#fca5a5">🗑️ Excluir</button>
       <button class="btn btn-ghost" onclick="closeOvl('ovlAus')">Cancelar</button>
       <button class="btn btn-red" onclick="saveAus()">Salvar</button>
     </div>
@@ -1780,6 +1788,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
     <div class="fg"><label>Observações para a Contabilidade</label><textarea id="fechObs" rows="2" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;font-family:inherit;resize:vertical" placeholder="Admissões, demissões, férias, observações especiais..."></textarea></div>
     <div class="mact">
+      <button id="btnDelFech" class="btn btn-ghost" onclick="delFech()" style="display:none;margin-right:auto;color:var(--red);border-color:#fca5a5">🗑️ Excluir</button>
       <button class="btn btn-ghost" onclick="closeOvl('ovlFech')">Cancelar</button>
       <button class="btn btn-red" onclick="saveFech()">Salvar Fechamento</button>
     </div>
@@ -3828,7 +3837,8 @@ function openPropView(pid){
     <button class="btn btn-ghost" onclick="closeOvl('ovlPropView')">Fechar</button>
     ${canEdit('prop')?`<button class="btn btn-ghost" onclick="closeOvl('ovlPropView');openPropModal('${pid}')">✏️ Editar</button>`:''}
     ${canEdit('prop')?`<button class="btn btn-ghost" onclick="setPropStatus('${pid}','aprovada')" style="background:#dcfce7;color:var(--green)">✅ Aprovar</button>`:''}
-    <button class="btn btn-red" onclick="gerarProposta('${pid}')">📄 Gerar Proposta</button>`;
+    <button class="btn btn-red" onclick="gerarProposta('${pid}')">📄 Gerar Proposta</button>
+    ${curUser?.isSuper?`<button class="btn btn-ghost" onclick="delProp('${pid}')" style="margin-left:auto;color:var(--red);border-color:#fca5a5">🗑️ Excluir</button>`:''}`;
   document.getElementById('ovlPropView').classList.add('v');
 }
 async function setPropStatus(pid,s){ await db.ref('erp/propostas/'+pid+'/status').set(s); closeOvl('ovlPropView'); }
@@ -4099,6 +4109,7 @@ function openProjView(pid){
   document.getElementById('upProg').value=p.progresso||0;
   document.getElementById('upStatus').value=p.status||'em-andamento';
   document.getElementById('upDesc').value='';
+  const pvjDel=document.getElementById('pvjDelBar'); if(pvjDel) pvjDel.style.display=curUser?.isSuper?'':'none';
   document.getElementById('ovlProjView').classList.add('v');
 }
 
@@ -4165,6 +4176,7 @@ function openFornModal(fid){
   const f=fid?fornecedores[fid]:null;
   document.getElementById('editFornId').value=fid||'';
   document.getElementById('fornModalTitle').textContent=fid?'Editar Fornecedor':'Novo Fornecedor';
+  const db_=document.getElementById('btnDelForn'); if(db_) db_.style.display=fid&&curUser?.isSuper?'':'none';
   if(f){
     document.getElementById('fNome').value=f.nome||'';
     document.getElementById('fCNPJ').value=f.cnpj||'';
@@ -4657,6 +4669,7 @@ function openEstModal(eid){
   const e=eid?estoque[eid]:null;
   document.getElementById('editEstId').value=eid||'';
   document.getElementById('estModalTitle').textContent=eid?'Editar Item':'Novo Item';
+  const db_=document.getElementById('btnDelEst'); if(db_) db_.style.display=eid&&curUser?.isSuper?'':'none';
   if(e){
     document.getElementById('eNome').value=e.nome||'';
     document.getElementById('eCat').value=e.cat||'';
@@ -5631,6 +5644,7 @@ function renderFolhas(){
         <div style="display:flex;gap:8px;align-items:center">
           <span style="font-weight:800;color:var(--red)">${fmtBRL(f.total||0)}</span>
           <button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 8px" onclick="openFolhaModal('${f.mes}')">✏️ Editar</button>
+          ${curUser?.isSuper?`<button class="btn btn-ghost" style="font-size:0.7rem;padding:3px 8px;color:var(--red);border-color:#fca5a5" onclick="delFolha('${f.mes}')">🗑️</button>`:''}
         </div>
       </div>
       ${itensHtml}
@@ -6055,6 +6069,7 @@ function openFuncModal(fid){
   const f=fid?funcionarios[fid]:null;
   document.getElementById('editFuncId').value=fid||'';
   document.getElementById('funcModalTitle').textContent=fid?'Editar Funcionário':'Novo Funcionário';
+  const db_=document.getElementById('btnDelFunc'); if(db_) db_.style.display=fid&&curUser?.isSuper?'':'none';
   fmTab('dados');
   if(f){
     document.getElementById('fnNome').value=f.nome||'';
@@ -6265,6 +6280,7 @@ function openCandModal(cid){
   const c=cid?candidatos[cid]:null;
   document.getElementById('editCandId').value=cid||'';
   document.getElementById('candModalTitle').textContent=cid?'Editar Candidato':'Novo Candidato';
+  const db_=document.getElementById('btnDelCand'); if(db_) db_.style.display=cid&&curUser?.isSuper?'':'none';
   if(c){
     document.getElementById('cNome').value=c.nome||'';
     document.getElementById('cCargo').value=c.cargo||'';
@@ -6320,6 +6336,7 @@ function openAusModal(aid){
   const a=aid?ausencias[aid]:null;
   document.getElementById('editAusId').value=aid||'';
   document.getElementById('ausModalTitle').textContent=aid?'Editar Ausência':'Registrar Ausência';
+  const db_=document.getElementById('btnDelAus'); if(db_) db_.style.display=aid&&curUser?.isSuper?'':'none';
   // Fill func select
   const sel=document.getElementById('ausFuncId');
   sel.innerHTML='<option value="">Selecione</option>'+
@@ -6370,6 +6387,7 @@ function renderFechamentos(){
           ${f.horas?`<a href="${f.horas}" target="_blank" style="font-size:0.7rem;color:var(--blue)">📊 Horas</a>`:''}
           ${f.atestados?`<a href="${f.atestados}" target="_blank" style="font-size:0.7rem;color:var(--blue)">📋 Atestados</a>`:''}
           <button class="btn btn-ghost" style="font-size:0.72rem;padding:5px 10px" onclick="openFechModal('${f.id}')">✏️ Editar</button>
+          ${curUser?.isSuper?`<button class="btn btn-ghost" style="font-size:0.72rem;padding:5px 10px;color:var(--red);border-color:#fca5a5" onclick="delFech('${f.id}')">🗑️</button>`:''}
           ${f.planilha?`<button class="btn btn-red" style="font-size:0.72rem;padding:5px 10px" onclick="gerarFechamento('${f.id}')">📤 Gerar para Contabilidade</button>`:''}
           ${f.planilha?`<button class="btn btn-ghost" style="font-size:0.72rem;padding:5px 10px" onclick="enviarEmailContador('${f.id}')">✉️ Enviar por E-mail</button>`:''}
         </div>
@@ -6485,6 +6503,7 @@ function openFechModal(fid){
   const f=fid?fechamentos[fid]:null;
   document.getElementById('editFechId').value=fid||'';
   document.getElementById('fechModalTitle').textContent=fid?'Editar Fechamento':'Novo Fechamento';
+  const db_=document.getElementById('btnDelFech'); if(db_) db_.style.display=fid&&curUser?.isSuper?'':'none';
   if(f){
     document.getElementById('fechMes').value=f.mes||'';
     document.getElementById('fechStatus').value=f.status||'aberto';
@@ -6583,7 +6602,7 @@ function openEmpDocModal(did){
   document.getElementById('editEmpDocId').value=did||'';
   document.getElementById('empDocModalTitle').textContent=did?'Editar Documento':'Novo Documento';
   const delBtn=document.getElementById('delEmpDocBtn');
-  if(delBtn) delBtn.style.display=did?'':'none';
+  if(delBtn) delBtn.style.display=did&&curUser?.isSuper?'':'none';
   const arqAtual=document.getElementById('edArqAtual');
   const arqProg=document.getElementById('edArqProg');
   if(arqProg) arqProg.textContent='';
@@ -6619,6 +6638,7 @@ async function abrirEmpDoc(did){
   }catch(e){ alert('Erro ao abrir arquivo: '+e.message); }
 }
 async function delEmpDoc(){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir documentos.');return;}
   const did=document.getElementById('editEmpDocId').value;
   if(!did) return;
   const d=empresaDocs[did];
@@ -6771,7 +6791,7 @@ function openContratoModal(cid){
   const c=cid?contratos[cid]:null;
   document.getElementById('editContratoId').value=cid||'';
   document.getElementById('contratoModalTitle').textContent=cid?'Editar Contrato':'Novo Contrato Recorrente';
-  document.getElementById('delContratoBtn').style.display=cid?'':'none';
+  document.getElementById('delContratoBtn').style.display=cid&&curUser?.isSuper?'':'none';
   if(c){
     document.getElementById('ctrDesc').value=c.desc||'';
     document.getElementById('ctrTipo').value=c.tipo||'receita';
@@ -6816,6 +6836,7 @@ async function toggleContrato(cid){
   toast(c.ativo?'Contrato pausado.':'Contrato ativado!');
 }
 async function delContrato(){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir contratos.');return;}
   const cid=document.getElementById('editContratoId').value; if(!cid) return;
   if(!confirm('Excluir este contrato recorrente?')) return;
   await db.ref('erp/contratos/'+cid).remove();
@@ -7595,7 +7616,9 @@ function openNFView(nid){
     ${n.status==='rascunho'||n.status==='erro'?`<button class="btn btn-ghost" onclick="closeOvl('ovlNFView');openNFModal('${nid}')">✏️ Editar</button>`:''}
     ${n.status==='processando'||n.status==='rascunho'?`<button class="btn btn-ghost" onclick="verificarFocusNFe('${nid}')" style="background:#eff6ff;color:var(--blue)">🔄 Verificar Status</button>`:''}
     ${n.status==='rascunho'||n.status==='erro'?`<button class="btn btn-red" onclick="closeOvl('ovlNFView');emitirFocusNFe('${nid}')">🧾 Emitir via Focus NFe</button>`:''}
-    ${n.status==='emitida'?`<button class="btn btn-ghost" onclick="cancelarNF('${nid}')" style="background:#fee2e2;color:var(--red)">❌ Cancelar NF</button>`:''}`;
+    ${n.status==='emitida'?`<button class="btn btn-ghost" onclick="cancelarNF('${nid}')" style="background:#fee2e2;color:var(--red)">❌ Cancelar NF</button>`:''}
+    ${curUser?.isSuper?`<button class="btn btn-ghost" onclick="delNF('${nid}')" style="margin-left:auto;color:var(--red);border-color:#fca5a5">🗑️ Excluir</button>`:''}`;
+
   document.getElementById('ovlNFView').classList.add('v');
 }
 
@@ -7793,7 +7816,7 @@ function openCProjModal(cid){
   document.getElementById('cpDataFim').value = c.dataFim||'';
   document.getElementById('cpStatus').value = c.status||'ativo';
   document.getElementById('cpObs').value = c.obs||'';
-  document.getElementById('btnDelCProj').style.display = cid ? '' : 'none';
+  document.getElementById('btnDelCProj').style.display = cid&&curUser?.isSuper ? '' : 'none';
 
   // Populate clientes select
   const cliSel = document.getElementById('cpClienteId');
@@ -7838,6 +7861,7 @@ async function saveCProj(){
 }
 
 async function delCProj(){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir contratos de projeto.');return;}
   const cid = document.getElementById('editCProjId').value;
   if(!cid) return;
   const c = cprojs[cid]; if(!c) return;
@@ -7981,6 +8005,137 @@ if('serviceWorker' in navigator)
   navigator.serviceWorker.register('./sw.js',{scope:'/'});
 window.addEventListener('online', ()=>document.getElementById('offWarn').classList.remove('show'));
 window.addEventListener('offline',()=>document.getElementById('offWarn').classList.add('show'));
+
+// ══════════════════════════════════════════════
+// DELETE — funções universais (apenas isSuper)
+// ══════════════════════════════════════════════
+async function delForn(){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir fornecedores.');return;}
+  const fid=document.getElementById('editFornId').value; if(!fid) return;
+  const f=fornecedores[fid]; if(!f) return;
+  const pedCount=Object.values(pedidos).filter(p=>p.fornId===fid).length;
+  let msg=`Excluir fornecedor "${f.nome}"?\n\nEsta ação não pode ser desfeita.`;
+  if(pedCount) msg+=`\n\n⚠️ ${pedCount} pedido(s) vinculado(s) serão mantidos.`;
+  if(!confirm(msg)) return;
+  await db.ref('erp/fornecedores/'+fid).remove();
+  logAudit('Compras','excluir',`Excluiu fornecedor: ${f.nome}`,fid);
+  closeOvl('ovlForn');
+  toast('Fornecedor excluído.');
+}
+async function delEst(){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir itens do estoque.');return;}
+  const eid=document.getElementById('editEstId').value; if(!eid) return;
+  const e=estoque[eid]; if(!e) return;
+  const movCount=Object.values(movimentos).filter(m=>m.estoqueId===eid).length;
+  let msg=`Excluir "${e.nome}" do estoque?\n\nEsta ação não pode ser desfeita.`;
+  if(movCount) msg+=`\n\n⚠️ ${movCount} movimentação(ões) vinculadas serão mantidas.`;
+  if(!confirm(msg)) return;
+  await db.ref('erp/estoque/'+eid).remove();
+  logAudit('Estoque','excluir',`Excluiu item: ${e.nome}`,eid);
+  closeOvl('ovlEst');
+  toast('Item excluído do estoque.');
+}
+async function delFunc(){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir funcionários.');return;}
+  const fid=document.getElementById('editFuncId').value; if(!fid) return;
+  const f=funcionarios[fid]; if(!f) return;
+  const ausCount=Object.values(ausencias).filter(a=>a.funcId===fid).length;
+  const lancCount=Object.values(lancamentos).filter(l=>l.funcId===fid).length;
+  let msg=`Excluir funcionário "${f.nome}"?\n\nEsta ação não pode ser desfeita.`;
+  if(ausCount||lancCount){
+    msg+='\n\nRegistros vinculados que serão mantidos:';
+    if(ausCount) msg+=`\n• ${ausCount} ausência(s)`;
+    if(lancCount) msg+=`\n• ${lancCount} lançamento(s) de folha`;
+  }
+  if(!confirm(msg)) return;
+  await db.ref('erp/funcionarios/'+fid).remove();
+  logAudit('RH','excluir',`Excluiu funcionário: ${f.nome}`,fid);
+  closeOvl('ovlFunc');
+  toast('Funcionário excluído.');
+}
+async function delCand(){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir candidatos.');return;}
+  const cid=document.getElementById('editCandId').value; if(!cid) return;
+  const c=candidatos[cid]; if(!c) return;
+  if(!confirm(`Excluir candidato "${c.nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  await db.ref('erp/candidatos/'+cid).remove();
+  logAudit('RH','excluir',`Excluiu candidato: ${c.nome}`,cid);
+  closeOvl('ovlCand');
+  toast('Candidato excluído.');
+}
+async function delAus(){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir ausências.');return;}
+  const aid=document.getElementById('editAusId').value; if(!aid) return;
+  const a=ausencias[aid]; if(!a) return;
+  if(!confirm(`Excluir ausência de "${a.funcNome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  await db.ref('erp/ausencias/'+aid).remove();
+  logAudit('RH','excluir',`Excluiu ausência: ${a.funcNome} — ${a.tipo}`,aid);
+  closeOvl('ovlAus');
+  toast('Ausência excluída.');
+}
+async function delFech(fid){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir fechamentos.');return;}
+  const id=fid||document.getElementById('editFechId').value; if(!id) return;
+  const f=fechamentos[id]; if(!f) return;
+  if(!confirm(`Excluir fechamento "${f.mes}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  await db.ref('erp/fechamentos/'+id).remove();
+  logAudit('RH','excluir',`Excluiu fechamento: ${f.mes}`,id);
+  closeOvl('ovlFech');
+  toast('Fechamento excluído.');
+}
+async function delFolha(mes){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir folhas.');return;}
+  const f=folhas[mes]; if(!f) return;
+  const [y,m]=mes.split('-');
+  const label=new Date(parseInt(y),parseInt(m)-1,1).toLocaleString('pt-BR',{month:'long',year:'numeric'});
+  if(!confirm(`Excluir folha de ${label}?\nTotal: ${fmtBRL(f.total||0)}\n\nEsta ação não pode ser desfeita.`)) return;
+  await db.ref('erp/folhas/'+mes).remove();
+  logAudit('RH','excluir',`Excluiu folha: ${label}`,mes);
+  toast('Folha excluída.');
+}
+async function delProp(pid){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir propostas.');return;}
+  const p=propostas[pid]; if(!p) return;
+  const lancCount=Object.values(lancamentos).filter(l=>l.propId===pid).length;
+  let msg=`Excluir proposta "${p.titulo||p.numero}"?\n\nEsta ação não pode ser desfeita.`;
+  if(lancCount) msg+=`\n\n⚠️ ${lancCount} lançamento(s) vinculado(s) serão mantidos.`;
+  if(!confirm(msg)) return;
+  await db.ref('erp/propostas/'+pid).remove();
+  logAudit('Propostas','excluir',`Excluiu proposta: ${p.titulo||p.numero}`,pid);
+  closeOvl('ovlPropView');
+  toast('Proposta excluída.');
+}
+async function delNF(nid){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir notas fiscais.');return;}
+  const n=notas[nid]; if(!n) return;
+  const msg=n.status==='emitida'
+    ?`⚠️ NF já EMITIDA. Excluir somente do sistema (o XML permanece na Receita)?\n\nEsta ação não pode ser desfeita.`
+    :`Excluir nota fiscal "${n.numero||nid}"?\n\nEsta ação não pode ser desfeita.`;
+  if(!confirm(msg)) return;
+  await db.ref('erp/notas/'+nid).remove();
+  logAudit('NF','excluir',`Excluiu NF: ${n.numero||nid}`,nid);
+  closeOvl('ovlNFView');
+  toast('Nota fiscal excluída do sistema.');
+}
+async function delProj(pid){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir ordens de serviço.');return;}
+  const p=projetos[pid]; if(!p) return;
+  const lancsCount=Object.values(lancamentos).filter(l=>l.projId===pid).length;
+  const compCount=Object.values(pedidos).filter(l=>l.projId===pid).length;
+  const updCount=Object.values(movimentos).filter(m=>m.projId===pid&&m._type==='update').length;
+  let msg=`Excluir OS "${(p.numero?p.numero+' — ':'')+p.titulo}"?\n\nEsta ação não pode ser desfeita.`;
+  if(lancsCount||compCount||updCount){
+    msg+='\n\nRegistros vinculados que serão mantidos:';
+    if(lancsCount) msg+=`\n• ${lancsCount} lançamento(s) financeiro(s)`;
+    if(compCount) msg+=`\n• ${compCount} pedido(s) de compra`;
+    if(updCount) msg+=`\n• ${updCount} atualização(ões)`;
+  }
+  if(!confirm(msg)) return;
+  await db.ref('erp/projetos/'+pid).remove();
+  logAudit('Projetos','excluir',`Excluiu OS: ${(p.numero?p.numero+' — ':'')+p.titulo}`,pid);
+  closeOvl('ovlProjView');
+  toast('OS excluída.');
+}
 </script>
 <!-- Modal mês fluxo de caixa -->
 <div class="ovl" id="ovlMesCF">
