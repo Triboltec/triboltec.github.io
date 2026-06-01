@@ -4190,8 +4190,21 @@ function renderPedidos(){
           <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px;background:#fee2e2;color:#991b1b;border-color:#fca5a5" onclick="rejeitarPedido('${p.id}')">✕ Rejeitar</button>`:''}
         ${!isPedPend&&curUser?.isSuper&&!pedLancs?`<button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px" onclick="event.stopPropagation();criarLancsPedido('${p.id}')">💰 Criar Lançamentos</button>`:''}
         <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px" onclick="gerarPedidoHTML('${p.id}')">🖨️ PDF</button>
+        ${curUser?.isSuper?`<button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 8px;background:#fee2e2;color:#991b1b;border-color:#fca5a5" onclick="event.stopPropagation();delPedido('${p.id}')">🗑️</button>`:''}
       </div>
     </div>`;}).join('');
+}
+
+async function delPedido(pid){
+  if(!curUser?.isSuper){alert('⛔ Apenas administradores podem excluir pedidos.');return;}
+  const p=pedidos[pid]; if(!p) return;
+  const lancsVinc=Object.values(lancamentos).filter(l=>l.pedidoId===pid);
+  let msg=`Excluir pedido ${p.numero||pid} — ${fmtBRL(p.total||0)}?\n\nEsta ação não pode ser desfeita.`;
+  if(lancsVinc.length) msg+=`\n\n⚠️ Atenção: este pedido tem ${lancsVinc.length} lançamento(s) vinculado(s) no Financeiro. Eles NÃO serão excluídos automaticamente.`;
+  if(!confirm(msg)) return;
+  await db.ref('erp/pedidos/'+pid).remove();
+  logAudit('Compras','excluir',`Excluiu pedido ${p.numero||pid} — ${fmtBRL(p.total||0)}`,pid);
+  toast('Pedido excluído.');
 }
 
 function openPedidoModal(pid){
