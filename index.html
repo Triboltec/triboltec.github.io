@@ -2129,7 +2129,8 @@ async function hashPin(p){
 function genId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
 function initials(n){ return (n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
 function fmtD(s){ if(!s) return '—'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
-function todayStr(){ return new Date().toISOString().slice(0,10); }
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function localYM(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
 function diffD(s){ if(!s) return null; const t=new Date(s+'T00:00:00'); const n=new Date(); n.setHours(0,0,0,0); return Math.round((t-n)/864e5); }
 function stInfo(id){ return STAGES.find(s=>s.id===id)||{label:id,cls:'s-prospect'}; }
 
@@ -2444,7 +2445,7 @@ function navTo(mid){
   }
   if(mid==='fin'){
     const el=document.getElementById('finMesInput');
-    if(el&&!el.value) el.value=new Date().toISOString().slice(0,7);
+    if(el&&!el.value) el.value=localYM();
     renderFin();
   }
 }
@@ -2520,7 +2521,7 @@ function renderDash(){
   const aPagar    = todosDes.filter(l=>l.status!=='pago').reduce((s,l)=>s+(l.valor||0),0);
   const jaRecebido= todosRec.filter(l=>l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
   const jaPago    = todosDes.filter(l=>l.status==='pago').reduce((s,l)=>s+(l.valor||0),0);
-  const hoje0     = new Date().toISOString().slice(0,10);
+  const hoje0     = todayStr();
   const recVenc   = todosRec.filter(l=>l.status!=='pago'&&l.venc&&l.venc<hoje0).reduce((s,l)=>s+(l.valor||0),0);
   const desVenc   = todosDes.filter(l=>l.status!=='pago'&&l.venc&&l.venc<hoje0).reduce((s,l)=>s+(l.valor||0),0);
 
@@ -2657,9 +2658,9 @@ function renderCashFlow(lanArr){
   const months=[];
   for(let i=3;i>=-4;i--){
     const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-i);
-    months.push(d.toISOString().slice(0,7));
+    months.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
   }
-  const ymAtual=new Date().toISOString().slice(0,7);
+  const ymAtual=localYM();
   const data=months.map(ym=>{
     const cfMes=l=>(l.venc||l.data||'').slice(0,7)===ym;
     const isPast=ym<ymAtual;
@@ -4374,14 +4375,14 @@ function renderProjecaoCaixa(){
   if(!finProjecaoAberta) return btn;
 
   const lan=Object.values(lancamentos).filter(l=>l.aprovStatus!=='pendente');
-  const hoje=new Date(); hoje.setHours(0,0,0,0);
-  const ymAtual=hoje.toISOString().slice(0,7);
+  const hoje=new Date();
+  const ymAtual=localYM();
 
   // Gera 3 meses atrás + atual + 5 à frente
   const meses=[];
   for(let i=-3;i<=5;i++){
     const d=new Date(hoje.getFullYear(),hoje.getMonth()+i,1);
-    meses.push(d.toISOString().slice(0,7));
+    meses.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
   }
 
   let acum=0;
@@ -4468,7 +4469,7 @@ function renderFin(){
   const mesInput=document.getElementById('finMesInput');
   // Pré-seleciona mês atual na primeira abertura
   if(mesInput&&!mesInput.dataset.touched&&!mesInput.value){
-    mesInput.value=new Date().toISOString().slice(0,7);
+    mesInput.value=localYM();
     mesInput.dataset.touched='1';
   }
   const mes=mesInput?.value||'';
@@ -4498,7 +4499,7 @@ function renderFin(){
   // ── Inadimplência + Projeção de Caixa ──
   const alertsEl=document.getElementById('finAlerts');
   if(alertsEl){
-    const hoje0s=new Date().toISOString().slice(0,10);
+    const hoje0s=todayStr();
     const inadimp=Object.values(lancamentos).filter(l=>l.aprovStatus!=='pendente'&&l.tipo==='receita'&&l.status!=='pago'&&l.venc&&l.venc<hoje0s)
       .sort((a,b)=>(a.venc||'').localeCompare(b.venc||''));
     const totalInad=inadimp.reduce((s,l)=>s+(l.valor||0),0);
