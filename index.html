@@ -4618,15 +4618,21 @@ function gerarPedidoHTML(pid){
     @media print{body{padding:10mm} .no-print{display:none!important}}
     .no-print{text-align:center;margin-bottom:16px}
     .no-print button{padding:10px 24px;background:#8B2020;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:700;margin:0 6px}
+    .no-print label{font-size:12px;color:#555;display:inline-flex;align-items:center;gap:6px;margin-left:12px;cursor:pointer;vertical-align:middle}
+    .col-pct{transition:opacity 0.1s}
+    .col-pct.oculto{display:none}
   </style></head><body>
   <div class="no-print">
     <button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
     <button onclick="window.close()">✕ Fechar</button>
+    <label><input type="checkbox" id="chkPct" checked onchange="document.querySelectorAll('.col-pct').forEach(el=>el.classList.toggle('oculto',!this.checked))"/> Mostrar %</label>
   </div>
   <div class="hdr">
     <div>
       <div class="co-name">TRIBOLTEC</div>
       <div class="co-sub">Engenharia Industrial e Civil</div>
+      <div style="font-size:9px;color:#666;margin-top:4px">CNPJ: 16.852.312/0001-63</div>
+      <div style="font-size:9px;color:#666">(19) 98348-1155 · contato@triboltec.com.br</div>
     </div>
     <div style="text-align:right">
       <div class="pc-label">PEDIDO DE COMPRA</div>
@@ -4665,13 +4671,13 @@ function gerarPedidoHTML(pid){
         <th style="font-size:9px;padding:4px 6px;background:#dbeafe;text-align:center;width:30px">#</th>
         <th style="font-size:9px;padding:4px 6px;background:#dbeafe;text-align:left">Vencimento</th>
         <th style="font-size:9px;padding:4px 6px;background:#dbeafe;text-align:right">Valor</th>
-        <th style="font-size:9px;padding:4px 6px;background:#dbeafe;text-align:right">%</th>
+        <th class="col-pct" style="font-size:9px;padding:4px 6px;background:#dbeafe;text-align:right">%</th>
       </tr></thead>
       <tbody>${p.pgtoParc.map((pc,i)=>`<tr>
         <td style="padding:4px 6px;text-align:center;font-size:10px;border-bottom:1px solid #e5e7eb">${i+1}</td>
         <td style="padding:4px 6px;font-size:10px;border-bottom:1px solid #e5e7eb">${fmtD(pc.venc)||'—'}</td>
         <td style="padding:4px 6px;font-size:10px;font-weight:700;text-align:right;border-bottom:1px solid #e5e7eb">${fmtBRL(pc.valor||0)}</td>
-        <td style="padding:4px 6px;font-size:10px;text-align:right;color:#6b7280;border-bottom:1px solid #e5e7eb">${p.total?Math.round(pc.valor/p.total*100)+'%':'—'}</td>
+        <td class="col-pct" style="padding:4px 6px;font-size:10px;text-align:right;color:#6b7280;border-bottom:1px solid #e5e7eb">${p.total?Math.round(pc.valor/p.total*100)+'%':'—'}</td>
       </tr>`).join('')}</tbody>
     </table>
   </div>`:''}
@@ -4685,8 +4691,7 @@ function gerarPedidoHTML(pid){
     <span>${emitidoEm}</span>
   </div>
   <script>
-    // Auto-print after short delay to allow styles to load
-    // User can also click the button above
+    window.onload = function(){ setTimeout(()=>window.print(), 600); };
   <\/script>
   </body></html>`);
   win.document.close();
