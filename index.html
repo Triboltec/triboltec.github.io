@@ -4590,8 +4590,7 @@ function gerarPedidoHTML(pid){
       <td style="text-align:right">${fmtBRL(it.vu||0)}</td>
       <td style="text-align:right"><strong>${fmtBRL((it.qtd||0)*(it.vu||0))}</strong></td>
     </tr>`).join('');
-  const win = window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>
   <title>Pedido de Compra ${p.numero||''}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -4691,8 +4690,10 @@ function gerarPedidoHTML(pid){
     <span>${emitidoEm}</span>
   </div>
   <script><\/script>
-  </body></html>`);
-  win.document.close();
+  </body></html>`;
+  const blob = new Blob([html], {type:'text/html'});
+  const blobUrl = URL.createObjectURL(blob);
+  window.open(blobUrl, '_blank');
 }
 
 // ══════════════════════════════════════════════
