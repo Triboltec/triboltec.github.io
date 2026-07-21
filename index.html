@@ -304,6 +304,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   #pedPrintOverlay{display:block!important;position:static!important}
   .ped-print-toolbar{display:none!important}
 }
+/* ── CRM PIPEDRIVE ── */
+.crm-tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:1.5px solid var(--border)}
+.crm-tab{padding:9px 18px;background:none;border:none;border-bottom:2.5px solid transparent;font-size:0.8rem;font-weight:600;color:var(--sub);cursor:pointer;margin-bottom:-1.5px;font-family:inherit;transition:color 0.15s}
+.crm-tab.active{color:var(--red);border-bottom-color:var(--red)}
+.crm-tab:hover:not(.active){color:var(--dark)}
+.kanban-pipe{display:flex;gap:10px;overflow-x:auto;padding-bottom:14px;min-height:420px;align-items:flex-start}
+.kpipe-col{min-width:230px;max-width:250px;flex-shrink:0;background:var(--bg2);border-radius:10px;padding:10px;display:flex;flex-direction:column}
+.kpipe-col.kpipe-closed{min-width:190px;opacity:0.85}
+.kpipe-head{padding:6px 2px 10px;margin-bottom:6px;border-bottom:1px solid var(--border)}
+.kpipe-cards{display:flex;flex-direction:column;gap:6px;flex:1}
+.kpipe-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 10px;cursor:pointer;transition:box-shadow 0.12s}
+.kpipe-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.kpipe-card.deal-rotten{border-left:3px solid var(--red)!important}
+.deal-title{font-size:0.8rem;font-weight:700;color:var(--dark);margin-bottom:2px}
+.deal-valor{font-size:0.78rem;font-weight:800;color:#10b981}
+.deal-meta{font-size:0.67rem;color:var(--sub);margin-top:2px}
+.kpipe-add{font-size:0.7rem;color:var(--sub);cursor:pointer;padding:6px 4px;text-align:center;border:1.5px dashed var(--border);border-radius:7px;margin-top:6px}
+.kpipe-add:hover{color:var(--red);border-color:var(--red)}
+.neg-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:7px;cursor:pointer;display:flex;gap:10px;align-items:center;transition:box-shadow 0.12s}
+.neg-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.07)}
+.neg-av{width:34px;height:34px;border-radius:8px;color:#fff;font-size:0.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.neg-inf{flex:1;min-width:0}
+.neg-title{font-size:0.87rem;font-weight:700;color:var(--dark)}
+.neg-meta{font-size:0.7rem;color:var(--sub);margin-top:1px}
+.neg-r{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;text-align:right}
+.atv-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:7px;transition:opacity 0.15s}
+.atv-done{opacity:0.45}
 /* ── COMPRAS ── */
 .ped-card{background:var(--card);border-radius:11px;border:1px solid var(--border);padding:13px 14px;margin-bottom:7px;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .ped-num{font-size:0.68rem;color:var(--sub);font-weight:700;margin-bottom:2px}
@@ -568,13 +595,54 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="sec" id="secCRM">
         <div class="pgh">
           <div class="pg-title">👥 CRM</div>
-          <button id="btnNewCliente" class="btn btn-red" onclick="openClientModal()">+ Empresa</button>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-ghost" id="btnNewAtividade" onclick="openAtividadeModal()" style="display:none">+ Atividade</button>
+            <button class="btn btn-ghost" id="btnNewNegocio" onclick="openNegocioModal()" style="display:none">+ Negócio</button>
+            <button id="btnNewCliente" class="btn btn-red" onclick="openClientModal()">+ Empresa</button>
+          </div>
         </div>
-        <div class="filters">
-          <input class="search" id="crmSearch" placeholder="Buscar empresa, cidade..." oninput="renderCRM()"/>
-          <div class="ftabs" id="stageTabs"></div>
+        <!-- Tabs CRM -->
+        <div class="crm-tabs">
+          <button class="crm-tab active" id="crmTabPipeline" onclick="setCrmTab('pipeline')">🎯 Pipeline</button>
+          <button class="crm-tab" id="crmTabNegocios" onclick="setCrmTab('negocios')">💼 Negócios</button>
+          <button class="crm-tab" id="crmTabEmpresas" onclick="setCrmTab('empresas')">🏭 Empresas</button>
+          <button class="crm-tab" id="crmTabAtividades" onclick="setCrmTab('atividades')">📅 Atividades</button>
         </div>
-        <div class="crm-list" id="crmList"></div>
+
+        <!-- VIEW: Pipeline Kanban -->
+        <div id="crmPipelineView">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div id="pipeKpis" style="display:flex;gap:14px;font-size:0.75rem;color:var(--sub);flex-wrap:wrap"></div>
+            <select id="pipeRespFilter" onchange="renderPipeline()" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:20px;font-size:0.75rem;font-family:inherit;background:var(--card)"></select>
+          </div>
+          <div class="kanban-pipe" id="kanbanPipe"></div>
+        </div>
+
+        <!-- VIEW: Negócios lista -->
+        <div id="crmNegociosView" style="display:none">
+          <div class="filters" style="margin-bottom:10px">
+            <input class="search" id="negSearch" placeholder="Buscar negócio ou empresa..." oninput="renderNegocios()"/>
+            <div class="ftabs" id="negTabs"></div>
+          </div>
+          <div id="negList"></div>
+        </div>
+
+        <!-- VIEW: Empresas (existente) -->
+        <div id="crmEmpresasView" style="display:none">
+          <div class="filters">
+            <input class="search" id="crmSearch" placeholder="Buscar empresa, cidade..." oninput="renderCRM()"/>
+            <div class="ftabs" id="stageTabs"></div>
+          </div>
+          <div class="crm-list" id="crmList"></div>
+        </div>
+
+        <!-- VIEW: Atividades -->
+        <div id="crmAtividadesView" style="display:none">
+          <div class="filters" style="margin-bottom:10px">
+            <div class="ftabs" id="atvTabs"></div>
+          </div>
+          <div id="atvList"></div>
+        </div>
       </div>
 
       <!-- FINANCEIRO -->
@@ -2374,6 +2442,23 @@ const STAGES = [
   {id:'perdido',   label:'Perdido',         cls:'s-perdido'},
 ];
 
+const PIPE_STAGES = [
+  {id:'prospeccao',  label:'Prospecção',   color:'#6b7280', prob:10},
+  {id:'qualificacao',label:'Qualificação', color:'#3b82f6', prob:25},
+  {id:'proposta',    label:'Proposta',     color:'#f59e0b', prob:50},
+  {id:'negociacao',  label:'Negociação',   color:'#8b5cf6', prob:75},
+  {id:'ganho',       label:'Ganho ✓',      color:'#10b981', prob:100},
+  {id:'perdido',     label:'Perdido ✗',    color:'#ef4444', prob:0},
+];
+
+const ATV_TIPOS = [
+  {id:'ligacao', label:'📞 Ligação', color:'#3b82f6'},
+  {id:'reuniao', label:'🤝 Reunião', color:'#8b5cf6'},
+  {id:'email',   label:'✉️ Email',   color:'#f59e0b'},
+  {id:'tarefa',  label:'✅ Tarefa',  color:'#10b981'},
+  {id:'prazo',   label:'⏰ Prazo',   color:'#ef4444'},
+];
+
 // ══════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════
@@ -2389,6 +2474,8 @@ let candidatos = {}, ausencias = {}, fechamentos = {}, empresaDocs = {}, pontoRe
 let sysConfig = {};
 let nfFilter = 'all';
 let selUID = null, pinBuf = '', curCID = null, crmFilter = 'all';
+let negocios = {}, atividades = {};
+let crmTab = 'pipeline', negFilter = 'all', atvFilter = 'pendente';
 let propFilter = 'all', projFilter = 'all', estFilter = 'all', rhFilter = 'all';
 let curProjViewId = null;
 let rhCurTab = 'alertas';
@@ -2807,6 +2894,8 @@ function startListeners(){
   db.ref('erp/contratos_proj').on('value', snap=>{ cprojs=snap.val()||{}; if(document.getElementById('secCProj')?.classList.contains('active')) renderCProjs(); });
   verificarContratos();
   db.ref('erp/ponto').on('value', snap=>{ pontoReg=snap.val()||{}; renderPonto(); });
+  db.ref('erp/negocios').on('value', snap=>{ negocios=snap.val()||{}; renderPipeline(); renderNegocios(); renderCRMAtividades(); renderDash(); });
+  db.ref('erp/atividades').on('value', snap=>{ atividades=snap.val()||{}; renderCRMAtividades(); renderDash(); });
   // Load ControlID config
   db.ref('erp/cidconfig').once('value', snap=>{ const c=snap.val()||{}; if(c.email)document.getElementById('cidEmail').value=c.email; if(c.url)document.getElementById('cidUrl').value=c.url; });
   // Load system config (accounting email, RH email, etc.)
@@ -3103,6 +3192,304 @@ function renderCRM(){
   }).join('');
 }
 function setFilter(f){ crmFilter=f; renderCRM(); }
+
+// ══════════════════════════════════════════════
+// CRM PIPEDRIVE — TABS
+// ══════════════════════════════════════════════
+function setCrmTab(tab){
+  crmTab = tab;
+  const tabs = ['pipeline','negocios','empresas','atividades'];
+  tabs.forEach(t=>{
+    const btn = document.getElementById('crmTab'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(btn) btn.classList.toggle('active', t===tab);
+    const view = document.getElementById('crm'+t.charAt(0).toUpperCase()+t.slice(1)+'View');
+    if(view) view.style.display = t===tab ? '' : 'none';
+  });
+  const showNeg = tab==='negocios'||tab==='pipeline';
+  const showAtv = tab==='atividades';
+  const showEmp = tab==='empresas';
+  document.getElementById('btnNewNegocio').style.display = showNeg ? '' : 'none';
+  document.getElementById('btnNewAtividade').style.display = showAtv ? '' : 'none';
+  document.getElementById('btnNewCliente').style.display = showEmp ? '' : 'none';
+  if(tab==='pipeline') renderPipeline();
+  else if(tab==='negocios') renderNegocios();
+  else if(tab==='empresas') renderCRM();
+  else if(tab==='atividades') renderCRMAtividades();
+}
+
+// ══════════════════════════════════════════════
+// PIPELINE KANBAN
+// ══════════════════════════════════════════════
+function renderPipeline(){
+  if(crmTab!=='pipeline') return;
+  // Fill resp select
+  const rs = document.getElementById('pipeRespFilter');
+  if(rs){
+    const cur = rs.value;
+    rs.innerHTML = '<option value="">Todos</option>' +
+      Object.values(usuarios).filter(u=>u.nome).map(u=>`<option value="${u.uid||u.id}" ${cur===(u.uid||u.id)?'selected':''}>${u.nome}</option>`).join('');
+    rs.value = cur;
+  }
+  const respFilter = rs ? rs.value : '';
+  const activeStages = PIPE_STAGES.filter(s=>s.id!=='ganho'&&s.id!=='perdido');
+  const closedStages = PIPE_STAGES.filter(s=>s.id==='ganho'||s.id==='perdido');
+  const negsArr = Object.values(negocios).filter(n=> !respFilter || n.responsavelId===respFilter);
+  const ativos = negsArr.filter(n=>n.etapa!=='ganho'&&n.etapa!=='perdido');
+  const totalPipe = ativos.reduce((s,n)=>s+(+n.valor||0),0);
+  const now30 = Date.now()-30*86400000;
+  const ganhos30 = negsArr.filter(n=>n.etapa==='ganho'&&(n.atualizadoEm||0)>now30).length;
+  const kpisEl = document.getElementById('pipeKpis');
+  if(kpisEl) kpisEl.innerHTML =
+    `<span>💼 ${ativos.length} negócios ativos</span><span>·</span><span>📊 ${fmtBRL(totalPipe)} em pipeline</span><span>·</span><span>✅ ${ganhos30} ganhos (30d)</span>`;
+  const board = document.getElementById('kanbanPipe');
+  if(!board) return;
+  const now = Date.now();
+  board.innerHTML = activeStages.map(st=>{
+    const cards = negsArr.filter(n=>n.etapa===st.id).sort((a,b)=>(+b.valor||0)-(+a.valor||0));
+    const colTotal = cards.reduce((s,n)=>s+(+n.valor||0),0);
+    const cardsHtml = cards.map(n=>{
+      const cli = clientes[n.clienteId]||{};
+      const daysSince = Math.floor((now-(n.atualizadoEm||n.criadoEm||now))/86400000);
+      const rotten = daysSince>=14;
+      const atvsPend = Object.values(atividades).filter(a=>a.negocioId===n.id&&!a.feito);
+      const today = new Date().toISOString().slice(0,10);
+      const atvVenc = atvsPend.filter(a=>a.data&&a.data<today).length;
+      return `<div class="kpipe-card${rotten?' deal-rotten':''}" onclick="openNegocioModal('${n.id}')">
+        <div class="deal-title">${n.titulo||'—'}</div>
+        ${n.valor?`<div class="deal-valor">${fmtBRL(+n.valor)}</div>`:''}
+        <div class="deal-meta">${cli.nome||'—'}${n.responsavelNome?' · '+n.responsavelNome:''}</div>
+        <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap">
+          ${n.dataFechamentoPrevista?`<span style="font-size:0.65rem;color:var(--sub)">📅 ${fmtD(n.dataFechamentoPrevista)}</span>`:''}
+          ${atvsPend.length?`<span style="font-size:0.65rem;color:${atvVenc?'var(--red)':'var(--sub)'}">📋 ${atvsPend.length}${atvVenc?' ⚠️':''}</span>`:''}
+          ${rotten?`<span style="font-size:0.65rem;color:var(--red)">🔴 ${daysSince}d parado</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="kpipe-col">
+      <div class="kpipe-head" style="border-top:3px solid ${st.color}">
+        <div style="font-weight:700;font-size:0.8rem">${st.label}</div>
+        <div style="font-size:0.7rem;color:var(--sub)">${cards.length} · ${fmtBRL(colTotal)}</div>
+      </div>
+      <div class="kpipe-cards">${cardsHtml}<div class="kpipe-add" onclick="openNegocioModal(null,'${st.id}')">+ Negócio</div></div>
+    </div>`;
+  }).join('') +
+  `<div class="kpipe-col kpipe-closed">
+    <div class="kpipe-head"><div style="font-weight:700;font-size:0.8rem">Encerrados</div></div>
+    ${closedStages.map(st=>{
+      const stCards = negsArr.filter(n=>n.etapa===st.id);
+      return `<div style="font-size:0.72rem;font-weight:700;color:${st.color};margin:8px 0 4px">${st.label} (${stCards.length})</div>`+
+        stCards.slice(0,4).map(n=>`<div class="kpipe-card" style="opacity:0.7" onclick="openNegocioModal('${n.id}')">
+          <div class="deal-title" style="font-size:0.75rem">${n.titulo||'—'}</div>
+          <div class="deal-meta">${n.valor?fmtBRL(+n.valor)+' · ':''}${clientes[n.clienteId]?.nome||'—'}</div>
+        </div>`).join('');
+    }).join('')}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+// NEGÓCIOS LIST
+// ══════════════════════════════════════════════
+function renderNegocios(){
+  const q = (document.getElementById('negSearch')?.value||'').toLowerCase();
+  const arr = Object.values(negocios).filter(n=>{
+    if(negFilter!=='all'&&n.etapa!==negFilter) return false;
+    if(q&&!(n.titulo||'').toLowerCase().includes(q)&&!(clientes[n.clienteId]?.nome||'').toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>(b.atualizadoEm||0)-(a.atualizadoEm||0));
+  const total = Object.values(negocios);
+  const negTabsEl = document.getElementById('negTabs');
+  if(negTabsEl) negTabsEl.innerHTML =
+    `<div class="ftab ${negFilter==='all'?'active':''}" onclick="negFilter='all';renderNegocios()">Todos (${total.length})</div>`+
+    PIPE_STAGES.map(s=>`<div class="ftab ${negFilter===s.id?'active':''}" onclick="negFilter='${s.id}';renderNegocios()">${s.label} (${total.filter(n=>n.etapa===s.id).length})</div>`).join('');
+  const el = document.getElementById('negList');
+  if(!el) return;
+  if(!arr.length){el.innerHTML='<div class="empty">Nenhum negócio encontrado.</div>';return;}
+  el.innerHTML = arr.map(n=>{
+    const cli = clientes[n.clienteId]||{};
+    const st = PIPE_STAGES.find(s=>s.id===n.etapa)||PIPE_STAGES[0];
+    const atvsPend = Object.values(atividades).filter(a=>a.negocioId===n.id&&!a.feito).length;
+    return `<div class="neg-card" onclick="openNegocioModal('${n.id}')">
+      <div class="neg-av" style="background:${st.color}">${(n.titulo||'N').slice(0,2).toUpperCase()}</div>
+      <div class="neg-inf">
+        <div class="neg-title">${n.titulo||'—'}</div>
+        <div class="neg-meta">${cli.nome||'—'} · ${n.responsavelNome||'—'}</div>
+        ${n.dataFechamentoPrevista?`<div class="neg-meta">📅 ${fmtD(n.dataFechamentoPrevista)}</div>`:''}
+      </div>
+      <div class="neg-r">
+        <span style="font-size:0.72rem;font-weight:700;color:${st.color};background:${st.color}18;padding:2px 8px;border-radius:20px">${st.label}</span>
+        ${n.valor?`<div style="font-size:0.85rem;font-weight:800;color:var(--dark)">${fmtBRL(+n.valor)}</div>`:''}
+        ${atvsPend?`<div style="font-size:0.65rem;color:var(--sub)">${atvsPend} ativ.</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// ATIVIDADES
+// ══════════════════════════════════════════════
+function renderCRMAtividades(){
+  const today = new Date().toISOString().slice(0,10);
+  const all = Object.values(atividades).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  const pendentes = all.filter(a=>!a.feito);
+  const vencidas = pendentes.filter(a=>a.data&&a.data<today);
+  const hoje = pendentes.filter(a=>a.data===today);
+  const concluidas = all.filter(a=>a.feito);
+  const atvTabsEl = document.getElementById('atvTabs');
+  if(atvTabsEl) atvTabsEl.innerHTML =
+    `<div class="ftab ${atvFilter==='pendente'?'active':''}" onclick="atvFilter='pendente';renderCRMAtividades()">Pendentes (${pendentes.length})</div>`+
+    `<div class="ftab ${atvFilter==='vencida'?'active':''}" onclick="atvFilter='vencida';renderCRMAtividades()" style="${atvFilter==='vencida'?'':''}">⚠️ Vencidas (${vencidas.length})</div>`+
+    `<div class="ftab ${atvFilter==='hoje'?'active':''}" onclick="atvFilter='hoje';renderCRMAtividades()">Hoje (${hoje.length})</div>`+
+    `<div class="ftab ${atvFilter==='concluida'?'active':''}" onclick="atvFilter='concluida';renderCRMAtividades()">Concluídas (${concluidas.length})</div>`;
+  const filtered = atvFilter==='vencida'?vencidas:atvFilter==='hoje'?hoje:atvFilter==='concluida'?concluidas:pendentes;
+  const el = document.getElementById('atvList');
+  if(!el) return;
+  if(!filtered.length){el.innerHTML='<div class="empty">Nenhuma atividade.</div>';return;}
+  el.innerHTML = filtered.map(a=>{
+    const cli = clientes[a.clienteId]||{};
+    const neg = negocios[a.negocioId]||{};
+    const tipo = ATV_TIPOS.find(t=>t.id===a.tipo)||ATV_TIPOS[0];
+    const venc = a.data&&a.data<today&&!a.feito;
+    return `<div class="atv-card${a.feito?' atv-done':''}" style="${venc?'border-left:3px solid var(--red)':''}">
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="checkbox" ${a.feito?'checked':''} onchange="toggleAtividade('${a.id}',this.checked)" style="width:16px;height:16px;cursor:pointer;flex-shrink:0" onclick="event.stopPropagation()"/>
+        <div style="flex:1;min-width:0;cursor:pointer" onclick="openAtividadeModal('${a.id}')">
+          <div style="font-weight:700;font-size:0.85rem">${tipo.label} — ${a.titulo||'—'}</div>
+          <div style="font-size:0.72rem;color:var(--sub)">${cli.nome||'—'}${neg.titulo?' · '+neg.titulo:''}</div>
+          <div style="font-size:0.72rem;color:${venc?'var(--red)':'var(--sub)'}">${a.data?fmtD(a.data):'Sem data'}${a.hora?' às '+a.hora:''} · ${a.responsavelNome||'—'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleAtividade(aid, feito){
+  await db.ref('erp/atividades/'+aid).update({feito, atualizadoEm:Date.now()});
+}
+
+// ══════════════════════════════════════════════
+// MODAL NEGÓCIO
+// ══════════════════════════════════════════════
+function openNegocioModal(nid, etapaDefault){
+  const n = nid ? negocios[nid] : null;
+  document.getElementById('editNegId').value = nid||'';
+  document.getElementById('negModalTitle').textContent = nid ? 'Editar Negócio' : 'Novo Negócio';
+  document.getElementById('btnDelNeg').style.display = (nid && curUser?.isSuper) ? '' : 'none';
+  const csel = document.getElementById('negCliente');
+  csel.innerHTML = '<option value="">— Selecione a empresa —</option>'+
+    Object.values(clientes).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(c=>`<option value="${c.id}" ${n?.clienteId===c.id?'selected':''}>${c.nome}</option>`).join('');
+  const rsel = document.getElementById('negResp');
+  rsel.innerHTML = Object.values(usuarios).filter(u=>u.nome).map(u=>`<option value="${u.uid||u.id}" ${(n?.responsavelId===(u.uid||u.id))||(!n&&(u.uid||u.id)===curUser?.uid)?'selected':''}>${u.nome}</option>`).join('');
+  const esel = document.getElementById('negEtapa');
+  esel.innerHTML = PIPE_STAGES.map(s=>`<option value="${s.id}" ${(n?.etapa||etapaDefault||'prospeccao')===s.id?'selected':''}>${s.label}</option>`).join('');
+  document.getElementById('negMotivoBox').style.display = (n?.etapa==='perdido'||etapaDefault==='perdido') ? '' : 'none';
+  document.getElementById('negTitulo').value = n?.titulo||'';
+  document.getElementById('negContato').value = n?.contatoNome||'';
+  document.getElementById('negValor').value = n?.valor||'';
+  document.getElementById('negDataFech').value = n?.dataFechamentoPrevista||'';
+  document.getElementById('negObs').value = n?.obs||'';
+  document.getElementById('negMotivo').value = n?.motivoPerda||'';
+  document.getElementById('ovlNegocio').classList.add('v');
+}
+
+async function saveNegocio(){
+  const nid = document.getElementById('editNegId').value||genId();
+  const titulo = document.getElementById('negTitulo').value.trim();
+  if(!titulo){alert('Informe o título do negócio.');return;}
+  const clienteId = document.getElementById('negCliente').value;
+  if(!clienteId){alert('Selecione a empresa.');return;}
+  const rsel = document.getElementById('negResp');
+  const etapa = document.getElementById('negEtapa').value;
+  const existing = negocios[nid]||{};
+  await db.ref('erp/negocios/'+nid).set({
+    id:nid, titulo, clienteId,
+    contatoNome: document.getElementById('negContato').value.trim(),
+    valor: parseFloat(document.getElementById('negValor').value)||0,
+    responsavelId: rsel.value,
+    responsavelNome: rsel.options[rsel.selectedIndex]?.text||'',
+    etapa,
+    probabilidade: PIPE_STAGES.find(s=>s.id===etapa)?.prob||0,
+    dataFechamentoPrevista: document.getElementById('negDataFech').value||'',
+    motivoPerda: document.getElementById('negMotivo').value.trim(),
+    obs: document.getElementById('negObs').value.trim(),
+    criadoEm: existing.criadoEm||Date.now(),
+    atualizadoEm: Date.now(),
+    uid: curUser?.uid||''
+  });
+  logAudit('CRM','negocio', (existing.titulo?'Editou':'Criou')+` negócio: ${titulo}`, nid);
+  closeOvl('ovlNegocio');
+  toast('Negócio salvo!');
+}
+
+async function delNegocio(){
+  const nid = document.getElementById('editNegId').value; if(!nid) return;
+  const n = negocios[nid]; if(!n) return;
+  if(!confirm(`Excluir negócio "${n.titulo}"?`)) return;
+  await db.ref('erp/negocios/'+nid).remove();
+  logAudit('CRM','del-negocio',`Excluiu negócio: ${n.titulo}`,nid);
+  closeOvl('ovlNegocio');
+  toast('Negócio excluído.');
+}
+
+// ══════════════════════════════════════════════
+// MODAL ATIVIDADE
+// ══════════════════════════════════════════════
+function openAtividadeModal(aid, negIdDefault, clienteIdDefault){
+  const a = aid ? atividades[aid] : null;
+  document.getElementById('editAtvId').value = aid||'';
+  document.getElementById('atvModalTitle').textContent = aid ? 'Editar Atividade' : 'Nova Atividade';
+  document.getElementById('btnDelAtv').style.display = (aid && curUser?.isSuper) ? '' : 'none';
+  const csel = document.getElementById('atvCliente');
+  csel.innerHTML = '<option value="">— Empresa (opcional) —</option>'+
+    Object.values(clientes).sort((b2,b3)=>(b2.nome||'').localeCompare(b3.nome||'')).map(c=>`<option value="${c.id}" ${(a?.clienteId||clienteIdDefault)===c.id?'selected':''}>${c.nome}</option>`).join('');
+  const nsel = document.getElementById('atvNegocio');
+  nsel.innerHTML = '<option value="">— Sem negócio —</option>'+
+    Object.values(negocios).sort((b2,b3)=>(b2.titulo||'').localeCompare(b3.titulo||'')).map(n2=>`<option value="${n2.id}" ${(a?.negocioId||negIdDefault)===n2.id?'selected':''}>${n2.titulo}</option>`).join('');
+  const rsel = document.getElementById('atvResp');
+  rsel.innerHTML = Object.values(usuarios).filter(u=>u.nome).map(u=>`<option value="${u.uid||u.id}" ${(a?.responsavelId===(u.uid||u.id))||(!a&&(u.uid||u.id)===curUser?.uid)?'selected':''}>${u.nome}</option>`).join('');
+  document.getElementById('atvTipo').value = a?.tipo||'ligacao';
+  document.getElementById('atvTitulo').value = a?.titulo||'';
+  document.getElementById('atvData').value = a?.data||new Date().toISOString().slice(0,10);
+  document.getElementById('atvHora').value = a?.hora||'';
+  document.getElementById('atvObs').value = a?.obs||'';
+  document.getElementById('ovlAtividade').classList.add('v');
+}
+
+async function saveAtividade(){
+  const aid = document.getElementById('editAtvId').value||genId();
+  const titulo = document.getElementById('atvTitulo').value.trim();
+  if(!titulo){alert('Informe o título da atividade.');return;}
+  const data = document.getElementById('atvData').value;
+  if(!data){alert('Informe a data.');return;}
+  const rsel = document.getElementById('atvResp');
+  const existing = atividades[aid]||{};
+  await db.ref('erp/atividades/'+aid).set({
+    id:aid,
+    tipo: document.getElementById('atvTipo').value,
+    titulo, data,
+    hora: document.getElementById('atvHora').value||'',
+    clienteId: document.getElementById('atvCliente').value||'',
+    negocioId: document.getElementById('atvNegocio').value||'',
+    responsavelId: rsel.value,
+    responsavelNome: rsel.options[rsel.selectedIndex]?.text||'',
+    obs: document.getElementById('atvObs').value.trim(),
+    feito: existing.feito||false,
+    criadoEm: existing.criadoEm||Date.now(),
+    atualizadoEm: Date.now(),
+    uid: curUser?.uid||''
+  });
+  logAudit('CRM','atividade', (existing.titulo?'Editou':'Criou')+` atividade: ${titulo}`, aid);
+  closeOvl('ovlAtividade');
+  toast('Atividade salva!');
+}
+
+async function delAtividade(){
+  const aid = document.getElementById('editAtvId').value; if(!aid) return;
+  const a = atividades[aid]; if(!a) return;
+  if(!confirm(`Excluir atividade "${a.titulo}"?`)) return;
+  await db.ref('erp/atividades/'+aid).remove();
+  closeOvl('ovlAtividade');
+  toast('Atividade excluída.');
+}
 
 // ══════════════════════════════════════════════
 // CLIENT PANEL
@@ -8280,5 +8667,69 @@ async function delProj(pid){
     <div style="overflow-y:auto;padding:10px 16px 16px;flex:1" id="mesCFList"></div>
   </div>
 </div>
+
+<!-- ═══ MODAL: NEGÓCIO ═══ -->
+<div class="ovl" id="ovlNegocio" onclick="if(event.target===this)closeOvl('ovlNegocio')">
+  <div class="modal" style="max-width:560px">
+    <div class="mhead"><div class="mtitle" id="negModalTitle">Novo Negócio</div><button class="mclose" onclick="closeOvl('ovlNegocio')">✕</button></div>
+    <input type="hidden" id="editNegId"/>
+    <div class="f2">
+      <div class="fg" style="grid-column:1/-1"><label>Título do Negócio *</label><input type="text" id="negTitulo" placeholder="Ex: Automação Planta Tetrapak"/></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Empresa *</label><select id="negCliente"></select></div>
+      <div class="fg"><label>Contato</label><input type="text" id="negContato" placeholder="Nome do contato"/></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Valor (R$)</label><input type="number" id="negValor" placeholder="0" min="0"/></div>
+      <div class="fg"><label>Responsável</label><select id="negResp"></select></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Etapa</label><select id="negEtapa" onchange="document.getElementById('negMotivoBox').style.display=this.value==='perdido'?'':'none'"></select></div>
+      <div class="fg"><label>Fechamento Previsto</label><input type="date" id="negDataFech"/></div>
+    </div>
+    <div class="fg"><label>Observações</label><textarea id="negObs" placeholder="Detalhes do negócio..." rows="3"></textarea></div>
+    <div id="negMotivoBox" style="display:none"><div class="fg"><label>Motivo da Perda</label><input type="text" id="negMotivo" placeholder="Por que perdemos?"/></div></div>
+    <div class="mact">
+      <button class="btn btn-ghost" onclick="closeOvl('ovlNegocio')">Cancelar</button>
+      <button class="btn btn-ghost" id="btnDelNeg" onclick="delNegocio()" style="display:none;color:var(--red)">🗑 Excluir</button>
+      <button class="btn btn-red" onclick="saveNegocio()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ATIVIDADE ═══ -->
+<div class="ovl" id="ovlAtividade" onclick="if(event.target===this)closeOvl('ovlAtividade')">
+  <div class="modal" style="max-width:480px">
+    <div class="mhead"><div class="mtitle" id="atvModalTitle">Nova Atividade</div><button class="mclose" onclick="closeOvl('ovlAtividade')">✕</button></div>
+    <input type="hidden" id="editAtvId"/>
+    <div class="f2">
+      <div class="fg"><label>Tipo *</label><select id="atvTipo">
+        <option value="ligacao">📞 Ligação</option>
+        <option value="reuniao">🤝 Reunião</option>
+        <option value="email">✉️ Email</option>
+        <option value="tarefa">✅ Tarefa</option>
+        <option value="prazo">⏰ Prazo</option>
+      </select></div>
+      <div class="fg"><label>Empresa</label><select id="atvCliente"></select></div>
+    </div>
+    <div class="fg"><label>Título / Descrição *</label><input type="text" id="atvTitulo" placeholder="Ex: Ligar para discutir proposta"/></div>
+    <div class="f2">
+      <div class="fg"><label>Data *</label><input type="date" id="atvData"/></div>
+      <div class="fg"><label>Hora</label><input type="time" id="atvHora"/></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Responsável</label><select id="atvResp"></select></div>
+      <div class="fg"><label>Negócio (opcional)</label><select id="atvNegocio"><option value="">— Sem negócio —</option></select></div>
+    </div>
+    <div class="fg"><label>Observações</label><textarea id="atvObs" placeholder="Detalhes..." rows="2"></textarea></div>
+    <div class="mact">
+      <button class="btn btn-ghost" onclick="closeOvl('ovlAtividade')">Cancelar</button>
+      <button class="btn btn-ghost" id="btnDelAtv" onclick="delAtividade()" style="display:none;color:var(--red)">🗑 Excluir</button>
+      <button class="btn btn-red" onclick="saveAtividade()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
