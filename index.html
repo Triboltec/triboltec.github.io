@@ -331,6 +331,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .neg-r{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;text-align:right}
 .atv-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:7px;transition:opacity 0.15s}
 .atv-done{opacity:0.45}
+/* PAINEL NEGÓCIO */
+#negPanel{display:none;position:fixed;top:0;left:58px;right:0;bottom:0;background:var(--card);z-index:500;overflow-y:auto}
+#negPanel.v{display:block}
+@media(min-width:768px){#negPanel{left:215px;top:52px}}
+.kpipe-col.drag-over{background:var(--red-alpha,#8c202018);outline:2px dashed var(--red);outline-offset:-4px}
+.kpipe-card.dragging{opacity:0.4;transform:scale(0.97)}
+.rel-bar-wrap{background:var(--bg2);border-radius:4px;height:12px;overflow:hidden;margin-top:3px}
+.rel-bar{height:100%;border-radius:4px;transition:width 0.5s}
 /* ── COMPRAS ── */
 .ped-card{background:var(--card);border-radius:11px;border:1px solid var(--border);padding:13px 14px;margin-bottom:7px;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .ped-num{font-size:0.68rem;color:var(--sub);font-weight:700;margin-bottom:2px}
@@ -607,6 +615,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <button class="crm-tab" id="crmTabNegocios" onclick="setCrmTab('negocios')">💼 Negócios</button>
           <button class="crm-tab" id="crmTabEmpresas" onclick="setCrmTab('empresas')">🏭 Empresas</button>
           <button class="crm-tab" id="crmTabAtividades" onclick="setCrmTab('atividades')">📅 Atividades</button>
+          <button class="crm-tab" id="crmTabRelatorios" onclick="setCrmTab('relatorios')">📊 Relatórios</button>
         </div>
 
         <!-- VIEW: Pipeline Kanban -->
@@ -642,6 +651,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
             <div class="ftabs" id="atvTabs"></div>
           </div>
           <div id="atvList"></div>
+        </div>
+
+        <!-- VIEW: Relatórios -->
+        <div id="crmRelatoriosView" style="display:none">
+          <div id="relContent"></div>
         </div>
       </div>
 
@@ -2476,6 +2490,7 @@ let nfFilter = 'all';
 let selUID = null, pinBuf = '', curCID = null, crmFilter = 'all';
 let negocios = {}, atividades = {};
 let crmTab = 'pipeline', negFilter = 'all', atvFilter = 'pendente';
+let curNegId = null, npTab = 'atividades', dragNegId = null;
 let propFilter = 'all', projFilter = 'all', estFilter = 'all', rhFilter = 'all';
 let curProjViewId = null;
 let rhCurTab = 'alertas';
@@ -2894,8 +2909,8 @@ function startListeners(){
   db.ref('erp/contratos_proj').on('value', snap=>{ cprojs=snap.val()||{}; if(document.getElementById('secCProj')?.classList.contains('active')) renderCProjs(); });
   verificarContratos();
   db.ref('erp/ponto').on('value', snap=>{ pontoReg=snap.val()||{}; renderPonto(); });
-  db.ref('erp/negocios').on('value', snap=>{ negocios=snap.val()||{}; renderPipeline(); renderNegocios(); renderCRMAtividades(); renderDash(); });
-  db.ref('erp/atividades').on('value', snap=>{ atividades=snap.val()||{}; renderCRMAtividades(); renderDash(); });
+  db.ref('erp/negocios').on('value', snap=>{ negocios=snap.val()||{}; renderPipeline(); renderNegocios(); renderCRMAtividades(); if(curNegId) renderNegPanel(); renderDash(); });
+  db.ref('erp/atividades').on('value', snap=>{ atividades=snap.val()||{}; renderCRMAtividades(); if(curNegId) renderNegPanel(); renderDash(); });
   // Load ControlID config
   db.ref('erp/cidconfig').once('value', snap=>{ const c=snap.val()||{}; if(c.email)document.getElementById('cidEmail').value=c.email; if(c.url)document.getElementById('cidUrl').value=c.url; });
   // Load system config (accounting email, RH email, etc.)
@@ -3198,23 +3213,21 @@ function setFilter(f){ crmFilter=f; renderCRM(); }
 // ══════════════════════════════════════════════
 function setCrmTab(tab){
   crmTab = tab;
-  const tabs = ['pipeline','negocios','empresas','atividades'];
+  const tabs = ['pipeline','negocios','empresas','atividades','relatorios'];
   tabs.forEach(t=>{
     const btn = document.getElementById('crmTab'+t.charAt(0).toUpperCase()+t.slice(1));
     if(btn) btn.classList.toggle('active', t===tab);
     const view = document.getElementById('crm'+t.charAt(0).toUpperCase()+t.slice(1)+'View');
     if(view) view.style.display = t===tab ? '' : 'none';
   });
-  const showNeg = tab==='negocios'||tab==='pipeline';
-  const showAtv = tab==='atividades';
-  const showEmp = tab==='empresas';
-  document.getElementById('btnNewNegocio').style.display = showNeg ? '' : 'none';
-  document.getElementById('btnNewAtividade').style.display = showAtv ? '' : 'none';
-  document.getElementById('btnNewCliente').style.display = showEmp ? '' : 'none';
+  document.getElementById('btnNewNegocio').style.display = (tab==='negocios'||tab==='pipeline') ? '' : 'none';
+  document.getElementById('btnNewAtividade').style.display = tab==='atividades' ? '' : 'none';
+  document.getElementById('btnNewCliente').style.display = tab==='empresas' ? '' : 'none';
   if(tab==='pipeline') renderPipeline();
   else if(tab==='negocios') renderNegocios();
   else if(tab==='empresas') renderCRM();
   else if(tab==='atividades') renderCRMAtividades();
+  else if(tab==='relatorios') renderRelatorios();
 }
 
 // ══════════════════════════════════════════════
@@ -3222,7 +3235,6 @@ function setCrmTab(tab){
 // ══════════════════════════════════════════════
 function renderPipeline(){
   if(crmTab!=='pipeline') return;
-  // Fill resp select
   const rs = document.getElementById('pipeRespFilter');
   if(rs){
     const cur = rs.value;
@@ -3236,14 +3248,14 @@ function renderPipeline(){
   const negsArr = Object.values(negocios).filter(n=> !respFilter || n.responsavelId===respFilter);
   const ativos = negsArr.filter(n=>n.etapa!=='ganho'&&n.etapa!=='perdido');
   const totalPipe = ativos.reduce((s,n)=>s+(+n.valor||0),0);
-  const now30 = Date.now()-30*86400000;
-  const ganhos30 = negsArr.filter(n=>n.etapa==='ganho'&&(n.atualizadoEm||0)>now30).length;
+  const ganhos30 = negsArr.filter(n=>n.etapa==='ganho'&&(n.atualizadoEm||0)>Date.now()-30*86400000).length;
   const kpisEl = document.getElementById('pipeKpis');
   if(kpisEl) kpisEl.innerHTML =
     `<span>💼 ${ativos.length} negócios ativos</span><span>·</span><span>📊 ${fmtBRL(totalPipe)} em pipeline</span><span>·</span><span>✅ ${ganhos30} ganhos (30d)</span>`;
   const board = document.getElementById('kanbanPipe');
   if(!board) return;
   const now = Date.now();
+  const today = new Date().toISOString().slice(0,10);
   board.innerHTML = activeStages.map(st=>{
     const cards = negsArr.filter(n=>n.etapa===st.id).sort((a,b)=>(+b.valor||0)-(+a.valor||0));
     const colTotal = cards.reduce((s,n)=>s+(+n.valor||0),0);
@@ -3252,9 +3264,12 @@ function renderPipeline(){
       const daysSince = Math.floor((now-(n.atualizadoEm||n.criadoEm||now))/86400000);
       const rotten = daysSince>=14;
       const atvsPend = Object.values(atividades).filter(a=>a.negocioId===n.id&&!a.feito);
-      const today = new Date().toISOString().slice(0,10);
       const atvVenc = atvsPend.filter(a=>a.data&&a.data<today).length;
-      return `<div class="kpipe-card${rotten?' deal-rotten':''}" onclick="openNegocioModal('${n.id}')">
+      return `<div class="kpipe-card${rotten?' deal-rotten':''}"
+        draggable="true"
+        ondragstart="onNegDragStart(event,'${n.id}')"
+        ondragend="this.classList.remove('dragging')"
+        onclick="openNegPanel('${n.id}')">
         <div class="deal-title">${n.titulo||'—'}</div>
         ${n.valor?`<div class="deal-valor">${fmtBRL(+n.valor)}</div>`:''}
         <div class="deal-meta">${cli.nome||'—'}${n.responsavelNome?' · '+n.responsavelNome:''}</div>
@@ -3265,7 +3280,11 @@ function renderPipeline(){
         </div>
       </div>`;
     }).join('');
-    return `<div class="kpipe-col">
+    return `<div class="kpipe-col"
+      ondragover="event.preventDefault()"
+      ondragenter="this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="onNegDrop(event,'${st.id}',this)">
       <div class="kpipe-head" style="border-top:3px solid ${st.color}">
         <div style="font-weight:700;font-size:0.8rem">${st.label}</div>
         <div style="font-size:0.7rem;color:var(--sub)">${cards.length} · ${fmtBRL(colTotal)}</div>
@@ -3273,17 +3292,41 @@ function renderPipeline(){
       <div class="kpipe-cards">${cardsHtml}<div class="kpipe-add" onclick="openNegocioModal(null,'${st.id}')">+ Negócio</div></div>
     </div>`;
   }).join('') +
-  `<div class="kpipe-col kpipe-closed">
+  `<div class="kpipe-col kpipe-closed"
+    ondragover="event.preventDefault()"
+    ondragenter="this.classList.add('drag-over')"
+    ondragleave="this.classList.remove('drag-over')"
+    ondrop="onNegDrop(event,'ganho',this)">
     <div class="kpipe-head"><div style="font-weight:700;font-size:0.8rem">Encerrados</div></div>
     ${closedStages.map(st=>{
       const stCards = negsArr.filter(n=>n.etapa===st.id);
       return `<div style="font-size:0.72rem;font-weight:700;color:${st.color};margin:8px 0 4px">${st.label} (${stCards.length})</div>`+
-        stCards.slice(0,4).map(n=>`<div class="kpipe-card" style="opacity:0.7" onclick="openNegocioModal('${n.id}')">
+        stCards.slice(0,4).map(n=>`<div class="kpipe-card" style="opacity:0.7" draggable="true" ondragstart="onNegDragStart(event,'${n.id}')" onclick="openNegPanel('${n.id}')">
           <div class="deal-title" style="font-size:0.75rem">${n.titulo||'—'}</div>
           <div class="deal-meta">${n.valor?fmtBRL(+n.valor)+' · ':''}${clientes[n.clienteId]?.nome||'—'}</div>
         </div>`).join('');
     }).join('')}
   </div>`;
+}
+
+function onNegDragStart(e, nid){
+  dragNegId = nid;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.classList.add('dragging');
+}
+
+async function onNegDrop(e, etapa, colEl){
+  e.preventDefault();
+  colEl.classList.remove('drag-over');
+  if(!dragNegId) return;
+  const n = negocios[dragNegId];
+  if(!n || n.etapa === etapa){ dragNegId=null; return; }
+  await db.ref('erp/negocios/'+dragNegId).update({
+    etapa,
+    probabilidade: PIPE_STAGES.find(s=>s.id===etapa)?.prob||0,
+    atualizadoEm: Date.now()
+  });
+  dragNegId = null;
 }
 
 // ══════════════════════════════════════════════
@@ -3489,6 +3532,204 @@ async function delAtividade(){
   await db.ref('erp/atividades/'+aid).remove();
   closeOvl('ovlAtividade');
   toast('Atividade excluída.');
+}
+
+// ══════════════════════════════════════════════
+// PAINEL DO NEGÓCIO
+// ══════════════════════════════════════════════
+function openNegPanel(nid){
+  curNegId = nid;
+  npTab = 'atividades';
+  document.getElementById('npTabAtv').classList.add('active');
+  document.getElementById('npTabNot').classList.remove('active');
+  document.getElementById('npAtvList').style.display = '';
+  document.getElementById('npNotList').style.display = 'none';
+  renderNegPanel();
+  document.getElementById('negPanel').classList.add('v');
+}
+
+function closeNegPanel(){
+  document.getElementById('negPanel').classList.remove('v');
+  curNegId = null;
+}
+
+function editCurNeg(){ if(curNegId) openNegocioModal(curNegId); }
+
+function npSetTab(tab){
+  npTab = tab;
+  document.getElementById('npTabAtv').classList.toggle('active', tab==='atividades');
+  document.getElementById('npTabNot').classList.toggle('active', tab==='notas');
+  document.getElementById('npAtvList').style.display = tab==='atividades' ? '' : 'none';
+  document.getElementById('npNotList').style.display = tab==='notas' ? '' : 'none';
+}
+
+function renderNegPanel(){
+  const nid = curNegId; if(!nid) return;
+  const n = negocios[nid]; if(!n) return;
+  const cli = clientes[n.clienteId]||{};
+  const st = PIPE_STAGES.find(s=>s.id===n.etapa)||PIPE_STAGES[0];
+
+  document.getElementById('npTitle').textContent = n.titulo||'—';
+
+  // Stage strip — click to change stage
+  document.getElementById('npStageStrip').innerHTML =
+    PIPE_STAGES.map(s=>`<div onclick="setNegStage('${nid}','${s.id}')" style="padding:5px 12px;border-radius:20px;font-size:0.68rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;
+      background:${n.etapa===s.id?s.color:'var(--bg2)'};color:${n.etapa===s.id?'#fff':'var(--sub)'};
+      border:1.5px solid ${n.etapa===s.id?s.color:'var(--border)'}">
+      ${s.label}
+    </div>`).join('');
+
+  // Info grid
+  document.getElementById('npInfo').innerHTML = [
+    ['🏭 Empresa', cli.nome||'—'],
+    ['💰 Valor', n.valor?fmtBRL(+n.valor):'—'],
+    ['👤 Responsável', n.responsavelNome||'—'],
+    ['📅 Fechamento', n.dataFechamentoPrevista?fmtD(n.dataFechamentoPrevista):'—'],
+    ['📊 Probabilidade', st.prob+'%'],
+    ['📞 Contato', n.contatoNome||'—'],
+  ].map(([l,v])=>`<div>
+    <div style="font-size:0.63rem;color:var(--sub);margin-bottom:2px;text-transform:uppercase;font-weight:600">${l}</div>
+    <div style="font-size:0.82rem;font-weight:600;color:var(--dark)">${v}</div>
+  </div>`).join('');
+
+  // Activities
+  const today = new Date().toISOString().slice(0,10);
+  const dealAtvs = Object.values(atividades).filter(a=>a.negocioId===nid).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  const npAtvEl = document.getElementById('npAtvList');
+  if(!dealAtvs.length){
+    npAtvEl.innerHTML = '<div class="empty" style="font-size:0.78rem;padding:16px 0">Nenhuma atividade. Crie uma acima.</div>';
+  } else {
+    npAtvEl.innerHTML = dealAtvs.map(a=>{
+      const tipo = ATV_TIPOS.find(t=>t.id===a.tipo)||ATV_TIPOS[0];
+      const venc = a.data&&a.data<today&&!a.feito;
+      return `<div class="atv-card${a.feito?' atv-done':''}" style="${venc?'border-left:3px solid var(--red)':''}">
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" ${a.feito?'checked':''} onchange="toggleAtividade('${a.id}',this.checked);setTimeout(renderNegPanel,400)" style="width:16px;height:16px;cursor:pointer;flex-shrink:0" onclick="event.stopPropagation()"/>
+          <div style="flex:1;min-width:0;cursor:pointer" onclick="openAtividadeModal('${a.id}')">
+            <div style="font-weight:700;font-size:0.82rem">${tipo.label} — ${a.titulo||'—'}</div>
+            <div style="font-size:0.68rem;color:${venc?'var(--red)':'var(--sub)'}">${a.data?fmtD(a.data):'Sem data'}${a.hora?' às '+a.hora:''} · ${a.responsavelNome||'—'}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Notes (interações do cliente vinculado)
+  const clienteInters = Object.values(interacoes)
+    .filter(i=>i.clienteId===n.clienteId)
+    .sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,15);
+  const npNotEl = document.getElementById('npNotList');
+  if(!clienteInters.length){
+    npNotEl.innerHTML = '<div class="empty" style="font-size:0.78rem;padding:16px 0">Nenhuma nota para esta empresa.</div>';
+  } else {
+    npNotEl.innerHTML = clienteInters.map(i=>`<div class="update-item">
+      <div class="update-meta">
+        <span class="update-user">${i.autor||'—'}</span>
+        <span class="update-date">${i.ts?new Date(i.ts).toLocaleDateString('pt-BR'):''}</span>
+      </div>
+      <div style="font-size:0.8rem">${i.texto||''}</div>
+    </div>`).join('');
+  }
+}
+
+async function setNegStage(nid, etapa){
+  await db.ref('erp/negocios/'+nid).update({
+    etapa,
+    probabilidade: PIPE_STAGES.find(s=>s.id===etapa)?.prob||0,
+    atualizadoEm: Date.now()
+  });
+  if(curNegId===nid) setTimeout(renderNegPanel,200);
+}
+
+// ══════════════════════════════════════════════
+// RELATÓRIOS CRM
+// ══════════════════════════════════════════════
+function renderRelatorios(){
+  const el = document.getElementById('relContent'); if(!el) return;
+  const negsArr = Object.values(negocios);
+  const now = Date.now();
+  const now30 = now-30*86400000;
+  const ativos = negsArr.filter(n=>n.etapa!=='ganho'&&n.etapa!=='perdido');
+  const ganhos30 = negsArr.filter(n=>n.etapa==='ganho'&&(n.atualizadoEm||0)>now30);
+  const perdidos30 = negsArr.filter(n=>n.etapa==='perdido'&&(n.atualizadoEm||0)>now30);
+  const totalPipe = ativos.reduce((s,n)=>s+(+n.valor||0),0);
+  const recGanhos = ganhos30.reduce((s,n)=>s+(+n.valor||0),0);
+  const base = ativos.length+ganhos30.length+perdidos30.length;
+  const conv = base>0 ? Math.round(ganhos30.length/base*100) : 0;
+  const funnelStages = PIPE_STAGES.filter(s=>s.id!=='ganho'&&s.id!=='perdido');
+  const maxCount = Math.max(1,...funnelStages.map(s=>ativos.filter(n=>n.etapa===s.id).length));
+
+  el.innerHTML = `
+    <div class="kpis" style="margin-bottom:20px">
+      <div class="kpi-card"><div class="kpi-val">${ativos.length}</div><div class="kpi-lbl">Negócios Ativos</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="font-size:1rem">${fmtBRL(totalPipe)}</div><div class="kpi-lbl">Pipeline Total</div></div>
+      <div class="kpi-card"><div class="kpi-val">${ganhos30.length}</div><div class="kpi-lbl">Ganhos (30d)</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="font-size:1rem">${fmtBRL(recGanhos)}</div><div class="kpi-lbl">Receita (30d)</div></div>
+      <div class="kpi-card"><div class="kpi-val">${conv}%</div><div class="kpi-lbl">Taxa Conversão</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+
+      <div class="card" style="padding:16px">
+        <div style="font-weight:700;font-size:0.88rem;margin-bottom:14px">🔽 Funil de Conversão</div>
+        ${funnelStages.map(s=>{
+          const cnt = ativos.filter(n=>n.etapa===s.id).length;
+          const val = ativos.filter(n=>n.etapa===s.id).reduce((sum,n)=>sum+(+n.valor||0),0);
+          const pct = Math.round(cnt/maxCount*100)||0;
+          return `<div style="margin-bottom:11px">
+            <div style="display:flex;justify-content:space-between;font-size:0.74rem;margin-bottom:3px">
+              <span style="font-weight:600;color:${s.color}">${s.label}</span>
+              <span style="color:var(--sub)">${cnt} · ${fmtBRL(val)}</span>
+            </div>
+            <div class="rel-bar-wrap"><div class="rel-bar" style="width:${pct}%;background:${s.color}"></div></div>
+          </div>`;
+        }).join('')}
+        <div style="display:flex;gap:8px;margin-top:8px;font-size:0.72rem;color:var(--sub)">
+          <span>✅ Ganhos (30d): ${ganhos30.length}</span>
+          <span>·</span>
+          <span>❌ Perdidos (30d): ${perdidos30.length}</span>
+        </div>
+      </div>
+
+      <div class="card" style="padding:16px">
+        <div style="font-weight:700;font-size:0.88rem;margin-bottom:14px">📈 Previsão de Receita</div>
+        ${funnelStages.map(s=>{
+          const stNegs = ativos.filter(n=>n.etapa===s.id);
+          const pondVal = stNegs.reduce((sum,n)=>sum+(+n.valor||0)*(s.prob/100),0);
+          return stNegs.length?`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:0.78rem">
+            <span style="color:${s.color};font-weight:600">${s.label} <span style="color:var(--sub);font-weight:400">(${s.prob}%)</span></span>
+            <span style="font-weight:700">${fmtBRL(pondVal)}</span>
+          </div>`:'';
+        }).join('')}
+        <div style="display:flex;justify-content:space-between;padding:9px 0 0;font-size:0.85rem;font-weight:800;color:var(--dark)">
+          <span>Total ponderado</span>
+          <span>${fmtBRL(ativos.reduce((s,n)=>{const st2=PIPE_STAGES.find(p=>p.id===n.etapa);return s+(+n.valor||0)*((st2?.prob||0)/100);},0))}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:16px">
+      <div style="font-weight:700;font-size:0.88rem;margin-bottom:14px">👥 Negócios por Responsável</div>
+      ${(()=>{
+        const byResp = {};
+        ativos.forEach(n=>{
+          const k = n.responsavelNome||'Sem responsável';
+          if(!byResp[k]) byResp[k]={count:0,val:0};
+          byResp[k].count++;
+          byResp[k].val+=(+n.valor||0);
+        });
+        const arr = Object.entries(byResp).sort((a,b)=>b[1].val-a[1].val);
+        if(!arr.length) return '<div class="empty">Sem dados.</div>';
+        const maxV = Math.max(1,...arr.map(([,v])=>v.val));
+        return arr.map(([nome,d])=>`<div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:0.74rem;margin-bottom:3px">
+            <span style="font-weight:600">${nome}</span>
+            <span style="color:var(--sub)">${d.count} neg · ${fmtBRL(d.val)}</span>
+          </div>
+          <div class="rel-bar-wrap"><div class="rel-bar" style="width:${Math.round(d.val/maxV*100)}%;background:var(--red)"></div></div>
+        </div>`).join('');
+      })()}
+    </div>`;
 }
 
 // ══════════════════════════════════════════════
@@ -8665,6 +8906,32 @@ async function delProj(pid){
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px 16px 0;flex-shrink:0" id="mesCFKpis"></div>
     <div style="overflow-y:auto;padding:10px 16px 16px;flex:1" id="mesCFList"></div>
+  </div>
+</div>
+
+<!-- ═══ PAINEL DO NEGÓCIO ═══ -->
+<div id="negPanel">
+  <div class="cp-head">
+    <button class="cp-back" onclick="closeNegPanel()">←</button>
+    <div class="cp-nm" id="npTitle">—</div>
+    <button onclick="editCurNeg()" style="font-size:0.72rem;padding:5px 12px;background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700">✏️ Editar</button>
+  </div>
+  <!-- Stage strip -->
+  <div id="npStageStrip" style="display:flex;overflow-x:auto;gap:6px;padding:10px 14px;border-bottom:1px solid var(--border)"></div>
+  <!-- Info grid -->
+  <div id="npInfo" style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;border-bottom:1px solid var(--border)"></div>
+  <!-- Add activity -->
+  <div style="padding:10px 16px;border-bottom:1px solid var(--border)">
+    <button class="btn btn-red" style="width:100%;font-size:0.82rem" onclick="openAtividadeModal(null,curNegId)">+ Nova Atividade</button>
+  </div>
+  <!-- Sub-tabs -->
+  <div class="crm-tabs" style="padding:0 16px;margin-bottom:0">
+    <button class="crm-tab active" id="npTabAtv" onclick="npSetTab('atividades')">📅 Atividades</button>
+    <button class="crm-tab" id="npTabNot" onclick="npSetTab('notas')">📝 Notas</button>
+  </div>
+  <div style="padding:12px 16px">
+    <div id="npAtvList"></div>
+    <div id="npNotList" style="display:none"></div>
   </div>
 </div>
 
