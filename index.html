@@ -339,6 +339,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .kpipe-card.dragging{opacity:0.4;transform:scale(0.97)}
 .rel-bar-wrap{background:var(--bg2);border-radius:4px;height:12px;overflow:hidden;margin-top:3px}
 .rel-bar{height:100%;border-radius:4px;transition:width 0.5s}
+/* CONTATOS TAB */
+.ct-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:7px;display:flex;gap:10px;align-items:center}
+.ct-av{width:36px;height:36px;border-radius:50%;background:var(--red);color:#fff;font-size:0.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ct-inf{flex:1;min-width:0}
+.ct-name{font-size:0.87rem;font-weight:700;color:var(--dark)}
+.ct-meta{font-size:0.7rem;color:var(--sub);margin-top:1px}
+.ct-acts{display:flex;gap:6px;flex-shrink:0}
 /* ── COMPRAS ── */
 .ped-card{background:var(--card);border-radius:11px;border:1px solid var(--border);padding:13px 14px;margin-bottom:7px;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .ped-num{font-size:0.68rem;color:var(--sub);font-weight:700;margin-bottom:2px}
@@ -606,6 +613,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <div style="display:flex;gap:8px;align-items:center">
             <button class="btn btn-ghost" id="btnNewAtividade" onclick="openAtividadeModal()" style="display:none">+ Atividade</button>
             <button class="btn btn-ghost" id="btnNewNegocio" onclick="openNegocioModal()" style="display:none">+ Negócio</button>
+            <button class="btn btn-ghost" id="btnNewContato" onclick="openContatoModal()" style="display:none">+ Contato</button>
             <button id="btnNewCliente" class="btn btn-red" onclick="openClientModal()">+ Empresa</button>
           </div>
         </div>
@@ -615,6 +623,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <button class="crm-tab" id="crmTabNegocios" onclick="setCrmTab('negocios')">💼 Negócios</button>
           <button class="crm-tab" id="crmTabEmpresas" onclick="setCrmTab('empresas')">🏭 Empresas</button>
           <button class="crm-tab" id="crmTabAtividades" onclick="setCrmTab('atividades')">📅 Atividades</button>
+          <button class="crm-tab" id="crmTabContatos" onclick="setCrmTab('contatos')">👤 Contatos</button>
           <button class="crm-tab" id="crmTabRelatorios" onclick="setCrmTab('relatorios')">📊 Relatórios</button>
         </div>
 
@@ -651,6 +660,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
             <div class="ftabs" id="atvTabs"></div>
           </div>
           <div id="atvList"></div>
+        </div>
+
+        <!-- VIEW: Contatos -->
+        <div id="crmContatosView" style="display:none">
+          <div class="filters" style="margin-bottom:10px">
+            <input class="search" id="contatoSearch" placeholder="Buscar contato, cargo ou empresa..." oninput="renderContatos()"/>
+          </div>
+          <div id="contatoList"></div>
         </div>
 
         <!-- VIEW: Relatórios -->
@@ -2885,7 +2902,7 @@ function fabAct(){ if(curMod==='crm') openClientModal(); }
 // DATA
 // ══════════════════════════════════════════════
 function startListeners(){
-  db.ref('erp/clientes').on('value', snap=>{ clientes=snap.val()||{}; renderCRM(); renderDash(); });
+  db.ref('erp/clientes').on('value', snap=>{ clientes=snap.val()||{}; renderCRM(); renderContatos(); renderDash(); });
   db.ref('erp/interacoes').on('value', snap=>{ interacoes=snap.val()||{}; if(curCID) renderPanel(curCID); renderCRM(); renderDash(); });
   db.ref('erp/usuarios').on('value', snap=>{ usuarios=snap.val()||{}; renderAdminUsers(); fillRespSelect(); fillProjSelects(); });
   db.ref('erp/propostas').on('value', snap=>{ propostas=snap.val()||{}; renderProp(); renderDash(); });
@@ -3213,20 +3230,22 @@ function setFilter(f){ crmFilter=f; renderCRM(); }
 // ══════════════════════════════════════════════
 function setCrmTab(tab){
   crmTab = tab;
-  const tabs = ['pipeline','negocios','empresas','atividades','relatorios'];
+  const tabs = ['pipeline','negocios','empresas','atividades','contatos','relatorios'];
   tabs.forEach(t=>{
     const btn = document.getElementById('crmTab'+t.charAt(0).toUpperCase()+t.slice(1));
     if(btn) btn.classList.toggle('active', t===tab);
     const view = document.getElementById('crm'+t.charAt(0).toUpperCase()+t.slice(1)+'View');
     if(view) view.style.display = t===tab ? '' : 'none';
   });
-  document.getElementById('btnNewNegocio').style.display = (tab==='negocios'||tab==='pipeline') ? '' : 'none';
+  document.getElementById('btnNewNegocio').style.display  = (tab==='negocios'||tab==='pipeline') ? '' : 'none';
   document.getElementById('btnNewAtividade').style.display = tab==='atividades' ? '' : 'none';
-  document.getElementById('btnNewCliente').style.display = tab==='empresas' ? '' : 'none';
-  if(tab==='pipeline') renderPipeline();
-  else if(tab==='negocios') renderNegocios();
-  else if(tab==='empresas') renderCRM();
+  document.getElementById('btnNewContato').style.display   = tab==='contatos'   ? '' : 'none';
+  document.getElementById('btnNewCliente').style.display   = tab==='empresas'   ? '' : 'none';
+  if(tab==='pipeline')   renderPipeline();
+  else if(tab==='negocios')   renderNegocios();
+  else if(tab==='empresas')   renderCRM();
   else if(tab==='atividades') renderCRMAtividades();
+  else if(tab==='contatos')   renderContatos();
   else if(tab==='relatorios') renderRelatorios();
 }
 
@@ -3532,6 +3551,94 @@ async function delAtividade(){
   await db.ref('erp/atividades/'+aid).remove();
   closeOvl('ovlAtividade');
   toast('Atividade excluída.');
+}
+
+// ══════════════════════════════════════════════
+// CONTATOS (PESSOAS)
+// ══════════════════════════════════════════════
+function renderContatos(){
+  const q = (document.getElementById('contatoSearch')?.value||'').toLowerCase();
+  // Agrega contatos de todos os clientes
+  const arr = [];
+  Object.values(clientes).forEach(c=>{
+    const cts = c.contatos ? Object.values(c.contatos) :
+                c.contatoNome ? [{id:'_',nome:c.contatoNome,cargo:c.cargo||'',tel:c.telefone||'',email:c.email||''}] : [];
+    cts.forEach(ct=>arr.push({...ct, empresaNome:c.nome||'—', empresaId:c.id}));
+  });
+  const filtered = arr.filter(ct=>{
+    if(!q) return true;
+    return (ct.nome||'').toLowerCase().includes(q)||
+           (ct.cargo||'').toLowerCase().includes(q)||
+           (ct.empresaNome||'').toLowerCase().includes(q)||
+           (ct.email||'').toLowerCase().includes(q);
+  }).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+  const el = document.getElementById('contatoList');
+  if(!el) return;
+  if(!filtered.length){ el.innerHTML='<div class="empty">Nenhum contato encontrado.</div>'; return; }
+  el.innerHTML = filtered.map(ct=>{
+    const initials = (ct.nome||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    return `<div class="ct-card">
+      <div class="ct-av">${initials}</div>
+      <div class="ct-inf">
+        <div class="ct-name">${ct.nome||'—'}${ct.cargo?` <span style="font-weight:400;color:var(--sub);font-size:0.7rem">· ${ct.cargo}</span>`:''}</div>
+        <div class="ct-meta">${ct.empresaNome}${ct.tel?' · '+ct.tel:''}${ct.email?' · '+ct.email:''}</div>
+      </div>
+      <div class="ct-acts">
+        ${ct.tel?`<button class="cnt-act-btn" onclick="window.open('tel:${ct.tel}')" title="Ligar">📞</button>
+                  <button class="cnt-act-btn" onclick="window.open('https://wa.me/55${(ct.tel||'').replace(/\D/g,'')}')" title="WhatsApp">💬</button>`:''}
+        ${ct.email?`<button class="cnt-act-btn" onclick="window.open('mailto:${ct.email}')" title="E-mail">✉️</button>`:''}
+        ${ct.id&&ct.id!=='_'?`<button class="cnt-act-btn" onclick="openContatoModal('${ct.id}','${ct.empresaId}')" title="Editar">✏️</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openContatoModal(ctId, clienteId){
+  const ct = ctId && clienteId && clientes[clienteId]?.contatos?.[ctId] ? clientes[clienteId].contatos[ctId] : null;
+  document.getElementById('contatoModalTitle').textContent = ct ? 'Editar Contato' : 'Novo Contato';
+  document.getElementById('editContatoId').value = ctId||genId();
+  document.getElementById('editContatoClienteId').value = clienteId||'';
+  document.getElementById('btnDelContato').style.display = (ct && curUser?.isSuper) ? '' : 'none';
+  const esel = document.getElementById('contatoEmpresa');
+  esel.innerHTML = '<option value="">— Selecione a empresa —</option>'+
+    Object.values(clientes).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(c=>`<option value="${c.id}" ${(clienteId||ct?.clienteId)===c.id?'selected':''}>${c.nome}</option>`).join('');
+  document.getElementById('contatoNome').value  = ct?.nome||'';
+  document.getElementById('contatoCargo').value = ct?.cargo||'';
+  document.getElementById('contatoTel').value   = ct?.tel||'';
+  document.getElementById('contatoEmail').value = ct?.email||'';
+  document.getElementById('ovlContato').classList.add('v');
+}
+
+function contatoEmpresaChanged(){
+  document.getElementById('editContatoClienteId').value = document.getElementById('contatoEmpresa').value;
+}
+
+async function saveContato(){
+  const ctId      = document.getElementById('editContatoId').value||genId();
+  const clienteId = document.getElementById('editContatoClienteId').value || document.getElementById('contatoEmpresa').value;
+  if(!clienteId){ alert('Selecione a empresa.'); return; }
+  const nome = document.getElementById('contatoNome').value.trim();
+  if(!nome){ alert('Informe o nome do contato.'); return; }
+  await db.ref(`erp/clientes/${clienteId}/contatos/${ctId}`).set({
+    id: ctId,
+    nome,
+    cargo: document.getElementById('contatoCargo').value.trim(),
+    tel:   document.getElementById('contatoTel').value.trim(),
+    email: document.getElementById('contatoEmail').value.trim(),
+  });
+  logAudit('CRM','contato',`Salvou contato: ${nome}`,ctId);
+  closeOvl('ovlContato');
+  toast('Contato salvo!');
+}
+
+async function delContato(){
+  const ctId      = document.getElementById('editContatoId').value; if(!ctId) return;
+  const clienteId = document.getElementById('editContatoClienteId').value; if(!clienteId) return;
+  const ct = clientes[clienteId]?.contatos?.[ctId]; if(!ct) return;
+  if(!confirm(`Excluir contato "${ct.nome}"?`)) return;
+  await db.ref(`erp/clientes/${clienteId}/contatos/${ctId}`).remove();
+  closeOvl('ovlContato');
+  toast('Contato excluído.');
 }
 
 // ══════════════════════════════════════════════
@@ -8906,6 +9013,29 @@ async function delProj(pid){
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px 16px 0;flex-shrink:0" id="mesCFKpis"></div>
     <div style="overflow-y:auto;padding:10px 16px 16px;flex:1" id="mesCFList"></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: CONTATO ═══ -->
+<div class="ovl" id="ovlContato" onclick="if(event.target===this)closeOvl('ovlContato')">
+  <div class="modal" style="max-width:480px">
+    <div class="mhead"><div class="mtitle" id="contatoModalTitle">Novo Contato</div><button class="mclose" onclick="closeOvl('ovlContato')">✕</button></div>
+    <input type="hidden" id="editContatoId"/>
+    <input type="hidden" id="editContatoClienteId"/>
+    <div class="fg"><label>Empresa *</label><select id="contatoEmpresa" onchange="contatoEmpresaChanged()"></select></div>
+    <div class="f2">
+      <div class="fg"><label>Nome *</label><input type="text" id="contatoNome" placeholder="Nome completo"/></div>
+      <div class="fg"><label>Cargo</label><input type="text" id="contatoCargo" placeholder="Ex: Diretor, Engenheiro..."/></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Telefone / WhatsApp</label><input type="tel" id="contatoTel" placeholder="(19) 99999-9999"/></div>
+      <div class="fg"><label>E-mail</label><input type="email" id="contatoEmail" placeholder="nome@empresa.com"/></div>
+    </div>
+    <div class="mact">
+      <button class="btn btn-ghost" onclick="closeOvl('ovlContato')">Cancelar</button>
+      <button class="btn btn-ghost" id="btnDelContato" onclick="delContato()" style="display:none;color:var(--red)">🗑 Excluir</button>
+      <button class="btn btn-red" onclick="saveContato()">Salvar</button>
+    </div>
   </div>
 </div>
 
