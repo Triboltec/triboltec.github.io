@@ -1074,6 +1074,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="cp-nm" id="cpName"></div>
       <div class="cp-sg" id="cpSeg"></div>
     </div>
+    <button onclick="openNegocioModalParaCliente(curCID)" style="font-size:0.71rem;padding:5px 10px;background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700;margin-right:4px">💼 Negócio</button>
     <button id="btnEditCliente" class="btn btn-red" onclick="editCurrentClient()" style="font-size:0.71rem;padding:5px 10px">Editar</button>
     <button id="btnDelCliente" class="btn btn-ghost" onclick="delCliente(curCID)" style="font-size:0.71rem;padding:5px 10px;background:#fee2e2;color:#991b1b;border-color:#fca5a5;display:none">🗑️</button>
   </div>
@@ -3868,6 +3869,21 @@ async function delCliente(cid){
   toast('Cliente excluído.');
 }
 function editCurrentClient(){ if(curCID) openClientModal(curCID); }
+
+function openNegocioModalParaCliente(cid){
+  closePanel();
+  openNegocioModal(null, null);
+  // Pré-seleciona a empresa após o modal abrir
+  setTimeout(()=>{
+    const sel = document.getElementById('negCliente');
+    if(sel) sel.value = cid;
+    // Pré-preenche título sugerido
+    const c = clientes[cid];
+    if(c && !document.getElementById('negTitulo').value){
+      document.getElementById('negTitulo').value = c.nome || '';
+    }
+  }, 50);
+}
 
 function renderPanel(cid){
   const c=clientes[cid]; if(!c) return;
